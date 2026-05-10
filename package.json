@@ -20,12 +20,7 @@
   "bin": {
     "emk": "./dist/cli/index.js"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
-  ],
+  "files": ["dist", "README.md", "LICENSE"],
   "engines": {
     "node": ">=20.11"
   },
@@ -43,7 +38,8 @@
     "docs:api": "typedoc",
     "docs:dev": "pnpm docs:api && vitepress dev docs-site",
     "docs:build": "pnpm docs:api && vitepress build docs-site",
-    "docs:preview": "vitepress preview docs-site"
+    "docs:preview": "vitepress preview docs-site",
+    "prepare": "husky"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
@@ -54,9 +50,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
     "@types/node": "^20.11.30",
     "@types/yauzl": "^2.10.3",
     "@vitest/coverage-v8": "^1.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
     "tsup": "^8.0.2",
     "typedoc": "~0.25.13",
     "typedoc-plugin-markdown": "~4.0.3",

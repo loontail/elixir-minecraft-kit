@@ -70,6 +70,7 @@ User-facing docs live in `docs-site/`. Rules from `code-guidelines.md` §8:
 - Examples must be runnable against the current public API.
 - Code-guideline content stays in `docs/`. It is *not* published to users.
 
-## When the audit task plan was executed
+## History
 
-See the CHANGELOG and `docs/audit-history.md` (if present) for the module-by-module record.
+Use `git log` for the change record. There is no CHANGELOG — breaking changes are flagged
+in PR titles with `feat!:` / `fix!:`, so they're findable with `git log --grep='!:'`.

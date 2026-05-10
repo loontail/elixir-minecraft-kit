@@ -126,7 +126,8 @@ Rules for both:
 ## 9. Refactoring rules
 
 - Behaviour-preserving unless a bug is identified and called out explicitly.
-- Public API breakage is allowed pre-1.0, but each break is listed in `CHANGELOG.md`.
+- Public API breakage is allowed pre-1.0. Call it out in the PR title (`feat!:` / `fix!:`)
+  and description so it's findable in git history.
 - New code replaces old code in the same change — no parallel "v2" implementations.
 - Imports / exports / circular dependencies are checked after every module-level change (`pnpm typecheck`).
 - Lint and tests run after every module-level change. A failing test that is *unrelated* to the change is documented in the report; it is not silenced.
