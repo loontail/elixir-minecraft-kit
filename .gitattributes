@@ -1,0 +1,20 @@
+# Force LF on every text file regardless of OS. Without this, Windows clones
+# (and the Windows CI runner) check out CRLF, which trips Biome's formatter
+# and any other tool that expects POSIX line endings.
+* text=auto eol=lf
+
+# Binary files: leave alone, never normalize.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.zip   binary
+*.jar   binary
+*.lzma  binary
+*.woff  binary
+*.woff2 binary
+
+# pnpm lockfile must round-trip verbatim — keep as LF (already covered by the
+# wildcard above, listed explicitly so future tooling doesn't second-guess it).
+pnpm-lock.yaml text eol=lf
