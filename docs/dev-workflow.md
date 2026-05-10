@@ -62,13 +62,40 @@ the failure to GitHub Actions.
 
 ## Release
 
-Maintainer-only. Tag-driven publish:
+Push-driven: every merge to `main` triggers `.github/workflows/release.yml`. If the
+`package.json` version on `main` doesn't have a matching `v*` tag yet, the workflow
+publishes that version to npm, then writes the tag and a GitHub release. Commits that
+don't bump the version are no-ops.
+
+To cut a release: open a "chore(release): X.Y.Z" PR that bumps `package.json` and merge
+it.
 
 ```bash
-pnpm version patch          # or minor / major / <explicit version>
-git push --follow-tags      # triggers .github/workflows/release.yml
+git switch main
+git pull
+
+# Bump package.json — no commit, no tag yet.
+pnpm version --no-git-tag-version patch       # or minor / major / <explicit>
+
+git switch -c chore/release-0.1.1
+git commit -am "chore(release): 0.1.1"
+git push -u origin chore/release-0.1.1
+
+gh pr create --base main \
+  --title "chore(release): 0.1.1" \
+  --body "Bump to 0.1.1."
+
+# Approve + merge in the GitHub UI (or `gh pr merge --squash`).
 ```
 
-The release workflow re-runs all CI gates, verifies the tag matches `package.json`,
-publishes to npm with provenance, and cuts a GitHub release with auto-generated notes
-from the Conventional-Commits log.
+When the PR lands, the release workflow:
+
+1. Reads `package.json` version on `main`.
+2. Checks the matching `v*` tag doesn't already exist.
+3. Re-runs typecheck / lint / test / build.
+4. `pnpm publish --provenance --access public` to npm.
+5. Creates and pushes the `vX.Y.Z` git tag.
+6. Cuts a GitHub release with auto-generated notes from the Conventional-Commits log.
+
+If publish fails, no tag is written — re-trigger the workflow by pushing any commit to
+`main` (e.g. an empty `git commit --allow-empty -m "ci: retry release"`).

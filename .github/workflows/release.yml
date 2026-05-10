@@ -1,23 +1,63 @@
 name: Release
 
-# Triggers on a `v*` tag push (e.g. `git tag v0.2.0 && git push --tags`).
-# Use `pnpm version <patch|minor|major>` to bump and tag in one step, then push with
-# `git push --follow-tags`.
+# Runs on every push to `main`. If `package.json` has a version that hasn't been tagged
+# yet, the workflow publishes that version to npm, then creates and pushes the matching
+# `vX.Y.Z` tag plus a GitHub release. Commits that don't bump the version are no-ops.
+#
+# Release flow:
+#   1. Open a "chore(release): X.Y.Z" PR that runs `pnpm version --no-git-tag-version`.
+#   2. Merge the PR through normal review.
+#   3. This workflow detects the new version and ships it.
 on:
   push:
-    tags: ["v*"]
-
-# `id-token: write` enables npm provenance — the published package will carry a verified
-# link back to this exact workflow run.
-permissions:
-  contents: read
-  id-token: write
+    branches: [main]
 
 jobs:
-  release:
+  gate:
+    name: Detect version change
     runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+      tag: ${{ steps.check.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history so `git rev-parse <tag>` can see existing tags.
+          fetch-depth: 0
+
+      - id: check
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — version not bumped on this push. Skipping."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tag $TAG is new — releasing version $VERSION."
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    name: Publish to npm + tag
+    needs: gate
+    if: needs.gate.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    # `contents: write` lets the job push the version tag back. Branch protection rules
+    # apply to branches, not tags, so this push goes through.
+    # `id-token: write` enables npm provenance.
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use the default GITHUB_TOKEN to push the tag. It is a repo-scoped token, not
+          # a PAT — it does not bypass branch protection but it can push tags.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -32,29 +72,29 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Full safety net before publishing. Match this with the `check` job in ci.yml so
-      # nothing can ship that hasn't been gated by the same rules a PR is.
+      # Re-run every gate even though ci.yml already ran them on the merged PR — this is
+      # the last point where we can stop a bad publish.
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build
 
-      # Sanity-check that the tag matches package.json's version. `pnpm publish` will also
-      # complain if it doesn't, but failing here gives a clearer error.
-      - name: Verify tag matches package version
-        run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
-          TAG="${GITHUB_REF#refs/tags/}"
-          if [ "$PKG_VERSION" != "$TAG" ]; then
-            echo "::error::Tag $TAG does not match package.json version $PKG_VERSION"
-            exit 1
-          fi
-
       - run: pnpm publish --no-git-checks --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      # Tag is created AFTER the publish succeeds. If publish fails, no tag is written
+      # and the next workflow run for the same version will retry cleanly.
+      - name: Tag release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ needs.gate.outputs.tag }}" -m "Release ${{ needs.gate.outputs.version }}"
+          git push origin "${{ needs.gate.outputs.tag }}"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.gate.outputs.tag }}
+          name: ${{ needs.gate.outputs.tag }}
           generate_release_notes: true
