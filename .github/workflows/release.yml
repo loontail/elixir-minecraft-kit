@@ -1,0 +1,60 @@
+name: Release
+
+# Triggers on a `v*` tag push (e.g. `git tag v0.2.0 && git push --tags`).
+# Use `pnpm version <patch|minor|major>` to bump and tag in one step, then push with
+# `git push --follow-tags`.
+on:
+  push:
+    tags: ["v*"]
+
+# `id-token: write` enables npm provenance — the published package will carry a verified
+# link back to this exact workflow run.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.11"
+          registry-url: "https://registry.npmjs.org"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Full safety net before publishing. Match this with the `check` job in ci.yml so
+      # nothing can ship that hasn't been gated by the same rules a PR is.
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+      # Sanity-check that the tag matches package.json's version. `pnpm publish` will also
+      # complain if it doesn't, but failing here gives a clearer error.
+      - name: Verify tag matches package version
+        run: |
+          PKG_VERSION="v$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF#refs/tags/}"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "::error::Tag $TAG does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+
+      - run: pnpm publish --no-git-checks --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

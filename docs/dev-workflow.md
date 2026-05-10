@@ -46,11 +46,29 @@
 - Network is forbidden in the test suite. All HTTP is scripted.
 - Each test owns its temp directory (`mkdtemp(...)`), cleans up in `afterEach`.
 
-## Pre-commit hooks
+## Git hooks
 
-None configured. Add them via `husky` if you want enforced gating; until then, rely on CI to
-catch regressions.
+Three hooks are installed automatically by husky on `pnpm install` (see the `prepare`
+script):
 
-## Release (TODO)
+| Hook | Runs |
+|---|---|
+| `commit-msg` | commitlint — enforces Conventional Commits |
+| `pre-commit` | lint-staged (biome on staged files) + `pnpm typecheck` |
+| `pre-push` | `pnpm test:coverage` + `pnpm build` |
 
-There is no automated release yet. When one is added, document it here.
+Don't bypass with `--no-verify`. CI re-runs the same checks; bypassing locally just moves
+the failure to GitHub Actions.
+
+## Release
+
+Maintainer-only. Tag-driven publish:
+
+```bash
+pnpm version patch          # or minor / major / <explicit version>
+git push --follow-tags      # triggers .github/workflows/release.yml
+```
+
+The release workflow re-runs all CI gates, verifies the tag matches `package.json`,
+publishes to npm with provenance, and cuts a GitHub release with auto-generated notes
+from the Conventional-Commits log.
