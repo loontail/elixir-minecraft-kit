@@ -1,0 +1,63 @@
+import { MinecraftKitError } from "../core/errors";
+import { targetPaths } from "../core/paths";
+import { planLibraryDownloads } from "../install/libraries";
+import type { MetadataCache } from "../types/cache";
+import type { ProgressListener } from "../types/events";
+import type { HttpClient } from "../types/http";
+import { Loaders } from "../types/loader";
+import type { Target } from "../types/target";
+import { VerificationKinds, type VerificationResult, VerifyFileCategories } from "../types/verify";
+import { runVerification, verifyExistence, verifyHashedFile } from "./helpers";
+
+/** Inputs to {@link verifyFabric}. */
+export interface VerifyFabricInput {
+  readonly target: Target;
+  readonly http: HttpClient;
+  readonly cache: MetadataCache;
+  readonly signal?: AbortSignal;
+  readonly onEvent?: ProgressListener;
+}
+
+/** Verify the Fabric loader slice: profile JSON + every library it pulls in. */
+export async function verifyFabric(input: VerifyFabricInput): Promise<VerificationResult> {
+  if (input.target.loader.type !== Loaders.FABRIC) {
+    throw new MinecraftKitError(
+      "INVALID_INPUT",
+      `verify.fabric requires a Fabric target (got ${input.target.loader.type})`,
+    );
+  }
+  const loader = input.target.loader;
+  return runVerification(
+    {
+      targetId: input.target.id,
+      kind: VerificationKinds.FABRIC,
+      ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
+    },
+    async (record) => {
+      record(
+        await verifyExistence({
+          path: targetPaths.versionJson(input.target.directory, loader.profile.id),
+          category: VerifyFileCategories.LOADER_LIBRARY,
+        }),
+      );
+      const fabricLibraries = planLibraryDownloads({
+        libraries: loader.profile.libraries,
+        directory: input.target.directory,
+        system: input.target.runtime.system,
+        versionId: input.target.minecraft.version,
+        category: "fabric-library",
+      });
+      for (const action of fabricLibraries.downloads) {
+        record(
+          await verifyHashedFile({
+            path: action.target,
+            expectedSha1: action.expectedSha1,
+            expectedSize: action.expectedSize,
+            ...(action.url ? { url: action.url } : {}),
+            category: VerifyFileCategories.LOADER_LIBRARY,
+          }),
+        );
+      }
+    },
+  );
+}

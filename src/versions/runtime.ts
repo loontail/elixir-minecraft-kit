@@ -1,0 +1,146 @@
+import { ApiEndpoints } from "../constants/api";
+import { RUNTIME_PLATFORM_KEYS } from "../constants/platform";
+import { FALLBACK_COMPONENT } from "../constants/runtime";
+import { MinecraftKitError } from "../core/errors";
+import { fetchJson } from "../http/metadata";
+import { RuntimePreference, type RuntimePreferenceKind } from "../types/runtime";
+import type { ResolvedRuntime, RuntimeIndex, RuntimeIndexEntry } from "../types/runtime";
+import type { RuntimeSystem } from "../types/system";
+import type { ResolverContext } from "./context";
+
+/** Inputs to {@link RuntimeVersionsApi.list}. */
+export interface RuntimeListInput {
+  readonly system: RuntimeSystem;
+  readonly minecraftVersion?: string;
+  readonly signal?: AbortSignal;
+}
+
+/** A summary entry for the list API. */
+export interface RuntimeListEntry {
+  readonly component: string;
+  readonly platformKey: string;
+  readonly versionName: string;
+  readonly released: string;
+  readonly manifestUrl: string;
+}
+
+/** Inputs to {@link RuntimeVersionsApi.resolve}. */
+export interface RuntimeResolveInput {
+  readonly system: RuntimeSystem;
+  readonly minecraftVersion?: string;
+  readonly component?: string;
+  readonly preference?: RuntimePreferenceKind;
+  readonly signal?: AbortSignal;
+}
+
+/** Public runtime versions API surface. */
+export class RuntimeVersionsApi {
+  constructor(private readonly ctx: ResolverContext) {}
+
+  /** List available runtime entries for the host platform. */
+  async list(input: RuntimeListInput): Promise<readonly RuntimeListEntry[]> {
+    const platformKey = pickPlatformKey(input.system);
+    const index = await this.fetchIndex(input.signal);
+    const platform = index[platformKey];
+    if (!platform) return [];
+    const entries: RuntimeListEntry[] = [];
+    for (const [component, items] of Object.entries(platform)) {
+      for (const item of items) {
+        entries.push({
+          component,
+          platformKey,
+          versionName: item.version.name,
+          released: item.version.released,
+          manifestUrl: item.manifest.url,
+        });
+      }
+    }
+    return entries;
+  }
+
+  /** Resolve a single runtime for the host platform and Minecraft version. */
+  async resolve(input: RuntimeResolveInput): Promise<ResolvedRuntime> {
+    const platformKey = pickPlatformKey(input.system);
+    const index = await this.fetchIndex(input.signal);
+    const platform = index[platformKey];
+    if (!platform) {
+      throw new MinecraftKitError(
+        "RUNTIME_UNSUPPORTED_PLATFORM",
+        `No runtimes published for platform: ${platformKey}`,
+        { context: { platform: platformKey } },
+      );
+    }
+    const component = input.component ?? FALLBACK_COMPONENT;
+    const candidates = platform[component] ?? [];
+    if (candidates.length === 0) {
+      const all = Object.entries(platform);
+      const preference = input.preference ?? RuntimePreference.RECOMMENDED;
+      if (preference === RuntimePreference.LATEST) {
+        const fallback = pickLatestAcrossComponents(all);
+        if (fallback) {
+          return toResolved(fallback.component, platformKey, fallback.entry, input.system);
+        }
+      }
+      throw new MinecraftKitError(
+        "RUNTIME_NOT_FOUND",
+        `Runtime component ${component} not available on ${platformKey}`,
+        { context: { platform: platformKey, version: component } },
+      );
+    }
+    const entry = candidates[0];
+    if (!entry) {
+      throw new MinecraftKitError(
+        "RUNTIME_NOT_FOUND",
+        `Runtime component ${component} list is empty for ${platformKey}`,
+        { context: { platform: platformKey, version: component } },
+      );
+    }
+    return toResolved(component, platformKey, entry, input.system);
+  }
+
+  private async fetchIndex(signal: AbortSignal | undefined): Promise<RuntimeIndex> {
+    return fetchJson<RuntimeIndex>(this.ctx.http, this.ctx.cache, {
+      url: ApiEndpoints.mojang.runtimeIndex(),
+      cacheKey: "mojang-runtime-index",
+      ...(signal !== undefined ? { signal } : {}),
+    });
+  }
+}
+
+function pickPlatformKey(system: RuntimeSystem): string {
+  const archMap = RUNTIME_PLATFORM_KEYS[system.os];
+  return archMap[system.arch];
+}
+
+function pickLatestAcrossComponents(
+  entries: readonly [string, readonly RuntimeIndexEntry[]][],
+): { readonly component: string; readonly entry: RuntimeIndexEntry } | null {
+  let bestComponent: string | null = null;
+  let bestEntry: RuntimeIndexEntry | null = null;
+  for (const [component, list] of entries) {
+    for (const entry of list) {
+      if (!bestEntry || entry.version.released > bestEntry.version.released) {
+        bestComponent = component;
+        bestEntry = entry;
+      }
+    }
+  }
+  if (!bestComponent || !bestEntry) return null;
+  return { component: bestComponent, entry: bestEntry };
+}
+
+function toResolved(
+  component: string,
+  platformKey: string,
+  entry: RuntimeIndexEntry,
+  system: RuntimeSystem,
+): ResolvedRuntime {
+  return {
+    component,
+    platformKey,
+    versionName: entry.version.name,
+    system,
+    manifestUrl: entry.manifest.url,
+    manifestSha1: entry.manifest.sha1,
+  };
+}

@@ -1,0 +1,168 @@
+import { planInstall } from "../install/planner";
+import {
+  type DownloadAction,
+  type ExtractNativeAction,
+  type InstallAction,
+  InstallActionKinds,
+  type InstallPlan,
+  type WriteVersionJsonAction,
+} from "../types/install";
+import type { AspectRepairInput, RepairPlan } from "../types/repair";
+import type { Target } from "../types/target";
+import {
+  type VerificationResult,
+  VerifyFileCategories,
+  type VerifyFileCategory,
+} from "../types/verify";
+
+/** Normalize the `from` option of a repair plan into an array. */
+export function asResultArray(
+  from: VerificationResult | readonly VerificationResult[],
+): readonly VerificationResult[] {
+  return Array.isArray(from) ? from : [from];
+}
+
+/**
+ * Category-aware view over a set of verification results. Lets repair distinguish
+ *  - paths that need a download (have any non-`native` category recorded), from
+ *  - paths whose only issue is `native` extraction (the JAR is fine, but the extracted
+ *    natives directory is missing).
+ *
+ * Without this distinction, a "natives directory missing" report would re-trigger every
+ * native-jar download even though every JAR on disk is already correct.
+ */
+export interface IssueIndex {
+  /** True when any verification result reported an issue at `path`. */
+  has(path: string): boolean;
+  /**
+   * True when at least one issue at `path` carries a category other than `native`.
+   * Used to decide whether a `DOWNLOAD_FILE` action should fire — a `native`-only issue
+   * means "re-extract the JAR" not "re-download the JAR".
+   */
+  hasNonNative(path: string): boolean;
+  /** All categories recorded for the given path (empty when none). */
+  categoriesAt(path: string): ReadonlySet<VerifyFileCategory>;
+}
+
+/** Build an {@link IssueIndex} from one or more verification results. */
+export function buildIssueIndex(
+  from: VerificationResult | readonly VerificationResult[],
+): IssueIndex {
+  const map = new Map<string, Set<VerifyFileCategory>>();
+  for (const v of asResultArray(from)) {
+    for (const issue of v.issues) {
+      const set = map.get(issue.path);
+      if (set) set.add(issue.category);
+      else map.set(issue.path, new Set([issue.category]));
+    }
+  }
+  return {
+    has: (path) => map.has(path),
+    hasNonNative: (path) => {
+      const cats = map.get(path);
+      if (!cats) return false;
+      for (const c of cats) {
+        if (c !== VerifyFileCategories.NATIVE) return true;
+      }
+      return false;
+    },
+    categoriesAt: (path) => map.get(path) ?? new Set<VerifyFileCategory>(),
+  };
+}
+
+/** Sum expected bytes of all DOWNLOAD_FILE actions in a list. */
+export function sumDownloadBytes(actions: readonly InstallAction[]): number {
+  return actions.reduce((sum, action) => {
+    if (action.kind === InstallActionKinds.DOWNLOAD_FILE) {
+      return sum + ((action as DownloadAction).expectedSize ?? 0);
+    }
+    return sum;
+  }, 0);
+}
+
+/** Wrap a list of install actions in a {@link RepairPlan} for the given target. */
+export function buildRepairPlan(target: Target, actions: readonly InstallAction[]): RepairPlan {
+  return {
+    targetId: target.id,
+    directory: target.directory,
+    target,
+    actions,
+    totalActions: actions.length,
+    totalBytes: sumDownloadBytes(actions),
+  };
+}
+
+/** Predicate to keep only actions belonging to a specific repair aspect. */
+export type AspectFilter = (action: InstallAction) => boolean;
+
+/**
+ * Run the boilerplate every aspect-specific repair planner shares:
+ *   1. Build a full install plan.
+ *   2. Index the verification issues.
+ *   3. Filter install actions through the aspect-specific predicate using the standard
+ *      DOWNLOAD / WRITE / EXTRACT_NATIVE selection rules.
+ *   4. Let the caller append any aspect-specific actions (e.g. Forge's defensive sweep).
+ *   5. Wrap the actions in a {@link RepairPlan}.
+ */
+export async function planAspectRepair(
+  input: AspectRepairInput,
+  aspectFilter: AspectFilter,
+  postprocess?: (context: {
+    actions: InstallAction[];
+    installPlan: InstallPlan;
+    issues: IssueIndex;
+  }) => void,
+): Promise<RepairPlan> {
+  const installPlan = await planInstall({
+    target: input.target,
+    http: input.http,
+    cache: input.cache,
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
+  const issues = buildIssueIndex(input.from);
+  const actions = selectRepairActions({
+    target: input.target,
+    installPlan,
+    issues,
+    aspectFilter,
+  });
+  postprocess?.({ actions, installPlan, issues });
+  return buildRepairPlan(input.target, actions);
+}
+
+/**
+ * Apply the standard repair-action selection rules, restricted to the actions accepted by
+ * `aspectFilter`. The rules are:
+ *  - DOWNLOAD_FILE: include if the target path has any non-`native` issue recorded.
+ *  - WRITE_VERSION_JSON: include if the destination path has any issue recorded.
+ *  - EXTRACT_NATIVE: include if the source JAR has any issue recorded.
+ *  - Anything else admitted by `aspectFilter` is included unconditionally.
+ */
+export function selectRepairActions(input: {
+  readonly target: Target;
+  readonly installPlan: InstallPlan;
+  readonly issues: IssueIndex;
+  readonly aspectFilter: AspectFilter;
+}): InstallAction[] {
+  const matching: InstallAction[] = [];
+  for (const action of input.installPlan.actions) {
+    if (!input.aspectFilter(action)) continue;
+    if (action.kind === InstallActionKinds.DOWNLOAD_FILE) {
+      if (input.issues.hasNonNative((action as DownloadAction).target)) {
+        matching.push(action);
+      }
+    } else if (action.kind === InstallActionKinds.WRITE_VERSION_JSON) {
+      if (input.issues.has((action as WriteVersionJsonAction).path)) {
+        matching.push(action);
+      }
+    } else if (action.kind === InstallActionKinds.EXTRACT_NATIVE) {
+      if (input.issues.has((action as ExtractNativeAction).source)) {
+        matching.push(action);
+      }
+    } else {
+      // Non-standard kinds (e.g. RUN_FORGE_PROCESSOR) are admitted by the aspect filter.
+      matching.push(action);
+    }
+  }
+  return matching;
+}

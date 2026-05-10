@@ -1,0 +1,44 @@
+import path from "node:path";
+import { targetPaths } from "../core/paths";
+import { fetchJson } from "../http/metadata";
+import type { MetadataCache } from "../types/cache";
+import type { HttpClient } from "../types/http";
+import { type DownloadAction, InstallActionKinds } from "../types/install";
+import type { ResolvedRuntime, RuntimeFilesManifest } from "../types/runtime";
+
+/** Plan the per-file downloads required to install a runtime. */
+export async function planRuntimeDownloads(input: {
+  readonly runtime: ResolvedRuntime;
+  readonly directory: string;
+  readonly http: HttpClient;
+  readonly cache: MetadataCache;
+  readonly signal?: AbortSignal;
+}): Promise<{
+  readonly actions: readonly DownloadAction[];
+  readonly manifest: RuntimeFilesManifest;
+}> {
+  const manifest = await fetchJson<RuntimeFilesManifest>(input.http, input.cache, {
+    url: input.runtime.manifestUrl,
+    cacheKey: `runtime-manifest:${input.runtime.component}:${input.runtime.platformKey}:${input.runtime.manifestSha1}`,
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
+  const actions: DownloadAction[] = [];
+  const runtimeRoot = targetPaths.runtimeRoot(
+    input.directory,
+    input.runtime.component,
+    input.runtime.installRoot,
+  );
+  for (const [relativePath, entry] of Object.entries(manifest.files)) {
+    if (entry.type !== "file") continue;
+    const target = path.join(runtimeRoot, relativePath);
+    actions.push({
+      kind: InstallActionKinds.DOWNLOAD_FILE,
+      url: entry.downloads.raw.url,
+      target,
+      expectedSha1: entry.downloads.raw.sha1,
+      expectedSize: entry.downloads.raw.size,
+      category: "runtime-file",
+    });
+  }
+  return { actions, manifest };
+}

@@ -1,0 +1,222 @@
+import path from "node:path";
+import { Loaders } from "../../types/loader";
+import type { MinecraftVersionSummary } from "../../types/minecraft";
+import type { ResolvedRuntime } from "../../types/runtime";
+import type { DiscoveredTarget, Target } from "../../types/target";
+import { formatUserError } from "../error-format";
+import { ProgressRenderer, type ProgressSummary, formatBytes, formatDuration } from "../progress";
+import type { InstallSelection, InstallType, ScenarioContext } from "./types";
+
+/**
+ * Plan + run an install and pipe progress events into the {@link ProgressRenderer}.
+ * Throws if either step fails; the renderer's `fail()` message is the user-facing error.
+ */
+export async function runInstallWithProgress(
+  ctx: ScenarioContext,
+  target: Target,
+  label: string,
+): Promise<void> {
+  const planSpinner = ctx.ui.spinner();
+  planSpinner.start(`Planning ${label}…`);
+  let plan: Awaited<ReturnType<typeof ctx.kit.install.plan>>;
+  try {
+    plan = await ctx.kit.install.plan(target);
+    planSpinner.stop(`Plan ready: ${plan.totalActions} actions, ${formatBytes(plan.totalBytes)}.`);
+  } catch (error) {
+    planSpinner.stop("Planning failed.");
+    throw error;
+  }
+  const renderer = new ProgressRenderer({
+    ui: ctx.ui,
+    label: `Install ${label}`,
+    totalActions: plan.totalActions,
+    totalBytes: plan.totalBytes,
+  });
+  const onEvent = renderer.attach();
+  try {
+    await ctx.kit.install.run(plan, { onEvent });
+    const summary = renderer.finish();
+    ctx.ui.note("Install summary", formatSummary(summary));
+  } catch (error) {
+    renderer.fail(formatUserError(error));
+    throw error;
+  }
+}
+
+/**
+ * Resolve a target from the wizard selection and execute the install. Returns:
+ *   - `"ok"`     install completed
+ *   - `"directory"` install failed; let the wizard re-prompt the directory step
+ *   - `"install-type"` target resolution failed; let the wizard re-prompt loader choice
+ *
+ * Both error paths log the underlying error before returning.
+ */
+export async function runInstallFromSelection(
+  ctx: ScenarioContext,
+  sel: InstallSelection,
+): Promise<"ok" | "directory" | "install-type"> {
+  const v = sel.version as MinecraftVersionSummary;
+  const dir = sel.directory as string;
+  const loaderInput = buildLoaderInput(sel);
+  const runtimeInput =
+    sel.runtimeOverride !== null ? { runtime: { component: sel.runtimeOverride } } : {};
+  let target: Target;
+  try {
+    target = await ctx.kit.targets.resolve({
+      id: path.basename(dir),
+      directory: dir,
+      minecraft: { version: v.id },
+      loader: loaderInput,
+      ...runtimeInput,
+    });
+  } catch (error) {
+    ctx.ui.log("error", formatUserError(error));
+    return "install-type";
+  }
+  try {
+    await runInstallWithProgress(ctx, target, describeLoader(sel));
+    return "ok";
+  } catch {
+    // runInstallWithProgress already rendered the failure via renderer.fail(). Returning
+    // "directory" lets the wizard re-prompt the destination without re-running pickers.
+    return "directory";
+  }
+}
+
+export async function runStandaloneRuntimeInstallWithProgress(
+  ctx: ScenarioContext,
+  input: { readonly id: string; readonly directory: string; readonly runtime: ResolvedRuntime },
+): Promise<void> {
+  const label = `runtime ${input.runtime.component}`;
+  const planSpinner = ctx.ui.spinner();
+  planSpinner.start(`Planning ${label}…`);
+  let plan: Awaited<ReturnType<typeof ctx.kit.install.runtime.standalonePlan>>;
+  try {
+    plan = await ctx.kit.install.runtime.standalonePlan({
+      id: input.id,
+      directory: input.directory,
+      runtime: input.runtime,
+    });
+    planSpinner.stop(`Plan ready: ${plan.totalActions} files, ${formatBytes(plan.totalBytes)}.`);
+  } catch (error) {
+    planSpinner.stop("Planning failed.");
+    throw error;
+  }
+  const renderer = new ProgressRenderer({
+    ui: ctx.ui,
+    label: `Install ${label}`,
+    totalActions: plan.totalActions,
+    totalBytes: plan.totalBytes,
+  });
+  const onEvent = renderer.attach();
+  try {
+    await ctx.kit.install.runtime.run(plan, { onEvent });
+    const summary = renderer.finish();
+    ctx.ui.note("Runtime install summary", formatSummary(summary));
+  } catch (error) {
+    renderer.fail(formatUserError(error));
+    throw error;
+  }
+}
+
+export function buildLoaderInput(sel: InstallSelection): {
+  readonly type: InstallType;
+  readonly version?: string;
+} {
+  if (sel.installType === Loaders.VANILLA) {
+    return { type: Loaders.VANILLA };
+  }
+  if (sel.installType === Loaders.FABRIC) {
+    return { type: Loaders.FABRIC, version: sel.fabricLoader as string };
+  }
+  return { type: Loaders.FORGE, version: sel.forgeBuild as string };
+}
+
+export function describeLoader(sel: InstallSelection): string {
+  const v = (sel.version as MinecraftVersionSummary).id;
+  if (sel.installType === Loaders.VANILLA) return `Vanilla ${v}`;
+  if (sel.installType === Loaders.FABRIC) return `Fabric ${sel.fabricLoader} on ${v}`;
+  return `Forge ${sel.forgeLabel ?? sel.forgeBuild} on ${v}`;
+}
+
+export function summaryRows(sel: InstallSelection): readonly (readonly [string, string])[] {
+  const v = sel.version as MinecraftVersionSummary;
+  const rows: [string, string][] = [
+    ["Minecraft", v.id],
+    ["Type", labelForType(sel.installType)],
+  ];
+  if (sel.installType === Loaders.FABRIC && sel.fabricLoader) {
+    rows.push(["Fabric", sel.fabricLoader]);
+  }
+  if (sel.installType === Loaders.FORGE && (sel.forgeLabel || sel.forgeBuild)) {
+    rows.push(["Forge", sel.forgeLabel ?? sel.forgeBuild ?? ""]);
+  }
+  rows.push(["Runtime", sel.runtimeOverride ?? "auto-detect"]);
+  rows.push(["Directory", sel.directory as string]);
+  return rows;
+}
+
+function labelForType(type: InstallType | null): string {
+  if (type === Loaders.FABRIC) return "Fabric";
+  if (type === Loaders.FORGE) return "Forge (modern)";
+  return "Vanilla";
+}
+
+export function previousFromDirectory(
+  sel: InstallSelection,
+): "fabric-loader" | "forge-build" | "install-type" {
+  if (sel.installType === Loaders.FABRIC) return "fabric-loader";
+  if (sel.installType === Loaders.FORGE) return "forge-build";
+  return "install-type";
+}
+
+export function defaultIdFromSelection(sel: InstallSelection): string {
+  const v = (sel.version as MinecraftVersionSummary).id;
+  if (sel.installType === Loaders.FABRIC) {
+    return defaultIdFor("fabric", `${v}-${sel.fabricLoader ?? ""}`);
+  }
+  if (sel.installType === Loaders.FORGE) {
+    return defaultIdFor("forge", `${v}-${sel.forgeBuild ?? ""}`);
+  }
+  return defaultIdFor("vanilla", v);
+}
+
+export function defaultIdFor(loader: string, suffix: string): string {
+  return `${loader}-${suffix}`.replace(/[^a-zA-Z0-9._-]+/g, "-").toLowerCase();
+}
+
+export function formatDetailed(entry: DiscoveredTarget): string {
+  const versions =
+    entry.minecraftVersions.length === 0 ? "(none)" : entry.minecraftVersions.join(", ");
+  const loaders =
+    entry.loaders.length === 0
+      ? "(none)"
+      : entry.loaders.map((l) => `${l.type}${l.version ? ` ${l.version}` : ""}`).join(", ");
+  const runtimePath = entry.runtime?.javaPath ?? "(none detected)";
+  const runtimeComponent = entry.runtime?.component ?? "(unknown)";
+  const runtimeVersion = entry.runtime?.javaVersion ?? "(unknown)";
+  return [
+    `Directory:         ${entry.directory}`,
+    `Minecraft:         ${versions}`,
+    `Loaders:           ${loaders}`,
+    `Runtime path:      ${runtimePath}`,
+    `Runtime component: ${runtimeComponent}`,
+    `Runtime version:   ${runtimeVersion}`,
+  ].join("\n");
+}
+
+export function formatSummary(summary: ProgressSummary): string {
+  const lines = [
+    `Files downloaded: ${summary.filesDownloaded}`,
+    `Files skipped:    ${summary.filesSkipped}`,
+  ];
+  if (summary.filesFailed > 0) {
+    lines.push(`Files failed:     ${summary.filesFailed}`);
+  }
+  lines.push(
+    `Bytes downloaded: ${formatBytes(summary.bytesDownloaded)}`,
+    `Average speed:    ${formatBytes(summary.avgSpeedBps)}/s`,
+    `Duration:         ${formatDuration(summary.durationMs)}`,
+  );
+  return lines.join("\n");
+}

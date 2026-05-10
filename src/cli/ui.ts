@@ -1,0 +1,367 @@
+/**
+ * Outcome of a single interactive step.
+ *
+ * - `ok`     — user picked a value.
+ * - `back`   — user asked to go to the previous step (only available when {@link UiPromptInput.allowBack}).
+ * - `cancel` — user pressed Ctrl+C, picked the explicit "Cancel" option, or otherwise aborted.
+ */
+export type WizardOutcome<T> =
+  | { readonly kind: "ok"; readonly value: T }
+  | { readonly kind: "back" }
+  | { readonly kind: "cancel" };
+
+/** A select option. */
+export interface SelectOption<T> {
+  readonly label: string;
+  readonly value: T;
+  readonly hint?: string;
+}
+
+/** Common shape for every interactive prompt input. */
+export interface UiPromptInput {
+  readonly message: string;
+  readonly allowBack?: boolean;
+  readonly allowCancel?: boolean;
+}
+
+/** Inputs for {@link Ui.text}. */
+export interface TextInput extends UiPromptInput {
+  readonly placeholder?: string;
+  readonly initial?: string;
+  /** Optional validator. Return undefined for valid input or an error message string. */
+  readonly validate?: (value: string) => string | undefined;
+}
+
+/** Inputs for {@link Ui.select}. */
+export interface SelectInput<T> extends UiPromptInput {
+  readonly options: readonly SelectOption<T>[];
+  /** Optional initial selection. */
+  readonly initialValue?: T;
+}
+
+/** Inputs for {@link Ui.searchableSelect}. */
+export interface SearchableSelectInput<T> extends SelectInput<T> {
+  /**
+   * Lists with at most this many entries are rendered as a normal select. Larger lists are
+   * clipped to the first {@link MAX_VISIBLE_OPTIONS} entries. Defaults to `30`.
+   */
+  readonly searchThreshold?: number;
+}
+
+/** Inputs for {@link Ui.confirm}. */
+export interface ConfirmInput extends UiPromptInput {
+  readonly initial?: boolean;
+}
+
+/** Spinner handle. */
+export interface UiSpinner {
+  /** Start the spinner with an initial message. */
+  start(message: string): void;
+  /** Update the running spinner's message in-place (no newline). */
+  message(message: string): void;
+  /** Stop the spinner with a final message. */
+  stop(message?: string): void;
+}
+
+/** Public interactive-UI contract. */
+export interface Ui {
+  intro(message: string): void;
+  outro(message: string): void;
+  note(title: string, body: string): void;
+  log(level: "info" | "success" | "warn" | "error", message: string): void;
+  /** Print a raw multi-line block without any clack box/prefix decoration. */
+  write(message: string): void;
+  text(input: TextInput): Promise<WizardOutcome<string>>;
+  select<T>(input: SelectInput<T>): Promise<WizardOutcome<T>>;
+  searchableSelect<T>(input: SearchableSelectInput<T>): Promise<WizardOutcome<T>>;
+  confirm(input: ConfirmInput): Promise<WizardOutcome<boolean>>;
+  spinner(): UiSpinner;
+}
+
+const BACK = Symbol("emk:back");
+const CANCEL = Symbol("emk:cancel");
+
+interface ClackModule {
+  intro(m: string): void;
+  outro(m: string): void;
+  note(body: string, title?: string): void;
+  log: {
+    info(m: string): void;
+    success(m: string): void;
+    warn(m: string): void;
+    error(m: string): void;
+  };
+  text(opts: object): Promise<unknown>;
+  select(opts: object): Promise<unknown>;
+  confirm(opts: object): Promise<unknown>;
+  spinner(): {
+    start(m: string): void;
+    stop(m?: string): void;
+    message?(m: string): void;
+  };
+  isCancel(value: unknown): boolean;
+}
+
+/**
+ * Build the production {@link Ui} backed by `@clack/prompts`. Lazy import keeps the CLI
+ * dependency out of the library's main entry point.
+ */
+export async function createClackUi(): Promise<Ui> {
+  const clack = (await import("@clack/prompts")) as unknown as ClackModule;
+  return buildUi(clack);
+}
+
+/** Maximum number of options shown in a single select. Above this, a filter is required. */
+export const MAX_VISIBLE_OPTIONS = 50;
+
+/** Threshold above which {@link Ui.searchableSelect} prompts for a filter first. */
+export const DEFAULT_SEARCH_THRESHOLD = 30;
+
+/** Build a {@link Ui} from any module that implements the clack contract. Exposed for tests. */
+export function buildUi(clack: ClackModule): Ui {
+  return {
+    intro: (m) => clack.intro(m),
+    outro: (m) => clack.outro(m),
+    write: (m) => process.stdout.write(`${m}\n`),
+    note: (title, body) => clack.note(body, title),
+    log: (level, message) => clack.log[level](message),
+    text: async (input) => {
+      const value = await clack.text({
+        message: input.message,
+        ...(input.placeholder !== undefined ? { placeholder: input.placeholder } : {}),
+        ...(input.initial !== undefined ? { initialValue: input.initial } : {}),
+        ...(input.validate !== undefined ? { validate: input.validate } : {}),
+      });
+      if (clack.isCancel(value)) return { kind: "cancel" };
+      // clack.text may return undefined when the user submits without typing and no
+      // initialValue was supplied. Normalize to an empty string so callers can safely
+      // call `.trim()` etc. without runtime crashes.
+      return { kind: "ok", value: typeof value === "string" ? value : "" };
+    },
+    select: async (input) => runSelect(clack, input),
+    searchableSelect: async (input) => searchableSelect(clack, input),
+    confirm: async (input) => {
+      const value = await clack.confirm({
+        message: input.message,
+        ...(input.initial !== undefined ? { initialValue: input.initial } : {}),
+      });
+      if (clack.isCancel(value)) return { kind: "cancel" };
+      return { kind: "ok", value: value as boolean };
+    },
+    // Bypass clack.spinner() for progress: clack's spinner sometimes prints a fresh line
+    // per update on Windows / older versions, defeating in-place rendering. Our own
+    // {@link createInPlaceSpinner} writes raw ANSI escapes to stdout so updates always
+    // overwrite the previous line.
+    spinner: () => createInPlaceSpinner(),
+  };
+}
+
+/**
+ * Default writable stream used by the in-place spinner. Wrapped so tests can swap it.
+ */
+const DEFAULT_OUT: { write(chunk: string): void; isTTY: boolean } = {
+  write(chunk) {
+    process.stdout.write(chunk);
+  },
+  get isTTY() {
+    return process.stdout.isTTY === true;
+  },
+};
+
+/** Inputs to {@link createInPlaceSpinner}. */
+export interface InPlaceSpinnerInput {
+  /** Sink the spinner writes to. Defaults to `process.stdout`. */
+  readonly out?: { write(chunk: string): void; isTTY: boolean };
+}
+
+/**
+ * Build a {@link UiSpinner} that updates a single terminal line in place by writing raw
+ * ANSI escape codes (`\r\x1b[2K` — carriage return + clear-line) before each update. Falls
+ * back to one line per call when the stream is not a TTY (CI logs, redirected stdout) so it
+ * never spams the output.
+ *
+ * Exposed for tests; the production {@link Ui} created by {@link createClackUi} already uses
+ * this internally.
+ */
+export function createInPlaceSpinner(input: InPlaceSpinnerInput = {}): UiSpinner {
+  const out = input.out ?? DEFAULT_OUT;
+  let started = false;
+  let lastLine = "";
+  return {
+    start(message: string): void {
+      if (started) {
+        // Treat a second `start` as an in-place update so callers don't accidentally print
+        // a fresh line by re-starting.
+        if (message !== lastLine) {
+          lastLine = message;
+          if (out.isTTY) {
+            out.write(`\r\x1b[2K${message}`);
+          } else {
+            out.write(`${message}\n`);
+          }
+        }
+        return;
+      }
+      started = true;
+      lastLine = message;
+      if (out.isTTY) {
+        out.write(message);
+      } else {
+        out.write(`${message}\n`);
+      }
+    },
+    message(message: string): void {
+      if (!started) return;
+      if (message === lastLine) return;
+      lastLine = message;
+      if (out.isTTY) {
+        out.write(`\r\x1b[2K${message}`);
+      }
+      // Non-TTY: drop in-flight updates entirely so the log isn't spammed.
+    },
+    stop(message?: string): void {
+      if (!started) {
+        if (message !== undefined) {
+          out.write(`${message}\n`);
+        }
+        return;
+      }
+      const finalText = message ?? lastLine;
+      if (out.isTTY) {
+        out.write(`\r\x1b[2K${finalText}\n`);
+      } else {
+        out.write(`${finalText}\n`);
+      }
+      started = false;
+      lastLine = "";
+    },
+  };
+}
+
+async function runSelect<T>(clack: ClackModule, input: SelectInput<T>): Promise<WizardOutcome<T>> {
+  const augmentedOptions: { label: string; value: unknown; hint?: string }[] = input.options.map(
+    (option) => {
+      const opt: { label: string; value: unknown; hint?: string } = {
+        label: option.label,
+        value: option.value as unknown,
+      };
+      if (option.hint !== undefined) opt.hint = option.hint;
+      return opt;
+    },
+  );
+  if (input.allowBack === true) {
+    augmentedOptions.push({ label: "← Back", value: BACK });
+  }
+  if (input.allowCancel === true) {
+    augmentedOptions.push({ label: "✕ Cancel", value: CANCEL });
+  }
+  const result = await clack.select({
+    message: input.message,
+    options: augmentedOptions,
+    maxItems: 12,
+    ...(input.initialValue !== undefined ? { initialValue: input.initialValue as unknown } : {}),
+  });
+  if (clack.isCancel(result)) return { kind: "cancel" };
+  if (result === BACK) return { kind: "back" };
+  if (result === CANCEL) return { kind: "cancel" };
+  return { kind: "ok", value: result as T };
+}
+
+async function searchableSelect<T>(
+  clack: ClackModule,
+  input: SearchableSelectInput<T>,
+): Promise<WizardOutcome<T>> {
+  const threshold = input.searchThreshold ?? DEFAULT_SEARCH_THRESHOLD;
+  if (input.options.length <= threshold) {
+    return runSelect(clack, input);
+  }
+  // Long lists: show only the first MAX_VISIBLE_OPTIONS items immediately. No filter
+  // sentinel — we render straight versions, sorted newest-first by the caller. There is no
+  // typing affordance because clack `select` does not support inline autocomplete, and an
+  // explicit "filter" entry adds noise that is not worth the extra step.
+  const trimmed = input.options.slice(0, MAX_VISIBLE_OPTIONS);
+  const truncatedHint =
+    input.options.length > MAX_VISIBLE_OPTIONS
+      ? ` (top ${MAX_VISIBLE_OPTIONS} of ${input.options.length})`
+      : "";
+  return runSelect<T>(clack, {
+    message: `${input.message}${truncatedHint}`,
+    options: trimmed,
+    ...(input.allowBack === true ? { allowBack: true } : {}),
+    ...(input.allowCancel === true ? { allowCancel: true } : {}),
+  });
+}
+
+/**
+ * Stub UI used by tests. Each prompt consumes one entry from `script`. Allowed entries:
+ *
+ * - a plain value (success path);
+ * - the literal strings `"back"` / `"cancel"` as shorthand outcomes;
+ * - a {@link WizardOutcome} object directly.
+ *
+ * The stub also captures every log/note/intro/outro call so tests can assert on them.
+ */
+export function createStubUi(script: readonly unknown[] = []): StubUi {
+  const queue = [...script];
+  const calls: StubUiCall[] = [];
+  function consume<T>(prompt: StubUiCall): WizardOutcome<T> {
+    calls.push(prompt);
+    if (queue.length === 0) {
+      throw new Error(`Stub UI exhausted before prompt: ${prompt.kind} "${prompt.message}"`);
+    }
+    const next = queue.shift();
+    if (next === "back") return { kind: "back" };
+    if (next === "cancel") return { kind: "cancel" };
+    if (
+      typeof next === "object" &&
+      next !== null &&
+      "kind" in next &&
+      ((next as WizardOutcome<T>).kind === "back" || (next as WizardOutcome<T>).kind === "cancel")
+    ) {
+      return next as WizardOutcome<T>;
+    }
+    return { kind: "ok", value: next as T };
+  }
+  return {
+    calls,
+    intro: (m) => calls.push({ kind: "intro", message: m }),
+    outro: (m) => calls.push({ kind: "outro", message: m }),
+    write: (m) => calls.push({ kind: "write", message: m }),
+    note: (title, body) => calls.push({ kind: "note", message: title, body }),
+    log: (level, m) => calls.push({ kind: "log", message: m, level }),
+    text: async (input) => consume({ kind: "text", message: input.message }),
+    select: async (input) => consume({ kind: "select", message: input.message }),
+    searchableSelect: async (input) => consume({ kind: "search", message: input.message }),
+    confirm: async (input) => consume({ kind: "confirm", message: input.message }),
+    spinner: () => ({
+      start: (m) => calls.push({ kind: "spinner-start", message: m }),
+      message: (m) => calls.push({ kind: "spinner-message", message: m }),
+      stop: (m) => calls.push({ kind: "spinner-stop", message: m ?? "" }),
+    }),
+  };
+}
+
+/** Recorded stub-UI call. */
+export interface StubUiCall {
+  readonly kind:
+    | "intro"
+    | "outro"
+    | "note"
+    | "log"
+    | "write"
+    | "text"
+    | "select"
+    | "search"
+    | "confirm"
+    | "spinner-start"
+    | "spinner-message"
+    | "spinner-stop";
+  readonly message: string;
+  readonly level?: "info" | "success" | "warn" | "error";
+  readonly body?: string;
+}
+
+/** Stub UI handle (extends {@link Ui} with a `calls` log for test assertions). */
+export interface StubUi extends Ui {
+  readonly calls: readonly StubUiCall[];
+}

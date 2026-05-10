@@ -1,0 +1,278 @@
+import crypto from "node:crypto";
+import { createReadStream } from "node:fs";
+import pLimit from "p-limit";
+import { DOWNLOAD_CONCURRENCY, MAX_PROCESSOR_STDERR_LINES } from "../constants/defaults";
+import { extractAllToDir } from "../core/archive";
+import { MinecraftKitError } from "../core/errors";
+import { atomicWrite } from "../core/fs";
+import { targetPaths } from "../core/paths";
+import { downloadFile } from "../http/download";
+import type { MetadataCache } from "../types/cache";
+import type { ProgressListener } from "../types/events";
+import type { HttpClient } from "../types/http";
+import {
+  type DownloadAction,
+  type ExtractNativeAction,
+  type InstallAction,
+  InstallActionKinds,
+  type InstallPlan,
+  type InstallReport,
+  type RunForgeProcessorAction,
+  type WriteLoggingConfigAction,
+  type WriteVersionJsonAction,
+} from "../types/install";
+import { type InstallPhase, InstallPhases } from "../types/install";
+import { Loaders } from "../types/loader";
+import type { Spawner } from "../types/spawner";
+import type { OperatingSystem } from "../types/system";
+import { planRuntimeDownloads } from "./runtime";
+import { materializeRuntimeExtras } from "./runtime-extras";
+
+/** Inputs to the install runner. */
+export interface RunInstallInput {
+  readonly plan: InstallPlan;
+  readonly http: HttpClient;
+  readonly cache: MetadataCache;
+  readonly spawner: Spawner;
+  readonly signal?: AbortSignal;
+  readonly onEvent?: ProgressListener;
+  readonly concurrency?: number;
+}
+
+/** Execute an install plan. */
+export async function runInstall(input: RunInstallInput): Promise<InstallReport> {
+  const startedAt = Date.now();
+  let bytesDownloaded = 0;
+  let actionsCompleted = 0;
+  let actionsSkipped = 0;
+  const onEvent = input.onEvent;
+  let currentPhase: InstallPhase | null = null;
+  const enterPhase = (phase: InstallPhase): void => {
+    if (phase === currentPhase) return;
+    onEvent?.({ type: "install:phase-changed", phase, previous: currentPhase });
+    currentPhase = phase;
+  };
+
+  const downloads = input.plan.actions.filter(isDownload);
+  const natives = input.plan.actions.filter(isNative);
+  const writeActions = input.plan.actions.filter(isWrite);
+  const processors = input.plan.actions.filter(isProcessor);
+
+  enterPhase(InstallPhases.PLANNING);
+
+  // 1. Download files in parallel.
+  enterPhase(InstallPhases.DOWNLOADING_LIBRARIES);
+  const limit = pLimit(input.concurrency ?? DOWNLOAD_CONCURRENCY);
+  await Promise.all(
+    downloads.map((action) =>
+      limit(async () => {
+        if (input.signal?.aborted) {
+          throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
+        }
+        const result = await downloadFile(input.http, {
+          url: action.url,
+          target: action.target,
+          ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
+          ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
+          ...(action.category !== undefined ? { category: action.category } : {}),
+          ...(input.signal !== undefined ? { signal: input.signal } : {}),
+          ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
+        });
+        bytesDownloaded += result.bytesDownloaded;
+        if (result.skipped) actionsSkipped++;
+        actionsCompleted++;
+      }),
+    ),
+  );
+
+  // 2. Write version JSON / logging config files.
+  if (writeActions.length > 0) {
+    enterPhase(InstallPhases.WRITING_FILES);
+    for (const action of writeActions) {
+      if (input.signal?.aborted) {
+        throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
+      }
+      await atomicWrite(action.path, action.content);
+      actionsCompleted++;
+    }
+  }
+
+  // 3. Native extractions.
+  if (natives.length > 0) {
+    enterPhase(InstallPhases.EXTRACTING_NATIVES);
+    for (const action of natives) {
+      if (input.signal?.aborted) {
+        throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
+      }
+      const { fileCount } = await extractAllToDir(action.source, action.destination, {
+        excludePrefixes: action.exclude as readonly string[],
+      });
+      input.onEvent?.({
+        type: "archive:extracted",
+        archive: action.source,
+        target: action.destination,
+        fileCount,
+      });
+      actionsCompleted++;
+    }
+  }
+
+  // 4. Runtime extras (directories + symlinks for the runtime component).
+  if (input.plan.target.runtime !== undefined) {
+    enterPhase(InstallPhases.INSTALLING_RUNTIME);
+    const runtimePlan = await planRuntimeDownloads({
+      runtime: input.plan.target.runtime,
+      directory: input.plan.directory,
+      http: input.http,
+      cache: input.cache,
+      ...(input.signal !== undefined ? { signal: input.signal } : {}),
+    });
+    await materializeRuntimeExtras({
+      runtime: input.plan.target.runtime,
+      directory: input.plan.directory,
+      manifest: runtimePlan.manifest,
+    });
+  }
+
+  // 5. Forge processors.
+  if (processors.length > 0) {
+    enterPhase(InstallPhases.RUNNING_FORGE_PROCESSORS);
+    if (input.plan.target.loader.type !== Loaders.FORGE) {
+      throw new MinecraftKitError(
+        "FORGE_PROCESSOR_FAILED",
+        "Forge processors planned for a non-Forge target",
+      );
+    }
+    const javaPath = targetPaths.runtimeJavaExecutable(
+      input.plan.directory,
+      input.plan.target.runtime.component,
+      input.plan.target.runtime.system.os as OperatingSystem,
+      input.plan.target.runtime.installRoot,
+    );
+    for (const action of processors) {
+      if (input.signal?.aborted) {
+        throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
+      }
+      await runProcessor({
+        action,
+        javaPath,
+        spawner: input.spawner,
+        ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
+        total: processors.length,
+      });
+      actionsCompleted++;
+    }
+  }
+
+  enterPhase(InstallPhases.COMPLETED);
+
+  return {
+    targetId: input.plan.targetId,
+    bytesDownloaded,
+    actionsCompleted,
+    actionsSkipped,
+    durationMs: Date.now() - startedAt,
+  };
+}
+
+function isDownload(action: InstallAction): action is DownloadAction {
+  return action.kind === InstallActionKinds.DOWNLOAD_FILE;
+}
+
+function isNative(action: InstallAction): action is ExtractNativeAction {
+  return action.kind === InstallActionKinds.EXTRACT_NATIVE;
+}
+
+function isProcessor(action: InstallAction): action is RunForgeProcessorAction {
+  return action.kind === InstallActionKinds.RUN_FORGE_PROCESSOR;
+}
+
+function isWrite(
+  action: InstallAction,
+): action is WriteVersionJsonAction | WriteLoggingConfigAction {
+  return (
+    action.kind === InstallActionKinds.WRITE_VERSION_JSON ||
+    action.kind === InstallActionKinds.WRITE_LOGGING_CONFIG
+  );
+}
+
+/** Inputs to {@link runProcessor}. */
+export interface RunProcessorInput {
+  readonly action: RunForgeProcessorAction;
+  readonly javaPath: string;
+  readonly spawner: Spawner;
+  readonly onEvent?: ProgressListener;
+  readonly total: number;
+}
+
+/** Execute a single Forge processor and verify its declared outputs. */
+export async function runProcessor(input: RunProcessorInput): Promise<void> {
+  const startedAt = Date.now();
+  const classpathSeparator = process.platform === "win32" ? ";" : ":";
+  const args = [
+    "-cp",
+    input.action.classpath.join(classpathSeparator),
+    input.action.mainClass,
+    ...input.action.args,
+  ];
+  input.onEvent?.({
+    type: "forge:processor-started",
+    processor: { index: input.action.index, mainClass: input.action.mainClass },
+    total: input.total,
+  });
+  const stderrTail: string[] = [];
+  const child = input.spawner.spawn(input.javaPath, args, { cwd: process.cwd() });
+  child.stdout.on("data", () => {
+    // Forge processors print noisy progress to stdout; we don't surface it.
+  });
+  child.stderr.on("data", (line) => {
+    if (stderrTail.length >= MAX_PROCESSOR_STDERR_LINES) stderrTail.shift();
+    stderrTail.push(line);
+  });
+  const exit = await child.exited;
+  if (exit.code !== 0) {
+    throw new MinecraftKitError(
+      "FORGE_PROCESSOR_FAILED",
+      `Forge processor exited with code ${exit.code ?? "(signal)"}: ${input.action.mainClass}`,
+      {
+        context: {
+          exitCode: exit.code ?? undefined,
+          mainClass: input.action.mainClass,
+          stderr: stderrTail.join("\n"),
+        },
+      },
+    );
+  }
+  input.onEvent?.({
+    type: "forge:processor-completed",
+    processor: { index: input.action.index, mainClass: input.action.mainClass },
+    exitCode: exit.code ?? 0,
+    durationMs: Date.now() - startedAt,
+  });
+  for (const [outputPath, expectedSha1] of Object.entries(input.action.outputs)) {
+    const sha1 = await sha1OfFileStreaming(outputPath);
+    if (sha1 !== expectedSha1) {
+      throw new MinecraftKitError(
+        "FORGE_PROCESSOR_FAILED",
+        `Processor output hash mismatch: ${outputPath}`,
+        { context: { filePath: outputPath, expectedHash: expectedSha1, actualHash: sha1 } },
+      );
+    }
+    input.onEvent?.({
+      type: "forge:processor-output-verified",
+      processor: { index: input.action.index, mainClass: input.action.mainClass },
+      path: outputPath,
+    });
+  }
+}
+
+async function sha1OfFileStreaming(filePath: string): Promise<string> {
+  const hash = crypto.createHash("sha1");
+  await new Promise<void>((resolve, reject) => {
+    const stream = createReadStream(filePath);
+    stream.on("data", (chunk) => hash.update(chunk));
+    stream.on("end", () => resolve());
+    stream.on("error", reject);
+  });
+  return hash.digest("hex");
+}

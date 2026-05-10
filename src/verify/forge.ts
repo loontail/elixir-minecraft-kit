@@ -1,0 +1,97 @@
+import { MinecraftKitError } from "../core/errors";
+import { fileExists, readText } from "../core/fs";
+import { planLibraryDownloads } from "../install/libraries";
+import type { MetadataCache } from "../types/cache";
+import type { ProgressListener } from "../types/events";
+import type { ForgeVersionJson } from "../types/forge";
+import type { HttpClient } from "../types/http";
+import { Loaders } from "../types/loader";
+import type { Target } from "../types/target";
+import {
+  VerificationKinds,
+  type VerificationResult,
+  VerifyFileCategories,
+  VerifyFileStatuses,
+} from "../types/verify";
+import {
+  findForgeVersionJsonPath,
+  runVerification,
+  verifyExistence,
+  verifyHashedFile,
+} from "./helpers";
+
+/** Inputs to {@link verifyForge}. */
+export interface VerifyForgeInput {
+  readonly target: Target;
+  readonly http: HttpClient;
+  readonly cache: MetadataCache;
+  readonly signal?: AbortSignal;
+  readonly onEvent?: ProgressListener;
+}
+
+/**
+ * Verify the Forge loader slice: the on-disk Forge version JSON and every library it
+ * declares. Libraries can only be enumerated once the JSON is present *and parsable*; a
+ * malformed JSON is surfaced as a CORRUPT issue so repair rewrites it before re-running.
+ */
+export async function verifyForge(input: VerifyForgeInput): Promise<VerificationResult> {
+  if (input.target.loader.type !== Loaders.FORGE) {
+    throw new MinecraftKitError(
+      "INVALID_INPUT",
+      `verify.forge requires a Forge target (got ${input.target.loader.type})`,
+    );
+  }
+  return runVerification(
+    {
+      targetId: input.target.id,
+      kind: VerificationKinds.FORGE,
+      ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
+    },
+    async (record) => {
+      const forgeVersionJsonPath = await findForgeVersionJsonPath(
+        input.target.directory,
+        input.target.minecraft.version,
+      );
+      if (forgeVersionJsonPath === null) return;
+      record(
+        await verifyExistence({
+          path: forgeVersionJsonPath,
+          category: VerifyFileCategories.LOADER_LIBRARY,
+        }),
+      );
+      if (!(await fileExists(forgeVersionJsonPath))) return;
+
+      let parsed: ForgeVersionJson;
+      try {
+        parsed = JSON.parse(await readText(forgeVersionJsonPath)) as ForgeVersionJson;
+      } catch {
+        // Surface as CORRUPT so repair rewrites the JSON. Library verification will pick up
+        // on the next pass once the file parses.
+        record({
+          path: forgeVersionJsonPath,
+          category: VerifyFileCategories.LOADER_LIBRARY,
+          status: VerifyFileStatuses.CORRUPT,
+        });
+        return;
+      }
+      const forgeLibraries = planLibraryDownloads({
+        libraries: parsed.libraries,
+        directory: input.target.directory,
+        system: input.target.runtime.system,
+        versionId: input.target.minecraft.version,
+        category: "forge-library",
+      });
+      for (const action of forgeLibraries.downloads) {
+        record(
+          await verifyHashedFile({
+            path: action.target,
+            expectedSha1: action.expectedSha1,
+            expectedSize: action.expectedSize,
+            ...(action.url ? { url: action.url } : {}),
+            category: VerifyFileCategories.LOADER_LIBRARY,
+          }),
+        );
+      }
+    },
+  );
+}

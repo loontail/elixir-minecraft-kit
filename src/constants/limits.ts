@@ -1,0 +1,14 @@
+/** Per-file size cap during archive extraction (bytes). */
+export const EXTRACTION_MAX_FILE_SIZE = 256 * 1024 * 1024;
+
+/** Total decompressed-bytes cap per archive. */
+export const EXTRACTION_MAX_TOTAL_SIZE = 2 * 1024 * 1024 * 1024;
+
+/** Maximum compression ratio (decompressed / compressed) before treating as a zip bomb. */
+export const EXTRACTION_MAX_COMPRESSION_RATIO = 200;
+
+/** Maximum entry count per archive. */
+export const EXTRACTION_MAX_ENTRY_COUNT = 100_000;
+
+/** Reasonable maximum bytes a Forge installer JAR can be. */
+export const FORGE_INSTALLER_MAX_SIZE = 256 * 1024 * 1024;

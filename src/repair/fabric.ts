@@ -1,0 +1,38 @@
+import { MinecraftKitError } from "../core/errors";
+import { targetPaths } from "../core/paths";
+import {
+  type DownloadAction,
+  type InstallAction,
+  InstallActionKinds,
+  type WriteVersionJsonAction,
+} from "../types/install";
+import { Loaders } from "../types/loader";
+import type { RepairPlan } from "../types/repair";
+import type { AspectRepairInput } from "../types/repair";
+import { planAspectRepair } from "./helpers";
+
+/** Inputs to {@link planFabricRepair}. */
+export type PlanFabricRepairInput = AspectRepairInput;
+
+/** Build a repair plan covering the Fabric loader slice: profile JSON + libraries. */
+export async function planFabricRepair(input: PlanFabricRepairInput): Promise<RepairPlan> {
+  if (input.target.loader.type !== Loaders.FABRIC) {
+    throw new MinecraftKitError(
+      "INVALID_INPUT",
+      `repair.fabric requires a Fabric target (got ${input.target.loader.type})`,
+    );
+  }
+  const fabricJsonPath = targetPaths.versionJson(
+    input.target.directory,
+    input.target.loader.profile.id,
+  );
+  return planAspectRepair(input, (action: InstallAction) => {
+    if (action.kind === InstallActionKinds.DOWNLOAD_FILE) {
+      return (action as DownloadAction).category === "fabric-library";
+    }
+    if (action.kind === InstallActionKinds.WRITE_VERSION_JSON) {
+      return (action as WriteVersionJsonAction).path === fabricJsonPath;
+    }
+    return false;
+  });
+}

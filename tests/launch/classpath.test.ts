@@ -1,0 +1,63 @@
+import { describe, expect, it } from "vitest";
+import { buildClasspath } from "../../src/launch/classpath";
+import type { MinecraftVersionManifest } from "../../src/types/minecraft";
+import type { RuntimeSystem } from "../../src/types/system";
+
+const system: RuntimeSystem = { os: "windows", arch: "x64", osVersion: "10.0" };
+
+const mergedManifest: MinecraftVersionManifest = {
+  id: "1.20.1",
+  type: "release",
+  mainClass: "x",
+  assetIndex: { id: "5", sha1: "x", size: 1, totalSize: 1, url: "" },
+  assets: "5",
+  downloads: { client: { sha1: "", size: 0, url: "" } },
+  libraries: [
+    {
+      name: "com.example:lib:1.0",
+      downloads: {
+        artifact: { path: "com/example/lib/1.0/lib-1.0.jar", sha1: "", size: 0, url: "" },
+      },
+    },
+    { name: "com.example:lib:1.0" }, // duplicate dropped
+    { name: "com.platform:lwjgl:1.0", natives: { windows: "natives" } }, // skipped (native)
+    { name: "com.example:nodownloads:2.0" }, // synthesized from coord
+    { name: "com.disallowed:lib:1.0", rules: [{ action: "allow", os: { name: "linux" } }] }, // disallowed
+  ],
+};
+
+describe("buildClasspath", () => {
+  it("includes libraries and version jar", () => {
+    const cp = buildClasspath({
+      directory: "/r",
+      versionId: "1.20.1",
+      merged: mergedManifest,
+      system,
+    });
+    expect(cp.some((p) => p.includes("lib-1.0.jar"))).toBe(true);
+    expect(cp.some((p) => p.includes("nodownloads"))).toBe(true);
+    expect(cp.some((p) => p.includes("disallowed"))).toBe(false);
+    expect(cp.some((p) => p.includes("1.20.1.jar"))).toBe(true);
+  });
+
+  it("dedupes by absolute path", () => {
+    const cp = buildClasspath({
+      directory: "/r",
+      versionId: "1.20.1",
+      merged: mergedManifest,
+      system,
+    });
+    const libCount = cp.filter((p) => p.includes("lib-1.0.jar")).length;
+    expect(libCount).toBe(1);
+  });
+
+  it("skips libraries with natives field", () => {
+    const cp = buildClasspath({
+      directory: "/r",
+      versionId: "1.20.1",
+      merged: mergedManifest,
+      system,
+    });
+    expect(cp.some((p) => p.includes("lwjgl"))).toBe(false);
+  });
+});

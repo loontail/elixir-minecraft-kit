@@ -1,0 +1,101 @@
+import type { MetadataCache } from "../types/cache";
+import type { HttpClient } from "../types/http";
+import type { InstallAction, InstallPlan } from "../types/install";
+import type { ResolvedRuntime } from "../types/runtime";
+import type { Target } from "../types/target";
+import { planRuntimeDownloads } from "./runtime";
+
+/** Inputs to {@link planRuntimeInstall}. */
+export interface PlanRuntimeInstallInput {
+  readonly target: Target;
+  readonly http: HttpClient;
+  readonly cache: MetadataCache;
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * Build an install plan that downloads ONLY the Java runtime declared by `target.runtime`.
+ *
+ * Useful when the consumer wants to provision a JRE without touching the rest of the
+ * Minecraft installation (no client jar, no libraries, no assets). When `target.runtime.installRoot`
+ * is set the runtime files land in a shared global location instead of the per-target folder.
+ *
+ * The returned plan is a regular {@link InstallPlan}, so it can be passed to the existing
+ * install runner — directory placeholders and symlinks declared by the runtime manifest are
+ * still materialized after downloads complete.
+ */
+export async function planRuntimeInstall(input: PlanRuntimeInstallInput): Promise<InstallPlan> {
+  const runtimePlan = await planRuntimeDownloads({
+    runtime: input.target.runtime,
+    directory: input.target.directory,
+    http: input.http,
+    cache: input.cache,
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
+  const actions: readonly InstallAction[] = runtimePlan.actions;
+  const totalBytes = runtimePlan.actions.reduce(
+    (sum, action) => sum + (action.expectedSize ?? 0),
+    0,
+  );
+  return {
+    targetId: input.target.id,
+    directory: input.target.directory,
+    target: input.target,
+    actions,
+    totalActions: actions.length,
+    totalBytes,
+  };
+}
+
+/** Inputs to {@link planStandaloneRuntimeInstall}. */
+export interface PlanStandaloneRuntimeInstallInput {
+  readonly id: string;
+  /** Where the runtime files live. Used as `directory` if `runtime.installRoot` is unset. */
+  readonly directory: string;
+  readonly runtime: ResolvedRuntime;
+  readonly http: HttpClient;
+  readonly cache: MetadataCache;
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * Plan a runtime-only install **without a Minecraft target**. Useful for "Install Java/runtime"
+ * flows where the user just wants a JRE on disk and never had a Minecraft version to choose
+ * from. The returned plan is shaped exactly like a normal {@link InstallPlan} and runs through
+ * the standard install runner — but its `target.minecraft` and `target.loader` fields are
+ * intentional placeholders. The runner only reads `target.runtime` for runtime-only plans, so
+ * the placeholders are never accessed at runtime.
+ */
+export async function planStandaloneRuntimeInstall(
+  input: PlanStandaloneRuntimeInstallInput,
+): Promise<InstallPlan> {
+  const runtimePlan = await planRuntimeDownloads({
+    runtime: input.runtime,
+    directory: input.directory,
+    http: input.http,
+    cache: input.cache,
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
+  const actions: readonly InstallAction[] = runtimePlan.actions;
+  const totalBytes = runtimePlan.actions.reduce(
+    (sum, action) => sum + (action.expectedSize ?? 0),
+    0,
+  );
+  // The install runner only touches `target.runtime` and `target.directory` for plans that
+  // have no processors and no write/native actions. The other Target fields are placeholders.
+  const target = {
+    id: input.id,
+    directory: input.directory,
+    runtime: input.runtime,
+    minecraft: undefined,
+    loader: undefined,
+  } as unknown as Target;
+  return {
+    targetId: input.id,
+    directory: input.directory,
+    target,
+    actions,
+    totalActions: actions.length,
+    totalBytes,
+  };
+}

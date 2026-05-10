@@ -1,0 +1,180 @@
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ApiEndpoints } from "../../src/constants/api";
+import { silentLogger } from "../../src/core/logger";
+import { createMemoryCache } from "../../src/http/cache";
+import { TargetsApi } from "../../src/targets/index";
+import { Loaders } from "../../src/types/loader";
+import type { RuntimeSystem } from "../../src/types/system";
+import { VerificationKinds } from "../../src/types/verify";
+import { verifyFabric } from "../../src/verify/fabric";
+import { verifyForge } from "../../src/verify/forge";
+import { verifyMinecraft } from "../../src/verify/minecraft";
+import { verifyRuntime } from "../../src/verify/runtime";
+import { FabricVersionsApi } from "../../src/versions/fabric";
+import { ForgeVersionsApi } from "../../src/versions/forge";
+import { MinecraftVersionsApi } from "../../src/versions/minecraft";
+import { RuntimeVersionsApi } from "../../src/versions/runtime";
+import { FakeHttpClient } from "../helpers/fake-http";
+
+const system: RuntimeSystem = { os: "windows", arch: "x64", osVersion: "10.0" };
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+const versionRoot = {
+  latest: { release: "1.20.1", snapshot: "1.20.1" },
+  versions: [
+    {
+      id: "1.20.1",
+      type: "release",
+      url: "https://m/1.20.1",
+      time: "t",
+      releaseTime: "r",
+      sha1: "x",
+      complianceLevel: 1,
+    },
+  ],
+};
+const versionManifest = {
+  id: "1.20.1",
+  type: "release",
+  mainClass: "x",
+  assetIndex: { id: "5", sha1: "x", size: 1, totalSize: 1, url: "https://idx/" },
+  assets: "5",
+  downloads: { client: { sha1: "abc", size: 1, url: "https://c/" } },
+  libraries: [],
+  javaVersion: { component: "java-runtime-gamma", majorVersion: 17 },
+};
+const runtimeIndex = {
+  "windows-x64": {
+    "java-runtime-gamma": [
+      {
+        availability: { group: 1, progress: 100 },
+        manifest: { sha1: "x", size: 1, url: "https://rm/" },
+        version: { name: "17.0.8", released: "2024-01-01" },
+      },
+    ],
+  },
+};
+
+function buildVanillaTarget(
+  http: FakeHttpClient,
+  opts: { directory?: string; runtimeInstallRoot?: string } = {},
+) {
+  const cache = createMemoryCache();
+  const targets = new TargetsApi({
+    minecraft: new MinecraftVersionsApi({ http, cache, logger: silentLogger }),
+    fabric: new FabricVersionsApi({ http, cache, logger: silentLogger }),
+    forge: new ForgeVersionsApi({ http, cache, logger: silentLogger }),
+    runtime: new RuntimeVersionsApi({ http, cache, logger: silentLogger }),
+    system,
+  });
+  return targets.resolve({
+    id: "x",
+    directory: opts.directory ?? "/r",
+    minecraft: { version: "1.20.1" },
+    loader: { type: Loaders.VANILLA },
+    ...(opts.runtimeInstallRoot !== undefined
+      ? { runtime: { installRoot: opts.runtimeInstallRoot } }
+      : {}),
+  });
+}
+
+describe("verifyMinecraft", () => {
+  it("emits kind: 'minecraft' and reports missing client jar as an issue", async () => {
+    const http = new FakeHttpClient()
+      .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(versionRoot) })
+      .on("https://m/1.20.1", { body: JSON.stringify(versionManifest) })
+      .on(ApiEndpoints.mojang.runtimeIndex(), { body: JSON.stringify(runtimeIndex) })
+      .on("https://idx/", { body: '{"objects":{}}' })
+      .on("https://rm/", { body: '{"files":{}}' });
+    const cache = createMemoryCache();
+    const target = await buildVanillaTarget(http);
+    const result = await verifyMinecraft({ target, http, cache });
+    expect(result.kind).toBe(VerificationKinds.MINECRAFT);
+    expect(result.isValid).toBe(false);
+    const clientJarIssue = result.issues.find((i) => i.category === "client-jar");
+    expect(clientJarIssue?.path).toBe(path.join("/r", "versions", "1.20.1", "1.20.1.jar"));
+  });
+});
+
+describe("verifyFabric", () => {
+  it("rejects non-Fabric targets", async () => {
+    const http = new FakeHttpClient()
+      .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(versionRoot) })
+      .on("https://m/1.20.1", { body: JSON.stringify(versionManifest) })
+      .on(ApiEndpoints.mojang.runtimeIndex(), { body: JSON.stringify(runtimeIndex) });
+    const cache = createMemoryCache();
+    const target = await buildVanillaTarget(http);
+    await expect(verifyFabric({ target, http, cache })).rejects.toThrow(/requires a Fabric target/);
+  });
+});
+
+describe("verifyForge", () => {
+  it("rejects non-Forge targets", async () => {
+    const http = new FakeHttpClient()
+      .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(versionRoot) })
+      .on("https://m/1.20.1", { body: JSON.stringify(versionManifest) })
+      .on(ApiEndpoints.mojang.runtimeIndex(), { body: JSON.stringify(runtimeIndex) });
+    const cache = createMemoryCache();
+    const target = await buildVanillaTarget(http);
+    await expect(verifyForge({ target, http, cache })).rejects.toThrow(/requires a Forge target/);
+  });
+});
+
+describe("verifyRuntime with installRoot", () => {
+  it("checks runtime files under target.runtime.installRoot when set", async () => {
+    const customInstallRoot = "/global-runtimes";
+    const http = new FakeHttpClient()
+      .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(versionRoot) })
+      .on("https://m/1.20.1", { body: JSON.stringify(versionManifest) })
+      .on(ApiEndpoints.mojang.runtimeIndex(), { body: JSON.stringify(runtimeIndex) })
+      .on("https://rm/", {
+        body: JSON.stringify({
+          files: {
+            "bin/javaw.exe": {
+              type: "file",
+              executable: true,
+              downloads: { raw: { sha1: "deadbeef", size: 100, url: "https://rt/javaw" } },
+            },
+          },
+        }),
+      });
+    const cache = createMemoryCache();
+    const target = await buildVanillaTarget(http, { runtimeInstallRoot: customInstallRoot });
+    expect(target.runtime.installRoot).toBe(customInstallRoot);
+    const result = await verifyRuntime({ target, http, cache });
+    expect(result.kind).toBe(VerificationKinds.RUNTIME);
+    // The expected path must use installRoot, not <target.directory>/runtime.
+    const expectedPath = path.join(customInstallRoot, "java-runtime-gamma", "bin", "javaw.exe");
+    const issue = result.issues.find((i) => i.path === expectedPath);
+    expect(issue).toBeDefined();
+    expect(issue?.status).toBe("missing");
+  });
+
+  it("falls back to <directory>/runtime when installRoot is unset", async () => {
+    const http = new FakeHttpClient()
+      .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(versionRoot) })
+      .on("https://m/1.20.1", { body: JSON.stringify(versionManifest) })
+      .on(ApiEndpoints.mojang.runtimeIndex(), { body: JSON.stringify(runtimeIndex) })
+      .on("https://rm/", {
+        body: JSON.stringify({
+          files: {
+            "bin/javaw.exe": {
+              type: "file",
+              executable: true,
+              downloads: { raw: { sha1: "deadbeef", size: 100, url: "https://rt/javaw" } },
+            },
+          },
+        }),
+      });
+    const cache = createMemoryCache();
+    const target = await buildVanillaTarget(http);
+    expect(target.runtime.installRoot).toBeUndefined();
+    const result = await verifyRuntime({ target, http, cache });
+    const expectedPath = path.join("/r", "runtime", "java-runtime-gamma", "bin", "javaw.exe");
+    expect(result.issues.find((i) => i.path === expectedPath)).toBeDefined();
+  });
+});
