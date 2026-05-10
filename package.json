@@ -4,6 +4,24 @@
   "description": "Stateless TypeScript Minecraft launcher library and interactive CLI for vanilla, Fabric, and modern Forge.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loontail/elixir-minecraft-kit.git"
+  },
+  "homepage": "https://github.com/loontail/elixir-minecraft-kit#readme",
+  "bugs": {
+    "url": "https://github.com/loontail/elixir-minecraft-kit/issues"
+  },
+  "keywords": [
+    "minecraft",
+    "launcher",
+    "fabric",
+    "forge",
+    "mojang",
+    "java-runtime",
+    "cli",
+    "typescript"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
