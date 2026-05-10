@@ -5,7 +5,7 @@ exist so you don't have to grep for "where does X live".
 
 ## `src/cli/`
 
-Interactive `emk` CLI built on Clack prompts. **Must not import from domain modules** — calls
+Interactive `mckit` CLI built on Clack prompts. **Must not import from domain modules** — calls
 only `kit.*` and types.
 
 - `index.ts` — bin entry; calls `bin()` from `main.ts`.

@@ -6,7 +6,7 @@ sites import from these modules.
 ## API endpoints
 
 ```ts
-import { ApiEndpoints } from "@elixir/minecraft-kit";
+import { ApiEndpoints } from "@loontail/minecraft-kit";
 
 ApiEndpoints.mojang.versionManifest();        // version_manifest_v2.json
 ApiEndpoints.mojang.runtimeIndex();           // java-runtime/.../all.json
@@ -31,8 +31,8 @@ ApiEndpoints.forge.installer(fullVersion);
 | `DOWNLOAD_CONCURRENCY` | `32` |
 | `CACHE_TTL_MS` | `300_000` |
 | `CACHE_MAX_ENTRIES` | `256` |
-| `USER_AGENT` | `elixir-minecraft-kit/0.1` |
-| `DEFAULT_LAUNCHER_NAME` | `elixir-minecraft-kit` |
+| `USER_AGENT` | `minecraft-kit/0.1` |
+| `DEFAULT_LAUNCHER_NAME` | `minecraft-kit` |
 | `DEFAULT_LAUNCHER_VERSION` | `0.1.0` |
 | `DEFAULT_MIN_MB` | `1024` |
 | `DEFAULT_MAX_MB` | `4096` |

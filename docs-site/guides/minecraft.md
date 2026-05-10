@@ -3,7 +3,7 @@
 Resolve and inspect Minecraft versions through `kit.versions.minecraft`.
 
 ```ts
-import { MinecraftChannels } from "@elixir/minecraft-kit";
+import { MinecraftChannels } from "@loontail/minecraft-kit";
 
 const releases = await kit.versions.minecraft.list({ channel: MinecraftChannels.RELEASE });
 const latest = await kit.versions.minecraft.latest({ channel: MinecraftChannels.RELEASE });
@@ -19,7 +19,7 @@ For a vanilla target you do **not** need to resolve anything else — just pass
 the already-resolved Minecraft manifest:
 
 ```ts
-import { Loaders } from "@elixir/minecraft-kit";
+import { Loaders } from "@loontail/minecraft-kit";
 
 const target = await kit.targets.resolve({
   id: "vanilla-1.20.1",

@@ -5,8 +5,8 @@ union, so a `switch` on `event.type` gives you exhaustiveness checking. Compare 
 `EventTypes` to avoid magic strings:
 
 ```ts
-import type { ProgressEvent } from "@elixir/minecraft-kit";
-import { EventTypes } from "@elixir/minecraft-kit";
+import type { ProgressEvent } from "@loontail/minecraft-kit";
+import { EventTypes } from "@loontail/minecraft-kit";
 
 function handle(e: ProgressEvent) {
   switch (e.type) {
@@ -49,7 +49,7 @@ The full payload of each event is in the [API reference](../api/).
 `throttleProgress` to cap emission at 10 Hz per file:
 
 ```ts
-import { throttleProgress, PROGRESS_EVENT_INTERVAL_MS } from "@elixir/minecraft-kit";
+import { throttleProgress, PROGRESS_EVENT_INTERVAL_MS } from "@loontail/minecraft-kit";
 
 const throttled = throttleProgress(listener, PROGRESS_EVENT_INTERVAL_MS);
 ```

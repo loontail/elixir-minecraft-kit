@@ -114,7 +114,7 @@ describe("TargetsApi", () => {
   });
 
   it("list() reports installations", async () => {
-    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "emk-list-"));
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "mckit-list-"));
     try {
       await fs.mkdir(path.join(tmp, "instance-1", "versions", "1.20.1"), { recursive: true });
       await fs.mkdir(path.join(tmp, "instance-1", "libraries"), { recursive: true });

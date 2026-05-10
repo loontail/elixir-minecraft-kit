@@ -4,7 +4,7 @@ Launching is split into two independent steps so you can preview the command bef
 anything:
 
 ```ts
-import { AuthModes } from "@elixir/minecraft-kit";
+import { AuthModes } from "@loontail/minecraft-kit";
 
 const composition = await kit.launch.compose(target, {
   auth: { mode: AuthModes.OFFLINE, username: "Player" },

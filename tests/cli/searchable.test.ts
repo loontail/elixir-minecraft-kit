@@ -34,7 +34,7 @@ function makeFakeClack(answers: readonly unknown[]): FakeClack {
       return queue.shift();
     },
     spinner: () => ({ start: () => {}, message: () => {}, stop: () => {} }),
-    isCancel: (value: unknown) => value === Symbol.for("emk:test:cancel"),
+    isCancel: (value: unknown) => value === Symbol.for("mckit:test:cancel"),
   };
   return { recorded, module };
 }
@@ -103,7 +103,7 @@ describe("Ui.searchableSelect", () => {
       label: `${i}`,
       value: i,
     }));
-    const fake = makeFakeClack([Symbol.for("emk:test:cancel")]);
+    const fake = makeFakeClack([Symbol.for("mckit:test:cancel")]);
     const ui = buildUi(fake.module);
     const result = await ui.searchableSelect({ message: "Pick", options });
     expect(result.kind).toBe("cancel");

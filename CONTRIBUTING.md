@@ -12,7 +12,7 @@ Requirements:
 
 ```bash
 git clone <your-fork>
-cd elixir-minecraft-kit
+cd minecraft-kit
 pnpm install
 ```
 

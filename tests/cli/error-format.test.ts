@@ -91,7 +91,7 @@ describe("formatUserError", () => {
     );
   });
 
-  it("returns the original message for non-elixir errors", () => {
+  it("returns the original message for non-kit errors", () => {
     expect(formatUserError(new Error("plain"))).toBe("plain");
     expect(formatUserError("string")).toBe("string");
   });

@@ -1,15 +1,15 @@
 # Installation
 
 ```bash
-pnpm add @elixir/minecraft-kit
+pnpm add @loontail/minecraft-kit
 ```
 
 The package is **ESM-only** and targets Node.js 20.11+.
 
-After installation the `emk` binary becomes available locally:
+After installation the `mckit` binary becomes available locally:
 
 ```bash
-pnpm exec emk
+pnpm exec mckit
 ```
 
 ## Peer requirements

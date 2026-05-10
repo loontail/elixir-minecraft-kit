@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/loontail/elixir-minecraft-kit.git"
+    "url": "git+https://github.com/loontail/minecraft-kit.git"
   },
-  "homepage": "https://github.com/loontail/elixir-minecraft-kit#readme",
+  "homepage": "https://github.com/loontail/minecraft-kit#readme",
   "bugs": {
-    "url": "https://github.com/loontail/elixir-minecraft-kit/issues"
+    "url": "https://github.com/loontail/minecraft-kit/issues"
   },
   "keywords": [
     "minecraft",
@@ -36,7 +36,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "emk": "./dist/cli/index.js"
+    "mckit": "./dist/cli/index.js"
   },
   "files": ["dist", "README.md", "LICENSE"],
   "engines": {

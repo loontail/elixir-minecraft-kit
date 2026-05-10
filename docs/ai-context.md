@@ -1,6 +1,6 @@
 # AI agent context
 
-If you are an AI agent picking up work on `@elixir/minecraft-kit`, read this first.
+If you are an AI agent picking up work on `@loontail/minecraft-kit`, read this first.
 
 ## Read these in order
 

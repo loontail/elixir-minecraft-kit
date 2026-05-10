@@ -3,7 +3,7 @@
 Every public capability hangs off a single facade class:
 
 ```ts
-import { MinecraftKit } from "@elixir/minecraft-kit";
+import { MinecraftKit } from "@loontail/minecraft-kit";
 
 const kit = new MinecraftKit();
 ```
@@ -37,7 +37,7 @@ mocking Node built-ins.
 ## Symmetric versions API
 
 ```ts
-import { MinecraftChannels, VersionPreference } from "@elixir/minecraft-kit";
+import { MinecraftChannels, VersionPreference } from "@loontail/minecraft-kit";
 
 await kit.versions.minecraft.list({ channel: MinecraftChannels.RELEASE });
 await kit.versions.minecraft.resolve({ version: "1.20.1" });
@@ -74,7 +74,7 @@ import {
   planRuntimeInstall,
   FetchHttpClient,
   createMemoryCache,
-} from "@elixir/minecraft-kit";
+} from "@loontail/minecraft-kit";
 ```
 
 The facade just composes these with the injected dependencies for you.

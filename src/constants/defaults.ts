@@ -23,10 +23,10 @@ export const CACHE_TTL_MS = 5 * 60_000;
 export const CACHE_MAX_ENTRIES = 256;
 
 /** User-agent value sent on every HTTP request. */
-export const USER_AGENT = "elixir-minecraft-kit/0.1";
+export const USER_AGENT = "minecraft-kit/0.1";
 
 /** Default launcher brand sent through `${launcher_name}`. */
-export const DEFAULT_LAUNCHER_NAME = "elixir-minecraft-kit";
+export const DEFAULT_LAUNCHER_NAME = "minecraft-kit";
 
 /** Default launcher version sent through `${launcher_version}`. */
 export const DEFAULT_LAUNCHER_VERSION = "0.1.0";

@@ -1,10 +1,10 @@
-# Interactive CLI: `emk`
+# Interactive CLI: `mckit`
 
-The `emk` binary is a fully-interactive companion to the library. It has no required
+The `mckit` binary is a fully-interactive companion to the library. It has no required
 arguments; the only flags are `--help`, `--version`, and `--debug`.
 
 ```bash
-emk
+mckit
 ```
 
 ## Main menu
@@ -133,11 +133,11 @@ Pass `--debug` to surface raw stack traces instead of the friendly translation.
 
 ## Programmatic CLI
 
-The `runCli` helper exported from `@elixir/minecraft-kit/cli` lets tests script the entire
+The `runCli` helper exported from `@loontail/minecraft-kit/cli` lets tests script the entire
 CLI against a stub UI:
 
 ```ts
-import { runCli, createStubUi } from "@elixir/minecraft-kit/cli";
+import { runCli, createStubUi } from "@loontail/minecraft-kit/cli";
 
 const ui = createStubUi([
   "install-minecraft",     // main menu

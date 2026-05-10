@@ -17,7 +17,7 @@ import type { MinecraftVersionSummary } from "../../src/types/minecraft";
 import type { DiscoveredTarget } from "../../src/types/target";
 import { buildFakeKit, fakeTarget } from "../helpers/fake-kit";
 
-const ROOT_DIR = "/tmp/emk-test";
+const ROOT_DIR = "/tmp/mckit-test";
 
 const release2: MinecraftVersionSummary = {
   id: "1.20.1",

@@ -1,7 +1,7 @@
 import type { MinecraftKitErrorCode, MinecraftKitErrorContext } from "../types/errors";
 
 /**
- * The single error class thrown by every public API in `@elixir/minecraft-kit`.
+ * The single error class thrown by every public API in `@loontail/minecraft-kit`.
  *
  * Use {@link isMinecraftKitError} or {@link isErrorCode} for type-narrowing in `catch` blocks.
  */

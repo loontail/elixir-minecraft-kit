@@ -5,7 +5,7 @@
 [Limitations](./limitations) for the legacy story.
 
 ```ts
-import { Loaders, VersionPreference } from "@elixir/minecraft-kit";
+import { Loaders, VersionPreference } from "@loontail/minecraft-kit";
 
 const builds = await kit.versions.forge.list({ minecraftVersion: "1.20.1" });
 const resolved = await kit.versions.forge.resolve({

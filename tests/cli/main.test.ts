@@ -29,7 +29,7 @@ describe("runCli", () => {
     const ui = createStubUi();
     const code = await runCli({ args: ["--help"], ui, rootDir: "/", kit: buildFakeKit() });
     expect(code).toBe(0);
-    expect(ui.calls.some((c) => c.kind === "note" && c.message.includes("emk"))).toBe(true);
+    expect(ui.calls.some((c) => c.kind === "note" && c.message.includes("mckit"))).toBe(true);
   });
 
   it("prints version on --version", async () => {

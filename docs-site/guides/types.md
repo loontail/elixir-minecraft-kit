@@ -22,7 +22,7 @@ package's `index.ts` re-exports the barrel.
 | `LogLevels` | `DEBUG` `INFO` `WARN` `ERROR` |
 
 ```ts
-import { Loaders, EventTypes, VerificationKinds } from "@elixir/minecraft-kit";
+import { Loaders, EventTypes, VerificationKinds } from "@loontail/minecraft-kit";
 
 if (target.loader.type === Loaders.FABRIC) { /* narrows */ }
 

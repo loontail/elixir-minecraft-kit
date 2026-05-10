@@ -3,7 +3,7 @@
 `kit.versions.fabric` reads the official Fabric meta API at `meta.fabricmc.net`.
 
 ```ts
-import { Loaders, VersionPreference } from "@elixir/minecraft-kit";
+import { Loaders, VersionPreference } from "@loontail/minecraft-kit";
 
 const loaders = await kit.versions.fabric.list({ minecraftVersion: "1.20.1" });
 const resolved = await kit.versions.fabric.resolve({

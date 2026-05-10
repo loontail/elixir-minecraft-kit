@@ -3,7 +3,7 @@
 Every error thrown by a public API is an `MinecraftKitError`:
 
 ```ts
-import { isMinecraftKitError, isErrorCode } from "@elixir/minecraft-kit";
+import { isMinecraftKitError, isErrorCode } from "@loontail/minecraft-kit";
 
 try {
   await kit.install.run(plan);

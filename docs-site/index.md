@@ -1,7 +1,7 @@
 ---
 layout: home
 hero:
-  name: "@elixir/minecraft-kit"
+  name: "@loontail/minecraft-kit"
   text: Minecraft launcher kit
   tagline: TypeScript library and interactive CLI for installing, verifying, repairing, and launching Minecraft — vanilla, Fabric, and modern Forge.
   actions:
@@ -13,7 +13,7 @@ hero:
       link: /api/
 features:
   - title: Library + CLI
-    details: Use the TypeScript facade from your app, or drop into the interactive emk CLI — both backed by the same code.
+    details: Use the TypeScript facade from your app, or drop into the interactive mckit CLI — both backed by the same code.
   - title: Versions API
     details: Symmetric list/resolve for Minecraft, Fabric, Forge, and Mojang Java runtimes.
   - title: Forge modern

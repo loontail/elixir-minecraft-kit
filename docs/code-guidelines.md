@@ -1,6 +1,6 @@
-# Code guidelines — `@elixir/minecraft-kit`
+# Code guidelines — `@loontail/minecraft-kit`
 
-These rules govern every change inside `elixir-minecraft-kit`. They exist so the package stays small, predictable, and safe to refactor.
+These rules govern every change inside `minecraft-kit`. They exist so the package stays small, predictable, and safe to refactor.
 
 This document is internal. It is not published to end users.
 

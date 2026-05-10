@@ -55,7 +55,7 @@ const runtime = await kit.versions.runtime.resolve({
 
 const plan = await kit.install.runtime.standalonePlan({
   id: "shared-jre",
-  directory: "/opt/elixir-runtimes",
+  directory: "/opt/minecraft-runtimes",
   runtime,
 });
 

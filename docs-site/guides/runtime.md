@@ -4,7 +4,7 @@
 `piston-meta.mojang.com/v1/products/java-runtime/.../all.json`.
 
 ```ts
-import { RuntimePreference, detectSystem } from "@elixir/minecraft-kit";
+import { RuntimePreference, detectSystem } from "@loontail/minecraft-kit";
 
 const system = detectSystem();
 const list = await kit.versions.runtime.list({ system });

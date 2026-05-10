@@ -35,7 +35,7 @@ export interface RunCliInput {
 export async function runCli(input: RunCliInput): Promise<number> {
   if (input.args.includes("--help") || input.args.includes("-h")) {
     input.ui.note(
-      "emk — elixir-minecraft-kit CLI",
+      "mckit — minecraft-kit CLI",
       "Run with no arguments for the interactive menu.\n--version, --help, --debug",
     );
     return 0;
@@ -47,7 +47,7 @@ export async function runCli(input: RunCliInput): Promise<number> {
   const debug = input.args.includes("--debug");
   const kit = input.kit ?? new MinecraftKit();
   const ctx: ScenarioContext = { kit, ui: input.ui, rootDir: input.rootDir };
-  input.ui.intro("emk — Minecraft launcher kit");
+  input.ui.intro("mckit — Minecraft launcher kit");
   while (true) {
     const choice = await input.ui.select<string>({
       message: "What would you like to do?",

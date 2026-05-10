@@ -38,7 +38,7 @@ function loadApiSidebar(): SidebarItem[] {
 }
 
 export default defineConfig({
-  title: "@elixir/minecraft-kit",
+  title: "@loontail/minecraft-kit",
   description: "Stateless TypeScript Minecraft launcher library and interactive CLI.",
   cleanUrls: true,
   lastUpdated: false,
@@ -86,7 +86,7 @@ export default defineConfig({
         },
         {
           text: "CLI",
-          items: [{ text: "emk", link: "/guides/cli" }],
+          items: [{ text: "mckit", link: "/guides/cli" }],
         },
         {
           text: "Reference",
@@ -110,6 +110,6 @@ export default defineConfig({
     },
     outline: { level: [2, 3], label: "On this page" },
     search: { provider: "local" },
-    footer: { message: "MIT License", copyright: "© 2026 elixir contributors" },
+    footer: { message: "MIT License", copyright: "© 2026 loontail" },
   },
 });

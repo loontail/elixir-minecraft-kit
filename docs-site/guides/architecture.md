@@ -39,7 +39,7 @@ src/update/        Thin wrapper over install (skip-already-correct).
 src/verify/        On-disk verification per aspect.
 src/repair/        Aspect repair = install plan ∩ verification issues.
 src/launch/        Argument composition + child-process lifecycle.
-src/cli/           Interactive `emk`; imports only the public facade.
+src/cli/           Interactive `mckit`; imports only the public facade.
 src/kit.ts         `MinecraftKit` facade.
 src/index.ts       Public barrel.
 ```

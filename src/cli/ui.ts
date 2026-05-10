@@ -78,8 +78,8 @@ export interface Ui {
   spinner(): UiSpinner;
 }
 
-const BACK = Symbol("emk:back");
-const CANCEL = Symbol("emk:cancel");
+const BACK = Symbol("mckit:back");
+const CANCEL = Symbol("mckit:cancel");
 
 interface ClackModule {
   intro(m: string): void;

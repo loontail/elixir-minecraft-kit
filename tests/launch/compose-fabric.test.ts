@@ -60,7 +60,7 @@ describe("composeLaunch (Fabric regression)", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "emk-compose-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "mckit-compose-"));
     // Layout: vanilla jar exists, Fabric profile JSON exists, Fabric jar does NOT exist.
     const vanillaDir = path.join(tmpDir, "versions", "1.20.1");
     await fs.mkdir(vanillaDir, { recursive: true });

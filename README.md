@@ -1,4 +1,4 @@
-# @elixir/minecraft-kit
+# @loontail/minecraft-kit
 
 A stateless TypeScript Minecraft launcher library and interactive CLI for vanilla, Fabric, and modern Forge.
 
@@ -8,19 +8,19 @@ A stateless TypeScript Minecraft launcher library and interactive CLI for vanill
 - Install Mojang Java runtimes (`java-runtime-gamma`, `delta`, `jre-legacy`, ...).
 - Verify, repair, and launch installations.
 - Fully typed `onEvent` progress callbacks.
-- Interactive `emk` CLI.
+- Interactive `mckit` CLI.
 - **Stateless** — writes only the files Minecraft itself needs; nothing else lives on disk.
 
 ## Install
 
 ```bash
-pnpm add @elixir/minecraft-kit
+pnpm add @loontail/minecraft-kit
 ```
 
 ## Usage
 
 ```ts
-import { MinecraftKit, AuthModes, Loaders } from "@elixir/minecraft-kit";
+import { MinecraftKit, AuthModes, Loaders } from "@loontail/minecraft-kit";
 
 const kit = new MinecraftKit();
 
@@ -44,7 +44,7 @@ await session.exited;
 ## CLI
 
 ```bash
-emk
+mckit
 ```
 
 The CLI is fully interactive — no required arguments. Run inside the directory that should host your installations.

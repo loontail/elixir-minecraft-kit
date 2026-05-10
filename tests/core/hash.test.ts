@@ -8,7 +8,7 @@ describe("hash utilities", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "emk-hash-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "mckit-hash-"));
   });
 
   afterEach(async () => {

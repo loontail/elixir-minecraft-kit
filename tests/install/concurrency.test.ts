@@ -38,7 +38,7 @@ function waitFor(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
 describe("install runner worker-pool", () => {
   let tmpDir: string;
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "emk-conc-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "mckit-conc-"));
   });
   afterEach(async () => {
     await fs.rm(tmpDir, { recursive: true, force: true });

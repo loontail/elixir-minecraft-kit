@@ -25,7 +25,7 @@ labels: bug
 
 - OS + version: 
 - Node version (`node --version`): 
-- `@elixir/minecraft-kit` version: 
+- `@loontail/minecraft-kit` version: 
 - pnpm / npm version: 
 
 ## Error

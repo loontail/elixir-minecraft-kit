@@ -12,7 +12,7 @@ describe("downloadFile", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "emk-dl-"));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "mckit-dl-"));
   });
 
   afterEach(async () => {

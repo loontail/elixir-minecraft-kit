@@ -105,7 +105,7 @@ describe("isHttpRetryable", () => {
     const error = new MinecraftKitError("NETWORK_TIMEOUT", "x");
     expect(isHttpRetryable(error)).toBe(true);
   });
-  it("does not retry on non-elixir errors", () => {
+  it("does not retry on non-kit errors", () => {
     expect(isHttpRetryable(new Error("x"))).toBe(false);
   });
   it("retries http error with no status (treated as 0)", () => {

@@ -1,7 +1,7 @@
 # Quickstart
 
 ```ts
-import { MinecraftKit, AuthModes, Loaders } from "@elixir/minecraft-kit";
+import { MinecraftKit, AuthModes, Loaders } from "@loontail/minecraft-kit";
 
 const kit = new MinecraftKit();
 
