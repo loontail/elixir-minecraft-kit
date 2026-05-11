@@ -40,6 +40,10 @@ function loadApiSidebar(): SidebarItem[] {
 export default defineConfig({
   title: "@loontail/minecraft-kit",
   description: "Stateless TypeScript Minecraft launcher library and interactive CLI.",
+  // GitHub Pages serves the site under https://loontail.github.io/minecraft-kit/.
+  // Every asset URL must be prefixed with this path; an empty / "/" base would 404 in
+  // production while still working in `pnpm docs:dev`.
+  base: "/minecraft-kit/",
   cleanUrls: true,
   lastUpdated: false,
   ignoreDeadLinks: true,

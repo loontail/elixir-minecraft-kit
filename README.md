@@ -2,6 +2,8 @@
 
 A stateless TypeScript Minecraft launcher library and interactive CLI for vanilla, Fabric, and modern Forge.
 
+**Documentation:** https://loontail.github.io/minecraft-kit/
+
 ## Features
 
 - Resolve and install vanilla Minecraft, Fabric, and modern Forge.
