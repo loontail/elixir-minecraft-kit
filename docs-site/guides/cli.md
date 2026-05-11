@@ -1,7 +1,6 @@
 # Interactive CLI: `mckit`
 
-The `mckit` binary is a fully-interactive companion to the library. It has no required
-arguments; the only flags are `--help`, `--version`, and `--debug`.
+The `mckit` binary is fully interactive. Flags: `--help` / `-h`, `--version` / `-v`, `--debug`.
 
 ```bash
 mckit
@@ -90,18 +89,6 @@ duration.
 If `totalBytes` is unknown (zero-size manifests), the bar falls back to `—` while the file
 counter, live speed, and active-downloads counter continue to update. There is **no ETA**
 in any progress line, summary, event payload, or error message — by design.
-
-## Worker-pool downloads
-
-Downloads run through a worker-pool driven by `p-limit`, with a default size of
-`DOWNLOAD_CONCURRENCY = 32`. The runner does **not** wait for a batch to finish before
-queueing the next file: as soon as one download completes, the next file in the queue
-starts immediately. Concurrency is overridable via the `concurrency` option on
-`kit.install.run` / `kit.repair.run` / `kit.update.run`.
-
-Each download still verifies its expected SHA-1 on the fly, writes through a temporary
-`.download` file with atomic rename on success, retries transient HTTP errors with
-exponential backoff, and respects an optional `AbortSignal`.
 
 ## Inspect
 

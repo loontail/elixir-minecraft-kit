@@ -58,6 +58,5 @@ ApiEndpoints.forge.installer(fullVersion);
 
 ## Placeholders
 
-`src/constants/placeholders.ts` exports `LAUNCH_PLACEHOLDERS` — the canonical mapping from
-every `${...}` token to a one-line description. Use it if you want to drive a UI for custom
-JVM arguments.
+`src/constants/placeholders.ts` exports `LAUNCH_PLACEHOLDERS` — every `${...}` token used
+during launch, with a one-line description per token.

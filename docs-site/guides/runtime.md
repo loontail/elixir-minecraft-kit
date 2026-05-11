@@ -19,9 +19,9 @@ const runtime = await kit.versions.runtime.resolve({
 ## Component selection
 
 The Minecraft per-version manifest declares the required component (e.g.
-`java-runtime-gamma`, `java-runtime-delta`, `jre-legacy`). `kit.targets.resolve` plumbs that
-component into the runtime resolver automatically. You only need to override it if you want
-a specific override (e.g. running an older MC version with a newer JDK).
+`java-runtime-gamma`, `java-runtime-delta`, `jre-legacy`). `kit.targets.resolve` picks that
+component automatically. Override `component` only to force a different JDK than the manifest
+declares.
 
 ## Install layout
 

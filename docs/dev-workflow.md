@@ -5,7 +5,7 @@
 | Tool | Version | Purpose |
 |---|---|---|
 | Node | ≥ 20.11 | Runtime (uses `fetch`, `crypto.randomBytes`, `child_process.spawn`). |
-| pnpm | 9.15.0 | Package manager (pinned via `packageManager`). |
+| npm | 10+ | Package manager (bundled with Node 20). |
 | TypeScript | ~5.4.5 | Strict; `noUncheckedIndexedAccess`, `verbatimModuleSyntax`. |
 | Biome | ^1.9.4 | Lint + format. |
 | Vitest | ^1.6.0 | Test runner (fork pool, parallel files). |
@@ -15,7 +15,7 @@
 
 ## Commands
 
-| `pnpm <cmd>` | What it does |
+| `npm run <cmd>` | What it does |
 |---|---|
 | `build` | `tsup` bundle to `dist/`. Library + CLI + sourcemaps + declarations. |
 | `dev` | Same, watching. |
@@ -23,7 +23,7 @@
 | `lint:fix` | Apply safe Biome fixes. |
 | `format` | Apply Biome formatting. |
 | `typecheck` | `tsc --noEmit` against the strict tsconfig. |
-| `test` | Run the full Vitest suite once. |
+| `test` | Run the full Vitest suite once. (Also available as `npm test`.) |
 | `test:watch` | Same, watching. |
 | `test:coverage` | Vitest with `--coverage` (v8 provider, html + json-summary + text). |
 | `docs:api` | TypeDoc → `docs-site/api/`. |
@@ -33,9 +33,9 @@
 
 ## Before pushing
 
-1. `pnpm typecheck && pnpm lint && pnpm test` — all three must pass.
-2. `pnpm build` — sanity-check the bundle.
-3. If you touched `src/types/` or the public surface in `src/index.ts`, also run `pnpm docs:api`.
+1. `npm run typecheck && npm run lint && npm test` — all three must pass.
+2. `npm run build` — sanity-check the bundle.
+3. If you touched `src/types/` or the public surface in `src/index.ts`, also run `npm run docs:api`.
 4. Update the matching guide in `docs-site/guides/` if you changed observable behaviour.
 
 ## Tests
@@ -48,14 +48,14 @@
 
 ## Git hooks
 
-Three hooks are installed automatically by husky on `pnpm install` (see the `prepare`
+Three hooks are installed automatically by husky on `npm install` (see the `prepare`
 script):
 
 | Hook | Runs |
 |---|---|
 | `commit-msg` | commitlint — enforces Conventional Commits |
-| `pre-commit` | lint-staged (biome on staged files) + `pnpm typecheck` |
-| `pre-push` | `pnpm test:coverage` + `pnpm build` |
+| `pre-commit` | lint-staged (biome on staged files) + `npm run typecheck` |
+| `pre-push` | `npm run test:coverage` + `npm run build` |
 
 Don't bypass with `--no-verify`. CI re-runs the same checks; bypassing locally just moves
 the failure to GitHub Actions.
@@ -75,7 +75,7 @@ git switch main
 git pull
 
 # Bump package.json — no commit, no tag yet.
-pnpm version --no-git-tag-version patch       # or minor / major / <explicit>
+npm version --no-git-tag-version patch       # or minor / major / <explicit>
 
 git switch -c chore/release-0.1.1
 git commit -am "chore(release): 0.1.1"
@@ -93,7 +93,7 @@ When the PR lands, the release workflow:
 1. Reads `package.json` version on `main`.
 2. Checks the matching `v*` tag doesn't already exist.
 3. Re-runs typecheck / lint / test / build.
-4. `pnpm publish --provenance --access public` to npm.
+4. `npm publish --provenance --access public` to npm.
 5. Creates and pushes the `vX.Y.Z` git tag.
 6. Cuts a GitHub release with auto-generated notes from the Conventional-Commits log.
 

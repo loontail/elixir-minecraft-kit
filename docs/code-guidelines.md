@@ -129,5 +129,5 @@ Rules for both:
 - Public API breakage is allowed pre-1.0. Call it out in the PR title (`feat!:` / `fix!:`)
   and description so it's findable in git history.
 - New code replaces old code in the same change — no parallel "v2" implementations.
-- Imports / exports / circular dependencies are checked after every module-level change (`pnpm typecheck`).
+- Imports / exports / circular dependencies are checked after every module-level change (`npm run typecheck`).
 - Lint and tests run after every module-level change. A failing test that is *unrelated* to the change is documented in the report; it is not silenced.

@@ -41,7 +41,4 @@ if (result.kind === VerificationKinds.MINECRAFT) { /* narrows */ }
 A `switch` on the discriminator gives you exhaustiveness checking — TypeScript will tell you
 if you forgot a case.
 
-## Where to find the full shape
-
-The TypeDoc-generated [API reference](../api/) lists every interface and field. This page
-exists as a quick map; treat it as an index, not a substitute.
+The [API reference](../api/) has the full shape of every interface and field.

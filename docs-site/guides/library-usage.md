@@ -31,8 +31,7 @@ new MinecraftKit({
 });
 ```
 
-Every dependency is replaceable. Tests inject `FakeHttpClient` and `FakeSpawner` instead of
-mocking Node built-ins.
+Every dependency is replaceable.
 
 ## Symmetric versions API
 

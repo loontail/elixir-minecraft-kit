@@ -16,7 +16,7 @@ A stateless TypeScript Minecraft launcher library and interactive CLI for vanill
 ## Install
 
 ```bash
-pnpm add @loontail/minecraft-kit
+npm install @loontail/minecraft-kit
 ```
 
 ## Usage

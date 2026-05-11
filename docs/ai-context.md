@@ -62,13 +62,7 @@ you change.
 
 ## When you write user-facing docs
 
-User-facing docs live in `docs-site/`. Rules from `code-guidelines.md` §8:
-
-- No filler, no marketing, no FAQ-for-FAQ's-sake.
-- Do not invent and then deny artefacts the kit doesn't produce — describe what *is* written,
-  not what isn't.
-- Examples must be runnable against the current public API.
-- Code-guideline content stays in `docs/`. It is *not* published to users.
+User-facing docs live in `docs-site/`. Rules are in `code-guidelines.md` §8.
 
 ## History
 

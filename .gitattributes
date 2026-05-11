@@ -15,6 +15,6 @@
 *.woff  binary
 *.woff2 binary
 
-# pnpm lockfile must round-trip verbatim — keep as LF (already covered by the
+# npm lockfile must round-trip verbatim — keep as LF (already covered by the
 # wildcard above, listed explicitly so future tooling doesn't second-guess it).
-pnpm-lock.yaml text eol=lf
+package-lock.json text eol=lf

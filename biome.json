@@ -6,7 +6,6 @@
       "dist/**",
       "node_modules/**",
       "coverage/**",
-      ".pnpm-store/**",
       "docs-site/.vitepress/cache/**",
       "docs-site/.vitepress/dist/**",
       "docs-site/api/**"

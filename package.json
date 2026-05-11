@@ -1,6 +1,6 @@
 {
   "name": "@loontail/minecraft-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Stateless TypeScript Minecraft launcher library and interactive CLI for vanilla, Fabric, and modern Forge.",
   "type": "module",
   "license": "MIT",
@@ -42,7 +42,6 @@
   "engines": {
     "node": ">=20.11"
   },
-  "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -54,8 +53,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "docs:api": "typedoc",
-    "docs:dev": "pnpm docs:api && vitepress dev docs-site",
-    "docs:build": "pnpm docs:api && vitepress build docs-site",
+    "docs:dev": "npm run docs:api && vitepress dev docs-site",
+    "docs:build": "npm run docs:api && vitepress build docs-site",
     "docs:preview": "vitepress preview docs-site",
     "prepare": "husky"
   },

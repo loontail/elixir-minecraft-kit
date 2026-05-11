@@ -1,13 +1,7 @@
 # Getting started
 
-`@loontail/minecraft-kit` is a stateless Minecraft launcher kit for Node 20+. It ships:
-
-- a TypeScript library — install / verify / repair / launch vanilla, Fabric, and modern Forge;
-- an interactive `mckit` CLI built on the same library.
-
-The library never writes launcher-private state. The only files produced on disk are the ones
-the Minecraft client itself expects: `versions/`, `libraries/`, `assets/`, and (optionally)
-`runtime/`.
+`@loontail/minecraft-kit` ships a TypeScript library and an interactive `mckit` CLI for
+installing, verifying, repairing, and launching vanilla / Fabric / modern Forge. Node 20.11+.
 
 - [Installation →](./installation)
 - [Quickstart →](./quickstart)

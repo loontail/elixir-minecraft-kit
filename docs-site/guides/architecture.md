@@ -44,28 +44,5 @@ src/kit.ts         `MinecraftKit` facade.
 src/index.ts       Public barrel.
 ```
 
-## Statelessness
-
-The kit writes only files Minecraft itself expects: `versions/`, `libraries/`, `assets/`,
-and (optionally) `runtime/`. Anything you want to remember about a target is your
-responsibility — pass the `Target` you got from `kit.targets.resolve` into your next call.
-
-## Dependency injection
-
-Every external dependency on the `MinecraftKit` constructor is replaceable:
-`httpClient`, `cache`, `logger`, `spawner`, `system`. Tests use the `FakeHttpClient` and
-`FakeSpawner` test helpers instead of `vi.mock("node:child_process")` — the `Spawner`
-interface eliminates that brittleness.
-
-## Plan vs run
-
-Every long-running operation produces a plan first:
-
-```ts
-const plan = await kit.install.plan(target);   // pure (mostly — see install.md)
-console.log(`${plan.totalActions} actions, ${plan.totalBytes} bytes`);
-await kit.install.run(plan, { onEvent });      // executes
-```
-
-This is what makes the library testable, dry-run-friendly, and resumable. The same shape
-holds for `update.plan` / `update.run` and `repair.<aspect>.plan` / `repair.<aspect>.run`.
+See [stateless](./stateless), [library usage](./library-usage), and [install](./install)
+for the on-disk layout, DI contract, and plan/run model respectively.

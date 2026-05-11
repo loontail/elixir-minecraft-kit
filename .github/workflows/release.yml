@@ -5,7 +5,7 @@ name: Release
 # `vX.Y.Z` tag plus a GitHub release. Commits that don't bump the version are no-ops.
 #
 # Release flow:
-#   1. Open a "chore(release): X.Y.Z" PR that runs `pnpm version --no-git-tag-version`.
+#   1. Open a "chore(release): X.Y.Z" PR that runs `npm version --no-git-tag-version`.
 #   2. Merge the PR through normal review.
 #   3. This workflow detects the new version and ships it.
 on:
@@ -59,27 +59,22 @@ jobs:
           # a PAT — it does not bypass branch protection but it can push tags.
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9.15.0
-          run_install: false
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20.11"
           registry-url: "https://registry.npmjs.org"
-          cache: pnpm
+          cache: npm
 
-      - run: pnpm install --frozen-lockfile
+      - run: npm ci
 
       # Re-run every gate even though ci.yml already ran them on the merged PR — this is
       # the last point where we can stop a bad publish.
-      - run: pnpm typecheck
-      - run: pnpm lint
-      - run: pnpm test
-      - run: pnpm build
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
 
-      - run: pnpm publish --no-git-checks --provenance --access public
+      - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

@@ -19,10 +19,10 @@
 
 ## Test plan
 
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm lint` passes
-- [ ] `pnpm test` passes
-- [ ] `pnpm build` passes
+- [ ] `npm run typecheck` passes
+- [ ] `npm run lint` passes
+- [ ] `npm test` passes
+- [ ] `npm run build` passes
 - [ ] New behaviour has a unit test (or note why it doesn't)
 - [ ] Public-facing change has a corresponding doc update in `docs-site/guides/`
 
