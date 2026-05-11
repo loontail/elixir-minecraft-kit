@@ -24,6 +24,10 @@ export async function runInstallWithProgress(
     planSpinner.stop(`Plan ready: ${plan.totalActions} actions, ${formatBytes(plan.totalBytes)}.`);
   } catch (error) {
     planSpinner.stop("Planning failed.");
+    // The spinner only shows a generic label. Surface the real reason here so the user
+    // can see whether it was a network 404, an invalid manifest, etc., before the
+    // wizard bounces them back.
+    ctx.ui.log("error", formatUserError(error));
     throw error;
   }
   const renderer = new ProgressRenderer({
@@ -45,16 +49,16 @@ export async function runInstallWithProgress(
 
 /**
  * Resolve a target from the wizard selection and execute the install. Returns:
- *   - `"ok"`     install completed
- *   - `"directory"` install failed; let the wizard re-prompt the directory step
- *   - `"install-type"` target resolution failed; let the wizard re-prompt loader choice
- *
- * Both error paths log the underlying error before returning.
+ *   - `"ok"`        install completed
+ *   - `"cancelled"` install failed; the underlying error is already logged. The wizard
+ *                   should exit to the main menu rather than re-prompt the same steps —
+ *                   retrying without changing inputs almost never recovers.
+ *   - `"install-type"` target resolution failed; loader choice probably needs to change.
  */
 export async function runInstallFromSelection(
   ctx: ScenarioContext,
   sel: InstallSelection,
-): Promise<"ok" | "directory" | "install-type"> {
+): Promise<"ok" | "cancelled" | "install-type"> {
   const v = sel.version as MinecraftVersionSummary;
   const dir = sel.directory as string;
   const loaderInput = buildLoaderInput(sel);
@@ -77,9 +81,10 @@ export async function runInstallFromSelection(
     await runInstallWithProgress(ctx, target, describeLoader(sel));
     return "ok";
   } catch {
-    // runInstallWithProgress already rendered the failure via renderer.fail(). Returning
-    // "directory" lets the wizard re-prompt the destination without re-running pickers.
-    return "directory";
+    // runInstallWithProgress already logged the error (plan-stage via ctx.ui.log,
+    // run-stage via renderer.fail). Bounce back to the main menu — looping inside
+    // the wizard would only re-trigger the same failure.
+    return "cancelled";
   }
 }
 
@@ -100,6 +105,7 @@ export async function runStandaloneRuntimeInstallWithProgress(
     planSpinner.stop(`Plan ready: ${plan.totalActions} files, ${formatBytes(plan.totalBytes)}.`);
   } catch (error) {
     planSpinner.stop("Planning failed.");
+    ctx.ui.log("error", formatUserError(error));
     throw error;
   }
   const renderer = new ProgressRenderer({

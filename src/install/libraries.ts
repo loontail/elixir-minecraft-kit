@@ -47,14 +47,20 @@ export function planLibraryDownloads(input: {
       );
       if (!seenPaths.has(targetPath)) {
         seenPaths.add(targetPath);
-        downloads.push({
-          kind: InstallActionKinds.DOWNLOAD_FILE,
-          url: artifact.url,
-          target: targetPath,
-          ...(artifact.sha1 !== undefined ? { expectedSha1: artifact.sha1 } : {}),
-          ...(artifact.size !== undefined ? { expectedSize: artifact.size } : {}),
-          category: input.category,
-        });
+        // Empty URL in a Forge install_profile / version JSON means "the file is
+        // provided by the installer's `maven/` extraction or by a processor output —
+        // do not issue a download." Still record the path on the classpath so the
+        // launch composer can find it after install.
+        if (artifact.url) {
+          downloads.push({
+            kind: InstallActionKinds.DOWNLOAD_FILE,
+            url: artifact.url,
+            target: targetPath,
+            ...(artifact.sha1 !== undefined ? { expectedSha1: artifact.sha1 } : {}),
+            ...(artifact.size !== undefined ? { expectedSize: artifact.size } : {}),
+            category: input.category,
+          });
+        }
         classpathFiles.push(targetPath);
       }
     }
@@ -64,14 +70,16 @@ export function planLibraryDownloads(input: {
       const targetPath = path.join(targetPaths.librariesDir(input.directory), native.relativePath);
       if (!seenPaths.has(targetPath)) {
         seenPaths.add(targetPath);
-        downloads.push({
-          kind: InstallActionKinds.DOWNLOAD_FILE,
-          url: native.url,
-          target: targetPath,
-          ...(native.sha1 !== undefined ? { expectedSha1: native.sha1 } : {}),
-          ...(native.size !== undefined ? { expectedSize: native.size } : {}),
-          category: input.category,
-        });
+        if (native.url) {
+          downloads.push({
+            kind: InstallActionKinds.DOWNLOAD_FILE,
+            url: native.url,
+            target: targetPath,
+            ...(native.sha1 !== undefined ? { expectedSha1: native.sha1 } : {}),
+            ...(native.size !== undefined ? { expectedSize: native.size } : {}),
+            category: input.category,
+          });
+        }
       }
       nativeExtractions.push({
         kind: InstallActionKinds.EXTRACT_NATIVE,

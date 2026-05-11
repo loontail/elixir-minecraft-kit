@@ -139,6 +139,7 @@ export async function scenarioInstallMinecraft(ctx: ScenarioContext): Promise<Sc
       if (!ok.value) return "cancelled";
       const result = await runInstallFromSelection(ctx, sel);
       if (result === "ok") return "completed";
+      if (result === "cancelled") return "cancelled";
       step = result;
     }
   }

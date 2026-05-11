@@ -1,6 +1,6 @@
 import path from "node:path";
 import { ApiEndpoints } from "../constants/api";
-import { extractSingleEntry, openZip, readEntryBuffer, readJarMainClass } from "../core/archive";
+import { extractSingleEntry, openZip, readEntryBuffer } from "../core/archive";
 import { dedupe, dedupeBy } from "../core/collections";
 import { MinecraftKitError } from "../core/errors";
 import { atomicWrite } from "../core/fs";
@@ -255,7 +255,7 @@ async function buildProcessorActions(input: {
     if (!evaluateRules([], { system: input.system })) {
       // Currently processors do not carry rules; placeholder for future expansion.
     }
-    const action = await buildProcessorAction({
+    const action = buildProcessorAction({
       processor,
       directory: input.directory,
       tokens,
@@ -272,24 +272,19 @@ function processorAppliesToClient(processor: ForgeProcessor): boolean {
   return processor.sides.includes("client");
 }
 
-async function buildProcessorAction(input: {
+function buildProcessorAction(input: {
   readonly processor: ForgeProcessor;
   readonly directory: string;
   readonly tokens: Readonly<Record<string, ResolvedTokenValue>>;
   readonly index: number;
-}): Promise<RunForgeProcessorAction> {
+}): RunForgeProcessorAction {
   const jarPath = path.join(
     targetPaths.librariesDir(input.directory),
     mavenRelativePathFor(input.processor.jar),
   );
-  const mainClass = await readJarMainClass(jarPath);
-  if (!mainClass) {
-    throw new MinecraftKitError(
-      "FORGE_INSTALLER_INVALID",
-      `Processor jar has no Main-Class: ${input.processor.jar}`,
-      { context: { filePath: jarPath } },
-    );
-  }
+  // Note: `Main-Class` is read from the JAR at runtime, not here. Newer Forge versions
+  // ship some processor JARs as regular Maven libraries that haven't been downloaded
+  // yet at planning time.
   const classpath = [
     jarPath,
     ...input.processor.classpath.map((coord) =>
@@ -308,7 +303,6 @@ async function buildProcessorAction(input: {
   return {
     kind: InstallActionKinds.RUN_FORGE_PROCESSOR,
     index: input.index,
-    mainClass,
     classpath,
     args,
     outputs,

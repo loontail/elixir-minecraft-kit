@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createReadStream } from "node:fs";
 import pLimit from "p-limit";
 import { DOWNLOAD_CONCURRENCY, MAX_PROCESSOR_STDERR_LINES } from "../constants/defaults";
-import { extractAllToDir } from "../core/archive";
+import { extractAllToDir, readJarMainClass } from "../core/archive";
 import { MinecraftKitError } from "../core/errors";
 import { atomicWrite } from "../core/fs";
 import { targetPaths } from "../core/paths";
@@ -208,16 +208,36 @@ export interface RunProcessorInput {
 /** Execute a single Forge processor and verify its declared outputs. */
 export async function runProcessor(input: RunProcessorInput): Promise<void> {
   const startedAt = Date.now();
+  // Resolve Main-Class from the processor JAR (always classpath[0]) now that all
+  // libraries have been downloaded. Deferring this from planning to runtime is what
+  // lets newer Forge versions work, since their processor JARs ship as regular Maven
+  // libraries instead of being bundled inside the installer.
+  const processorJar = input.action.classpath[0];
+  if (processorJar === undefined) {
+    throw new MinecraftKitError(
+      "FORGE_INSTALLER_INVALID",
+      "Forge processor has an empty classpath",
+      { context: { processorIndex: input.action.index } },
+    );
+  }
+  const mainClass = await readJarMainClass(processorJar);
+  if (!mainClass) {
+    throw new MinecraftKitError(
+      "FORGE_INSTALLER_INVALID",
+      `Forge processor jar has no Main-Class: ${processorJar}`,
+      { context: { filePath: processorJar } },
+    );
+  }
   const classpathSeparator = process.platform === "win32" ? ";" : ":";
   const args = [
     "-cp",
     input.action.classpath.join(classpathSeparator),
-    input.action.mainClass,
+    mainClass,
     ...input.action.args,
   ];
   input.onEvent?.({
     type: "forge:processor-started",
-    processor: { index: input.action.index, mainClass: input.action.mainClass },
+    processor: { index: input.action.index, mainClass },
     total: input.total,
   });
   const stderrTail: string[] = [];
@@ -233,11 +253,11 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
   if (exit.code !== 0) {
     throw new MinecraftKitError(
       "FORGE_PROCESSOR_FAILED",
-      `Forge processor exited with code ${exit.code ?? "(signal)"}: ${input.action.mainClass}`,
+      `Forge processor exited with code ${exit.code ?? "(signal)"}: ${mainClass}`,
       {
         context: {
           exitCode: exit.code ?? undefined,
-          mainClass: input.action.mainClass,
+          mainClass,
           stderr: stderrTail.join("\n"),
         },
       },
@@ -245,7 +265,7 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
   }
   input.onEvent?.({
     type: "forge:processor-completed",
-    processor: { index: input.action.index, mainClass: input.action.mainClass },
+    processor: { index: input.action.index, mainClass },
     exitCode: exit.code ?? 0,
     durationMs: Date.now() - startedAt,
   });
@@ -260,7 +280,7 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
     }
     input.onEvent?.({
       type: "forge:processor-output-verified",
-      processor: { index: input.action.index, mainClass: input.action.mainClass },
+      processor: { index: input.action.index, mainClass },
       path: outputPath,
     });
   }

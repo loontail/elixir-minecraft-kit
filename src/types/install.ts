@@ -60,11 +60,16 @@ export interface ExtractNativeAction {
   readonly exclude: readonly string[];
 }
 
-/** A Forge processor invocation. */
+/**
+ * A Forge processor invocation. `Main-Class` is intentionally NOT carried here — the
+ * runner reads it from `classpath[0]`'s manifest at execution time, because the JAR is
+ * not guaranteed to exist on disk during planning (newer Forge versions ship some
+ * processor JARs as regular Maven libraries instead of bundling them in the installer).
+ */
 export interface RunForgeProcessorAction {
   readonly kind: typeof InstallActionKinds.RUN_FORGE_PROCESSOR;
   readonly index: number;
-  readonly mainClass: string;
+  /** First entry is the processor JAR; remaining entries are its declared classpath. */
   readonly classpath: readonly string[];
   readonly args: readonly string[];
   readonly outputs: Readonly<Record<string, string>>;
