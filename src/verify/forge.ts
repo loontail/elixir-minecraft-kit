@@ -6,6 +6,7 @@ import type { MetadataCache } from "../types/cache";
 import type { ProgressListener } from "../types/events";
 import type { ForgeVersionJson } from "../types/forge";
 import type { HttpClient } from "../types/http";
+import { DownloadCategories } from "../types/install";
 import { Loaders } from "../types/loader";
 import type { Target } from "../types/target";
 import {
@@ -78,7 +79,7 @@ export const verifyForge = async (input: VerifyForgeInput): Promise<Verification
         directory: input.target.directory,
         system: input.target.runtime.system,
         versionId: input.target.minecraft.version,
-        category: "forge-library",
+        category: DownloadCategories.FORGE_LIBRARY,
       });
       for (const action of forgeLibraries.downloads) {
         record(

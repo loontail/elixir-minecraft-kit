@@ -1,20 +1,21 @@
 import { targetPaths } from "../core/paths";
 import {
   type DownloadAction,
+  DownloadCategories,
+  type DownloadCategory,
   type InstallAction,
   InstallActionKinds,
   type WriteVersionJsonAction,
 } from "../types/install";
-import type { RepairPlan } from "../types/repair";
-import type { AspectRepairInput } from "../types/repair";
+import type { AspectRepairInput, RepairPlan } from "../types/repair";
 import { planAspectRepair } from "./helpers";
 
-const MINECRAFT_DOWNLOAD_CATEGORIES = new Set<DownloadAction["category"]>([
-  "client-jar",
-  "library",
-  "asset-index",
-  "asset",
-  "logging-config",
+const MINECRAFT_DOWNLOAD_CATEGORIES = new Set<DownloadCategory>([
+  DownloadCategories.CLIENT_JAR,
+  DownloadCategories.LIBRARY,
+  DownloadCategories.ASSET_INDEX,
+  DownloadCategories.ASSET,
+  DownloadCategories.LOGGING_CONFIG,
 ]);
 
 /** Inputs to {@link planMinecraftRepair}. */

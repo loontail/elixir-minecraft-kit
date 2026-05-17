@@ -20,6 +20,7 @@ import type {
 import type { HttpClient } from "../types/http";
 import {
   type DownloadAction,
+  DownloadCategories,
   InstallActionKinds,
   type RunForgeProcessorAction,
   type WriteVersionJsonAction,
@@ -61,7 +62,7 @@ export const planForgeInstall = async (input: PlanForgeInstallInput): Promise<Fo
   await downloadFile(input.http, {
     url: input.loader.installerUrl,
     target: installerPath,
-    category: "forge-installer",
+    category: DownloadCategories.FORGE_INSTALLER,
     ...(input.signal !== undefined ? { signal: input.signal } : {}),
     ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
   });
@@ -70,7 +71,7 @@ export const planForgeInstall = async (input: PlanForgeInstallInput): Promise<Fo
     kind: InstallActionKinds.DOWNLOAD_FILE,
     url: input.loader.installerUrl,
     target: installerPath,
-    category: "forge-installer",
+    category: DownloadCategories.FORGE_INSTALLER,
   };
 
   const profile = await readJsonEntry<ForgeInstallProfile>(installerPath, "install_profile.json");
@@ -90,14 +91,14 @@ export const planForgeInstall = async (input: PlanForgeInstallInput): Promise<Fo
     directory: input.directory,
     system: input.system,
     versionId: input.minecraft.version,
-    category: "forge-library",
+    category: DownloadCategories.FORGE_LIBRARY,
   });
   const versionLibraries = planLibraryDownloads({
     libraries: version.libraries,
     directory: input.directory,
     system: input.system,
     versionId: version.id,
-    category: "forge-library",
+    category: DownloadCategories.FORGE_LIBRARY,
   });
 
   const dedupedDownloads = dedupeBy(

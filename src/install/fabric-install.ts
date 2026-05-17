@@ -2,6 +2,7 @@ import { targetPaths } from "../core/paths";
 import type { ResolvedFabricLoader } from "../types/fabric";
 import {
   type DownloadAction,
+  DownloadCategories,
   InstallActionKinds,
   type WriteVersionJsonAction,
 } from "../types/install";
@@ -36,7 +37,7 @@ export const planFabricInstall = (input: {
     directory: input.directory,
     system: input.system,
     versionId: input.minecraft.version,
-    category: "fabric-library",
+    category: DownloadCategories.FABRIC_LIBRARY,
   });
   return {
     versionJson,

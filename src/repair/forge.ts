@@ -2,18 +2,19 @@ import { MinecraftKitError } from "../core/errors";
 import { targetPaths } from "../core/paths";
 import {
   type DownloadAction,
+  DownloadCategories,
+  type DownloadCategory,
   type InstallAction,
   InstallActionKinds,
   type WriteVersionJsonAction,
 } from "../types/install";
 import { Loaders } from "../types/loader";
-import type { RepairPlan } from "../types/repair";
-import type { AspectRepairInput } from "../types/repair";
+import type { AspectRepairInput, RepairPlan } from "../types/repair";
 import { planAspectRepair } from "./helpers";
 
-const FORGE_DOWNLOAD_CATEGORIES = new Set<DownloadAction["category"]>([
-  "forge-library",
-  "forge-installer",
+const FORGE_DOWNLOAD_CATEGORIES = new Set<DownloadCategory>([
+  DownloadCategories.FORGE_LIBRARY,
+  DownloadCategories.FORGE_INSTALLER,
 ]);
 
 /** Inputs to {@link planForgeRepair}. */
@@ -62,7 +63,7 @@ export const planForgeRepair = async (input: PlanForgeRepairInput): Promise<Repa
       for (const action of installPlan.actions) {
         if (
           action.kind === InstallActionKinds.DOWNLOAD_FILE &&
-          (action as DownloadAction).category === "forge-library" &&
+          (action as DownloadAction).category === DownloadCategories.FORGE_LIBRARY &&
           !alreadyIncluded.has((action as DownloadAction).target)
         ) {
           actions.push(action);

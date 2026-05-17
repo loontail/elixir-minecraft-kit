@@ -3,7 +3,7 @@ import { targetPaths } from "../core/paths";
 import { fetchJson } from "../http/metadata";
 import type { MetadataCache } from "../types/cache";
 import type { HttpClient } from "../types/http";
-import { type DownloadAction, InstallActionKinds } from "../types/install";
+import { type DownloadAction, DownloadCategories, InstallActionKinds } from "../types/install";
 import type { AssetIndexDocument, AssetIndexReference } from "../types/minecraft";
 
 /**
@@ -34,7 +34,7 @@ export const planAssetDownloads = async (input: {
       target: indexPath,
       expectedSha1: input.assetIndex.sha1,
       expectedSize: input.assetIndex.size,
-      category: "asset-index",
+      category: DownloadCategories.ASSET_INDEX,
     },
   ];
   // Asset indexes routinely list the same hash under multiple virtual paths (e.g. legacy
@@ -51,7 +51,7 @@ export const planAssetDownloads = async (input: {
       target: targetPaths.assetObject(input.directory, entry.hash),
       expectedSha1: entry.hash,
       expectedSize: entry.size,
-      category: "asset",
+      category: DownloadCategories.ASSET,
     });
   }
   return { actions, indexDocument };

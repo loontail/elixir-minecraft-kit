@@ -1,6 +1,7 @@
 import type { ProgressEvent, ProgressListener } from "../types/events";
 import {
-  type DownloadAction,
+  DownloadCategories,
+  type DownloadCategory,
   type InstallPhase,
   InstallPhases,
   type InstallPlan,
@@ -41,16 +42,16 @@ export type InstallProgressTracker = {
   finish(): void;
 };
 
-const STAGE_FOR_CATEGORY: Record<DownloadAction["category"], InstallStage> = {
-  "runtime-file": InstallStages.RUNTIME,
-  "client-jar": InstallStages.MINECRAFT,
-  library: InstallStages.MINECRAFT,
-  "asset-index": InstallStages.MINECRAFT,
-  asset: InstallStages.MINECRAFT,
-  "logging-config": InstallStages.MINECRAFT,
-  "fabric-library": InstallStages.LOADER,
-  "forge-library": InstallStages.LOADER,
-  "forge-installer": InstallStages.LOADER,
+const STAGE_FOR_CATEGORY: Record<DownloadCategory, InstallStage> = {
+  [DownloadCategories.RUNTIME_FILE]: InstallStages.RUNTIME,
+  [DownloadCategories.CLIENT_JAR]: InstallStages.MINECRAFT,
+  [DownloadCategories.LIBRARY]: InstallStages.MINECRAFT,
+  [DownloadCategories.ASSET_INDEX]: InstallStages.MINECRAFT,
+  [DownloadCategories.ASSET]: InstallStages.MINECRAFT,
+  [DownloadCategories.LOGGING_CONFIG]: InstallStages.MINECRAFT,
+  [DownloadCategories.FABRIC_LIBRARY]: InstallStages.LOADER,
+  [DownloadCategories.FORGE_LIBRARY]: InstallStages.LOADER,
+  [DownloadCategories.FORGE_INSTALLER]: InstallStages.LOADER,
 };
 
 const STAGE_FOR_PHASE: Partial<Record<InstallPhase, InstallStage>> = {

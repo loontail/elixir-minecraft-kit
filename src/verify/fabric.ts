@@ -4,6 +4,7 @@ import { planLibraryDownloads } from "../install/libraries";
 import type { MetadataCache } from "../types/cache";
 import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
+import { DownloadCategories } from "../types/install";
 import { Loaders } from "../types/loader";
 import type { Target } from "../types/target";
 import { VerificationKinds, type VerificationResult, VerifyFileCategories } from "../types/verify";
@@ -45,7 +46,7 @@ export const verifyFabric = async (input: VerifyFabricInput): Promise<Verificati
         directory: input.target.directory,
         system: input.target.runtime.system,
         versionId: input.target.minecraft.version,
-        category: "fabric-library",
+        category: DownloadCategories.FABRIC_LIBRARY,
       });
       for (const action of fabricLibraries.downloads) {
         record(

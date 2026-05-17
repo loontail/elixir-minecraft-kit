@@ -33,6 +33,25 @@ export const InstallActionKinds = {
 /** Discriminator for an install action. */
 export type InstallActionKind = (typeof InstallActionKinds)[keyof typeof InstallActionKinds];
 
+/**
+ * Categorisation tag on every {@link DownloadAction}. Drives the install-phase mapping
+ * and lets consumers filter the plan to a subset (e.g. "runtime only").
+ */
+export const DownloadCategories = {
+  CLIENT_JAR: "client-jar",
+  LIBRARY: "library",
+  ASSET_INDEX: "asset-index",
+  ASSET: "asset",
+  LOGGING_CONFIG: "logging-config",
+  FABRIC_LIBRARY: "fabric-library",
+  FORGE_LIBRARY: "forge-library",
+  RUNTIME_FILE: "runtime-file",
+  FORGE_INSTALLER: "forge-installer",
+} as const;
+
+/** Download category literal — drives `runInstall` phase boundaries. */
+export type DownloadCategory = (typeof DownloadCategories)[keyof typeof DownloadCategories];
+
 /** A single download step. */
 export type DownloadAction = {
   readonly kind: typeof InstallActionKinds.DOWNLOAD_FILE;
@@ -40,16 +59,7 @@ export type DownloadAction = {
   readonly target: string;
   readonly expectedSha1?: string;
   readonly expectedSize?: number;
-  readonly category:
-    | "client-jar"
-    | "library"
-    | "asset-index"
-    | "asset"
-    | "logging-config"
-    | "fabric-library"
-    | "forge-library"
-    | "runtime-file"
-    | "forge-installer";
+  readonly category: DownloadCategory;
 };
 
 /** A native extraction step. Source jar must already exist on disk. */

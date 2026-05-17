@@ -5,6 +5,7 @@ import { planLibraryDownloads } from "../install/libraries";
 import type { MetadataCache } from "../types/cache";
 import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
+import { DownloadCategories } from "../types/install";
 import type { AssetIndexDocument } from "../types/minecraft";
 import type { Target } from "../types/target";
 import {
@@ -78,7 +79,7 @@ export const verifyMinecraft = async (input: VerifyMinecraftInput): Promise<Veri
         directory,
         system: runtime.system,
         versionId: minecraft.version,
-        category: "library",
+        category: DownloadCategories.LIBRARY,
       });
       for (const action of libraryPlan.downloads) {
         record(

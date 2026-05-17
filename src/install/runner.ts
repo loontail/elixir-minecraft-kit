@@ -12,6 +12,8 @@ import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
 import {
   type DownloadAction,
+  DownloadCategories,
+  type DownloadCategory,
   type ExtractNativeAction,
   type InstallAction,
   InstallActionKinds,
@@ -46,17 +48,20 @@ export type RunInstallInput = {
 
 /** Download category → install phase mapping that runs each category as its own phase. */
 const DOWNLOAD_GROUPS: ReadonlyArray<{
-  readonly categories: ReadonlyArray<DownloadAction["category"]>;
+  readonly categories: ReadonlyArray<DownloadCategory>;
   readonly phase: InstallPhase;
 }> = [
-  { categories: ["runtime-file"], phase: InstallPhases.INSTALLING_RUNTIME },
-  { categories: ["client-jar"], phase: InstallPhases.DOWNLOADING_CLIENT_JAR },
-  { categories: ["library"], phase: InstallPhases.DOWNLOADING_LIBRARIES },
-  { categories: ["asset-index"], phase: InstallPhases.DOWNLOADING_ASSET_INDEX },
-  { categories: ["asset"], phase: InstallPhases.DOWNLOADING_ASSETS },
-  { categories: ["logging-config"], phase: InstallPhases.WRITING_FILES },
-  { categories: ["fabric-library"], phase: InstallPhases.INSTALLING_FABRIC },
-  { categories: ["forge-installer", "forge-library"], phase: InstallPhases.INSTALLING_FORGE },
+  { categories: [DownloadCategories.RUNTIME_FILE], phase: InstallPhases.INSTALLING_RUNTIME },
+  { categories: [DownloadCategories.CLIENT_JAR], phase: InstallPhases.DOWNLOADING_CLIENT_JAR },
+  { categories: [DownloadCategories.LIBRARY], phase: InstallPhases.DOWNLOADING_LIBRARIES },
+  { categories: [DownloadCategories.ASSET_INDEX], phase: InstallPhases.DOWNLOADING_ASSET_INDEX },
+  { categories: [DownloadCategories.ASSET], phase: InstallPhases.DOWNLOADING_ASSETS },
+  { categories: [DownloadCategories.LOGGING_CONFIG], phase: InstallPhases.WRITING_FILES },
+  { categories: [DownloadCategories.FABRIC_LIBRARY], phase: InstallPhases.INSTALLING_FABRIC },
+  {
+    categories: [DownloadCategories.FORGE_INSTALLER, DownloadCategories.FORGE_LIBRARY],
+    phase: InstallPhases.INSTALLING_FORGE,
+  },
 ];
 
 type InstallCounters = {

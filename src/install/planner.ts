@@ -2,7 +2,12 @@ import { targetPaths } from "../core/paths";
 import type { MetadataCache } from "../types/cache";
 import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
-import { type InstallAction, InstallActionKinds, type InstallPlan } from "../types/install";
+import {
+  DownloadCategories,
+  type InstallAction,
+  InstallActionKinds,
+  type InstallPlan,
+} from "../types/install";
 import { Loaders } from "../types/loader";
 import type { Target } from "../types/target";
 import { planAssetDownloads } from "./assets";
@@ -32,7 +37,7 @@ export const planInstall = async (input: PlanInstallInput): Promise<InstallPlan>
     target: targetPaths.versionJar(target.directory, target.minecraft.version),
     expectedSha1: target.minecraft.manifest.downloads.client.sha1,
     expectedSize: target.minecraft.manifest.downloads.client.size,
-    category: "client-jar",
+    category: DownloadCategories.CLIENT_JAR,
   });
 
   // 2. Vanilla version JSON (write).
@@ -48,7 +53,7 @@ export const planInstall = async (input: PlanInstallInput): Promise<InstallPlan>
     directory: target.directory,
     system: target.runtime.system,
     versionId: target.minecraft.version,
-    category: "library",
+    category: DownloadCategories.LIBRARY,
   });
   actions.push(...vanillaLibraries.downloads);
   actions.push(...vanillaLibraries.nativeExtractions);
@@ -72,7 +77,7 @@ export const planInstall = async (input: PlanInstallInput): Promise<InstallPlan>
       target: targetPaths.loggingConfig(target.directory, logging.file.id),
       expectedSha1: logging.file.sha1,
       expectedSize: logging.file.size,
-      category: "logging-config",
+      category: DownloadCategories.LOGGING_CONFIG,
     });
   }
 

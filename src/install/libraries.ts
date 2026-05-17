@@ -6,6 +6,7 @@ import { targetPaths } from "../core/paths";
 import { archDigit, evaluateRules, resolveArchPlaceholder } from "../core/rules";
 import {
   type DownloadAction,
+  type DownloadCategory,
   type ExtractNativeAction,
   InstallActionKinds,
 } from "../types/install";
@@ -29,7 +30,7 @@ export const planLibraryDownloads = (input: {
   readonly directory: string;
   readonly system: RuntimeSystem;
   readonly versionId: string;
-  readonly category: DownloadAction["category"];
+  readonly category: DownloadCategory;
 }): LibraryPlan => {
   const downloads: DownloadAction[] = [];
   const nativeExtractions: ExtractNativeAction[] = [];

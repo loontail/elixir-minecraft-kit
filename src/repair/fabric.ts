@@ -2,6 +2,7 @@ import { MinecraftKitError } from "../core/errors";
 import { targetPaths } from "../core/paths";
 import {
   type DownloadAction,
+  DownloadCategories,
   type InstallAction,
   InstallActionKinds,
   type WriteVersionJsonAction,
@@ -28,7 +29,7 @@ export const planFabricRepair = async (input: PlanFabricRepairInput): Promise<Re
   );
   return planAspectRepair(input, (action: InstallAction) => {
     if (action.kind === InstallActionKinds.DOWNLOAD_FILE) {
-      return (action as DownloadAction).category === "fabric-library";
+      return (action as DownloadAction).category === DownloadCategories.FABRIC_LIBRARY;
     }
     if (action.kind === InstallActionKinds.WRITE_VERSION_JSON) {
       return (action as WriteVersionJsonAction).path === fabricJsonPath;

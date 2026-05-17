@@ -3,7 +3,7 @@ import { targetPaths } from "../core/paths";
 import { fetchJson } from "../http/metadata";
 import type { MetadataCache } from "../types/cache";
 import type { HttpClient } from "../types/http";
-import { type DownloadAction, InstallActionKinds } from "../types/install";
+import { type DownloadAction, DownloadCategories, InstallActionKinds } from "../types/install";
 import type { ResolvedRuntime, RuntimeFilesManifest } from "../types/runtime";
 
 /** Plan the per-file downloads required to install a runtime. */
@@ -37,7 +37,7 @@ export const planRuntimeDownloads = async (input: {
       target,
       expectedSha1: entry.downloads.raw.sha1,
       expectedSize: entry.downloads.raw.size,
-      category: "runtime-file",
+      category: DownloadCategories.RUNTIME_FILE,
     });
   }
   return { actions, manifest };
