@@ -1,18 +1,31 @@
+// Public API of @loontail/minecraft-kit. Exports are grouped by concern; consumers should
+// import what they need from `@loontail/minecraft-kit` directly. The `./cli` entry point
+// is a separate binary and is NOT re-exported here.
+//
+// Stability: any name re-exported below is part of the published API surface and is
+// covered by semver. Names not re-exported here are internal and may change between
+// patch releases.
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Kit entry point + composed API
+// ─────────────────────────────────────────────────────────────────────────────────────
 export { MinecraftKit } from "./kit";
-export {
-  resolveLaunchVersion,
-  pickClientJarVersionId,
-  type ResolvedLaunchVersion,
-} from "./launch/version-resolution";
-export { targetPaths } from "./core/paths";
 export type {
   InstallRunOptions,
   MinecraftKitOptions,
-  RepairPlanOptions,
   RepairAspect,
+  RepairPlanOptions,
   VerifyOperationOptions,
 } from "./kit";
-export { PauseController } from "./core/pause-controller";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Errors + error codes (single error class for every public API)
+// ─────────────────────────────────────────────────────────────────────────────────────
+export { isErrorCode, isMinecraftKitError, MinecraftKitError } from "./core/errors";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Targets — resolve, list, and validate a Minecraft + loader + runtime triple
+// ─────────────────────────────────────────────────────────────────────────────────────
 export { TargetsApi } from "./targets/index";
 export type {
   TargetListInput,
@@ -20,50 +33,37 @@ export type {
   TargetResolveInput,
   TargetsApiContext,
 } from "./targets/index";
-export type { ResolverContext } from "./versions/context";
-export { MinecraftVersionsApi } from "./versions/minecraft";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Versions APIs (Minecraft / Fabric / Forge / Java runtime)
+// ─────────────────────────────────────────────────────────────────────────────────────
 export { FabricVersionsApi } from "./versions/fabric";
+export type { FabricListInput, FabricResolveInput } from "./versions/fabric";
 export { ForgeVersionsApi } from "./versions/forge";
-export { RuntimeVersionsApi, parseMajorVersion } from "./versions/runtime";
+export type { ForgeListInput, ForgeResolveInput } from "./versions/forge";
+export { MinecraftVersionsApi } from "./versions/minecraft";
 export type {
-  MinecraftListInput,
-  MinecraftLatestInput,
   MinecraftGetInput,
+  MinecraftLatestInput,
+  MinecraftListInput,
 } from "./versions/minecraft";
-export type { FabricResolveInput, FabricListInput } from "./versions/fabric";
-export type { ForgeResolveInput, ForgeListInput } from "./versions/forge";
+export { parseMajorVersion, RuntimeVersionsApi } from "./versions/runtime";
 export type {
+  RuntimeListEntry,
   RuntimeListInput,
   RuntimeResolveInput,
-  RuntimeListEntry,
 } from "./versions/runtime";
-export type { MemoryCacheOptions } from "./http/cache";
-export type { DetectSystemInput } from "./core/system";
+export type { ResolverContext } from "./versions/context";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Install — plan a runtime/standalone install + observe progress
+// ─────────────────────────────────────────────────────────────────────────────────────
 export {
-  verifyMinecraft,
-  verifyFabric,
-  verifyForge,
-  verifyRuntime,
-  type VerifyMinecraftInput,
-  type VerifyFabricInput,
-  type VerifyForgeInput,
-  type VerifyRuntimeInput,
-} from "./verify/index";
-export {
-  planMinecraftRepair,
-  planFabricRepair,
-  planForgeRepair,
-  planRuntimeRepair,
-  runRepair,
-  repairAll,
-  type PlanMinecraftRepairInput,
-  type PlanFabricRepairInput,
-  type PlanForgeRepairInput,
-  type PlanRuntimeRepairInput,
-  type RunRepairInput,
-  type RepairAllInput,
-  type RepairAllReport,
-} from "./repair/index";
+  planRuntimeInstall,
+  planStandaloneRuntimeInstall,
+  type PlanRuntimeInstallInput,
+  type PlanStandaloneRuntimeInstallInput,
+} from "./install/runtime-install";
 export {
   createInstallProgressTracker,
   InstallStages,
@@ -72,27 +72,78 @@ export {
   type ProgressSnapshot,
   type ProgressTrackerOptions,
 } from "./install/progress-tracker";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Verify + repair — detect missing/corrupt files and re-derive an install plan
+// ─────────────────────────────────────────────────────────────────────────────────────
 export {
-  planRuntimeInstall,
-  planStandaloneRuntimeInstall,
-  type PlanRuntimeInstallInput,
-  type PlanStandaloneRuntimeInstallInput,
-} from "./install/runtime-install";
-export { MinecraftKitError, isMinecraftKitError, isErrorCode } from "./core/errors";
-export { detectSystem } from "./core/system";
-export { offlineUuidFor, stripUuidDashes } from "./core/uuid";
-export { createMemoryCache } from "./http/cache";
-export { FetchHttpClient } from "./http/client";
+  type VerifyFabricInput,
+  type VerifyForgeInput,
+  verifyFabric,
+  verifyForge,
+  verifyMinecraft,
+  type VerifyMinecraftInput,
+  verifyRuntime,
+  type VerifyRuntimeInput,
+} from "./verify/index";
+export {
+  planFabricRepair,
+  planForgeRepair,
+  planMinecraftRepair,
+  type PlanFabricRepairInput,
+  type PlanForgeRepairInput,
+  type PlanMinecraftRepairInput,
+  type PlanRuntimeRepairInput,
+  planRuntimeRepair,
+  type RepairAllInput,
+  type RepairAllReport,
+  repairAll,
+  type RunRepairInput,
+  runRepair,
+} from "./repair/index";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Launch — resolve the on-disk version JSON before composing JVM args
+// ─────────────────────────────────────────────────────────────────────────────────────
+export {
+  pickClientJarVersionId,
+  resolveLaunchVersion,
+  type ResolvedLaunchVersion,
+} from "./launch/version-resolution";
 export { ChildProcessSpawner } from "./launch/spawner";
-export { silentLogger, consoleLogger, scopedLogger } from "./core/logger";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Authentication — Microsoft OAuth device-code → Xbox → Minecraft
+// ─────────────────────────────────────────────────────────────────────────────────────
 export {
-  MojangAuthApi,
-  toOnlineAuth,
   CLIENT_ID_ENV_VAR,
   type LoginOptions,
+  MojangAuthApi,
+  type PollDeviceCodeOptions,
   type RefreshOptions,
   type StartDeviceCodeOptions,
-  type PollDeviceCodeOptions,
+  toOnlineAuth,
 } from "./auth/index";
-export * from "./types/index";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// HTTP + cache abstractions consumers plug into MinecraftKit
+// ─────────────────────────────────────────────────────────────────────────────────────
+export { createMemoryCache } from "./http/cache";
+export type { MemoryCacheOptions } from "./http/cache";
+export { FetchHttpClient } from "./http/client";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Utilities — loggers, system detection, path layout, pause control, UUID helpers
+// ─────────────────────────────────────────────────────────────────────────────────────
+export { consoleLogger, scopedLogger, silentLogger } from "./core/logger";
+export { detectSystem } from "./core/system";
+export type { DetectSystemInput } from "./core/system";
+export { offlineUuidFor, stripUuidDashes } from "./core/uuid";
+export { targetPaths } from "./core/paths";
+export { PauseController } from "./core/pause-controller";
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// Public type surface (events, manifests, error codes, enums, etc.)
+// ─────────────────────────────────────────────────────────────────────────────────────
 export * from "./constants/index";
+export * from "./types/index";
