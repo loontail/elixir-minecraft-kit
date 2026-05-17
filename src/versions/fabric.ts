@@ -1,5 +1,5 @@
 import { ApiEndpoints } from "../constants/api";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { fetchJson } from "../http/metadata";
 import type {
   FabricCompatibilityEntry,
@@ -57,7 +57,7 @@ export class FabricVersionsApi {
     });
     if (loaders.length === 0) {
       throw new MinecraftKitError(
-        "MANIFEST_NOT_FOUND",
+        MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
         `No Fabric loader available for Minecraft ${input.minecraftVersion}`,
         { context: { version: input.minecraftVersion } },
       );
@@ -65,7 +65,7 @@ export class FabricVersionsApi {
     const chosen = pickFabricLoader(loaders, input);
     if (!chosen) {
       throw new MinecraftKitError(
-        "MANIFEST_NOT_FOUND",
+        MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
         `Fabric loader version not found: ${input.loaderVersion ?? "(none matched)"}`,
         {
           context: input.loaderVersion !== undefined ? { version: input.loaderVersion } : {},

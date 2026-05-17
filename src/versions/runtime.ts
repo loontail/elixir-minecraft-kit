@@ -1,7 +1,7 @@
 import { ApiEndpoints } from "../constants/api";
 import { RUNTIME_PLATFORM_KEYS } from "../constants/platform";
 import { FALLBACK_COMPONENT } from "../constants/runtime";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { fetchJson } from "../http/metadata";
 import { RuntimePreference, type RuntimePreferenceKind } from "../types/runtime";
 import type { ResolvedRuntime, RuntimeIndex, RuntimeIndexEntry } from "../types/runtime";
@@ -65,7 +65,7 @@ export class RuntimeVersionsApi {
     const platform = index[platformKey];
     if (!platform) {
       throw new MinecraftKitError(
-        "RUNTIME_UNSUPPORTED_PLATFORM",
+        MinecraftKitErrorCodes.RUNTIME_UNSUPPORTED_PLATFORM,
         `No runtimes published for platform: ${platformKey}`,
         { context: { platform: platformKey } },
       );
@@ -82,7 +82,7 @@ export class RuntimeVersionsApi {
         }
       }
       throw new MinecraftKitError(
-        "RUNTIME_NOT_FOUND",
+        MinecraftKitErrorCodes.RUNTIME_NOT_FOUND,
         `Runtime component ${component} not available on ${platformKey}`,
         { context: { platform: platformKey, version: component } },
       );
@@ -90,7 +90,7 @@ export class RuntimeVersionsApi {
     const entry = candidates[0];
     if (!entry) {
       throw new MinecraftKitError(
-        "RUNTIME_NOT_FOUND",
+        MinecraftKitErrorCodes.RUNTIME_NOT_FOUND,
         `Runtime component ${component} list is empty for ${platformKey}`,
         { context: { platform: platformKey, version: component } },
       );

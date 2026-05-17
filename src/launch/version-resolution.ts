@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { fileExists, listChildDirectories, readText } from "../core/fs";
 import { parseJsonOrUndefined, parseJsonStrict } from "../core/json";
 import { mergeManifest } from "../core/manifest-merge";
@@ -54,7 +54,7 @@ export const pickClientJarVersionId = async (
   const fallback = chain.at(-1);
   if (fallback === undefined) {
     throw new MinecraftKitError(
-      "MANIFEST_NOT_FOUND",
+      MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
       "Cannot resolve a client jar version id from an empty inheritsFrom chain",
     );
   }
@@ -85,7 +85,7 @@ const pickInstalledVersionId = async (target: Target): Promise<string> => {
     }
   }
   throw new MinecraftKitError(
-    "MANIFEST_NOT_FOUND",
+    MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
     `Could not find an installed version JSON for target ${target.id}`,
     { context: { targetId: target.id, loaderType: target.loader.type } },
   );
@@ -99,7 +99,7 @@ const loadAndMerge = async (
   const versionJsonPath = targetPaths.versionJson(directory, versionId);
   const text = await readText(versionJsonPath);
   const child = parseJsonStrict<MinecraftVersionManifest>(text, {
-    code: "MANIFEST_INVALID",
+    code: MinecraftKitErrorCodes.MANIFEST_INVALID,
     message: `Version JSON is not valid JSON: ${versionJsonPath}`,
     context: { filePath: versionJsonPath },
   });

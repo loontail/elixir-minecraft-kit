@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { fileExists, readText } from "../core/fs";
 import { parseJsonOrUndefined } from "../core/json";
 import { planLibraryDownloads } from "../install/libraries";
@@ -39,7 +39,7 @@ export type VerifyForgeInput = {
 export const verifyForge = async (input: VerifyForgeInput): Promise<VerificationResult> => {
   if (input.target.loader.type !== Loaders.FORGE) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `verify.forge requires a Forge target (got ${input.target.loader.type})`,
     );
   }

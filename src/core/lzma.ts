@@ -1,5 +1,5 @@
 import lzmaModule from "lzma";
-import { MinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "./errors";
 
 type LzmaApi = {
   decompress(
@@ -21,14 +21,23 @@ export const decodeLzma = (input: Uint8Array): Promise<Uint8Array> => {
     lzma.decompress(input, (result, error) => {
       if (error) {
         reject(
-          new MinecraftKitError("LZMA_DECODE_ERROR", "Failed to decompress LZMA1 stream", {
-            cause: error,
-          }),
+          new MinecraftKitError(
+            MinecraftKitErrorCodes.LZMA_DECODE_ERROR,
+            "Failed to decompress LZMA1 stream",
+            {
+              cause: error,
+            },
+          ),
         );
         return;
       }
       if (result === null || result === undefined) {
-        reject(new MinecraftKitError("LZMA_DECODE_ERROR", "LZMA decoder returned no output"));
+        reject(
+          new MinecraftKitError(
+            MinecraftKitErrorCodes.LZMA_DECODE_ERROR,
+            "LZMA decoder returned no output",
+          ),
+        );
         return;
       }
       resolve(result instanceof Uint8Array ? result : Uint8Array.from(result));

@@ -3,7 +3,7 @@ import {
   HTTP_RETRY_BACKOFF_CAP_MS,
   HTTP_RETRY_MAX,
 } from "../constants/defaults";
-import { MinecraftKitError, isMinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes, isMinecraftKitError } from "./errors";
 
 /** Inputs passed to {@link withRetry}. */
 export type RetryOptions = {
@@ -36,7 +36,7 @@ export const abortableSleep = (ms: number, signal?: AbortSignal): Promise<void> 
 };
 
 const toAbortError = (signal?: AbortSignal): Error => {
-  return new MinecraftKitError("NETWORK_ABORTED", "Operation aborted", {
+  return new MinecraftKitError(MinecraftKitErrorCodes.NETWORK_ABORTED, "Operation aborted", {
     context: { reason: signal?.reason },
   });
 };

@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { HTTP_RETRY_MAX } from "../constants/defaults";
 import { checkpoint } from "../core/abort";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { ensureDir } from "../core/fs";
 import type { PauseController } from "../core/pause-controller";
 import { isHttpRetryable, withRetry } from "../core/retry";
@@ -107,7 +107,7 @@ export const downloadFile = async (
       } catch (cause) {
         await safeUnlink(tmp);
         throw new MinecraftKitError(
-          "FILESYSTEM_WRITE_ERROR",
+          MinecraftKitErrorCodes.FILESYSTEM_WRITE_ERROR,
           `Failed to write download: ${input.target}`,
           { cause, context: { filePath: input.target, url: input.url } },
         );
@@ -115,13 +115,17 @@ export const downloadFile = async (
       const computedSha1 = hash.digest("hex");
       if (input.expectedSize !== undefined && bytesDownloaded !== input.expectedSize) {
         await safeUnlink(tmp);
-        throw new MinecraftKitError("INTEGRITY_SIZE_MISMATCH", `Size mismatch for ${input.url}`, {
-          context: {
-            url: input.url,
-            expectedSize: input.expectedSize,
-            actualSize: bytesDownloaded,
+        throw new MinecraftKitError(
+          MinecraftKitErrorCodes.INTEGRITY_SIZE_MISMATCH,
+          `Size mismatch for ${input.url}`,
+          {
+            context: {
+              url: input.url,
+              expectedSize: input.expectedSize,
+              actualSize: bytesDownloaded,
+            },
           },
-        });
+        );
       }
       if (input.expectedSha1 !== undefined && computedSha1 !== input.expectedSha1) {
         await safeUnlink(tmp);
@@ -132,20 +136,24 @@ export const downloadFile = async (
           expected: input.expectedSha1,
           actual: computedSha1,
         });
-        throw new MinecraftKitError("INTEGRITY_HASH_MISMATCH", `SHA-1 mismatch for ${input.url}`, {
-          context: {
-            url: input.url,
-            expectedHash: input.expectedSha1,
-            actualHash: computedSha1,
+        throw new MinecraftKitError(
+          MinecraftKitErrorCodes.INTEGRITY_HASH_MISMATCH,
+          `SHA-1 mismatch for ${input.url}`,
+          {
+            context: {
+              url: input.url,
+              expectedHash: input.expectedSha1,
+              actualHash: computedSha1,
+            },
           },
-        });
+        );
       }
       try {
         await fs.rename(tmp, input.target);
       } catch (cause) {
         await safeUnlink(tmp);
         throw new MinecraftKitError(
-          "FILESYSTEM_WRITE_ERROR",
+          MinecraftKitErrorCodes.FILESYSTEM_WRITE_ERROR,
           `Failed to finalize download: ${input.target}`,
           { cause, context: { filePath: input.target } },
         );
@@ -221,20 +229,24 @@ const assertSafeDownloadUrl = (url: string, allowList: readonly string[] | undef
   try {
     parsed = new URL(url);
   } catch {
-    throw new MinecraftKitError("INVALID_INPUT", `Download URL is not parseable: ${url}`, {
-      context: { url },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.INVALID_INPUT,
+      `Download URL is not parseable: ${url}`,
+      {
+        context: { url },
+      },
+    );
   }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `Download URL must use http(s); refusing scheme ${parsed.protocol}`,
       { context: { url, scheme: parsed.protocol } },
     );
   }
   if (allowList !== undefined && !matchesHostAllowList(parsed.hostname, allowList)) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `Download URL host is not in the allow-list: ${parsed.hostname}`,
       { context: { url, host: parsed.hostname } },
     );

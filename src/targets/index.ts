@@ -1,6 +1,6 @@
 import path from "node:path";
 import { ASSETS_DIR, LIBRARIES_DIR, RUNTIMES_DIR, VERSIONS_DIR } from "../constants/files";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { dirExists, fileExists, listChildDirectories } from "../core/fs";
 import { Loaders, type VersionPreferenceKind } from "../types/loader";
 import { RuntimePreference, type RuntimePreferenceKind } from "../types/runtime";
@@ -77,21 +77,27 @@ export class TargetsApi {
   /** Build a {@link Target} from already-resolved components. */
   create(input: TargetCreateInput): Target {
     if (!input.id) {
-      throw new MinecraftKitError("INVALID_INPUT", "Target id must be non-empty");
+      throw new MinecraftKitError(
+        MinecraftKitErrorCodes.INVALID_INPUT,
+        "Target id must be non-empty",
+      );
     }
     if (!input.directory) {
-      throw new MinecraftKitError("INVALID_INPUT", "Target directory must be non-empty");
+      throw new MinecraftKitError(
+        MinecraftKitErrorCodes.INVALID_INPUT,
+        "Target directory must be non-empty",
+      );
     }
     if (!path.isAbsolute(input.directory)) {
       throw new MinecraftKitError(
-        "INVALID_INPUT",
+        MinecraftKitErrorCodes.INVALID_INPUT,
         `Target directory must be an absolute path, got: ${input.directory}`,
         { context: { directory: input.directory } },
       );
     }
     if (input.loader.minecraftVersion !== input.minecraft.version) {
       throw new MinecraftKitError(
-        "INVALID_INPUT",
+        MinecraftKitErrorCodes.INVALID_INPUT,
         `Loader Minecraft version (${input.loader.minecraftVersion}) does not match resolved Minecraft (${input.minecraft.version})`,
         {
           context: {

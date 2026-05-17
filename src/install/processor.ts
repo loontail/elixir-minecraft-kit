@@ -1,6 +1,6 @@
 import { MAX_PROCESSOR_STDERR_LINES } from "../constants/defaults";
 import { readJarMainClass } from "../core/archive";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { sha1OfFile } from "../core/hash";
 import type { ProgressListener } from "../types/events";
 import type { RunForgeProcessorAction } from "../types/install";
@@ -24,7 +24,7 @@ export const runProcessor = async (input: RunProcessorInput): Promise<void> => {
   const exit = await spawnProcessor(input, mainClass);
   if (exit.code !== 0) {
     throw new MinecraftKitError(
-      "FORGE_PROCESSOR_FAILED",
+      MinecraftKitErrorCodes.FORGE_PROCESSOR_FAILED,
       `Forge processor exited with code ${exit.code ?? "(signal)"}: ${mainClass}`,
       {
         context: {
@@ -53,7 +53,7 @@ const resolveProcessorMainClass = async (action: RunForgeProcessorAction): Promi
   const processorJar = action.classpath[0];
   if (processorJar === undefined) {
     throw new MinecraftKitError(
-      "FORGE_INSTALLER_INVALID",
+      MinecraftKitErrorCodes.FORGE_INSTALLER_INVALID,
       "Forge processor has an empty classpath",
       { context: { processorIndex: action.index } },
     );
@@ -61,7 +61,7 @@ const resolveProcessorMainClass = async (action: RunForgeProcessorAction): Promi
   const mainClass = await readJarMainClass(processorJar);
   if (!mainClass) {
     throw new MinecraftKitError(
-      "FORGE_INSTALLER_INVALID",
+      MinecraftKitErrorCodes.FORGE_INSTALLER_INVALID,
       `Forge processor jar has no Main-Class: ${processorJar}`,
       { context: { filePath: processorJar } },
     );
@@ -106,7 +106,7 @@ const verifyProcessorOutputs = async (
     const sha1 = await sha1OfFile(outputPath);
     if (sha1 !== expectedSha1) {
       throw new MinecraftKitError(
-        "FORGE_PROCESSOR_FAILED",
+        MinecraftKitErrorCodes.FORGE_PROCESSOR_FAILED,
         `Processor output hash mismatch: ${outputPath}`,
         { context: { filePath: outputPath, expectedHash: expectedSha1, actualHash: sha1 } },
       );

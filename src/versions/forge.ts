@@ -1,5 +1,5 @@
 import { ApiEndpoints } from "../constants/api";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { parseMavenMetadataVersions } from "../core/xml";
 import { fetchJson, fetchText } from "../http/metadata";
 import type { ForgeBuildSummary, ResolvedForgeLoader } from "../types/forge";
@@ -52,7 +52,7 @@ export class ForgeVersionsApi {
     });
     if (builds.length === 0) {
       throw new MinecraftKitError(
-        "MANIFEST_NOT_FOUND",
+        MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
         `No Forge build available for Minecraft ${input.minecraftVersion}`,
         { context: { version: input.minecraftVersion } },
       );
@@ -60,7 +60,7 @@ export class ForgeVersionsApi {
     const chosen = pickForge(builds, input);
     if (!chosen) {
       throw new MinecraftKitError(
-        "MANIFEST_NOT_FOUND",
+        MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
         `Forge build not found for ${input.minecraftVersion}: ${input.forgeVersion ?? "(none matched)"}`,
         {
           context: input.forgeVersion !== undefined ? { version: input.forgeVersion } : {},

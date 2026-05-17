@@ -9,7 +9,7 @@ import {
   EXTRACTION_MAX_FILE_SIZE,
   EXTRACTION_MAX_TOTAL_SIZE,
 } from "../constants/limits";
-import { MinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "./errors";
 import { assertWithinRoot, atomicWrite, chmodExecutable, ensureDir } from "./fs";
 
 /** A single zip entry exposed to callers. */
@@ -30,10 +30,14 @@ export const openZip = (filePath: string): Promise<ZipReader> => {
     yauzl.open(filePath, { lazyEntries: true, autoClose: false }, (err, zipFile) => {
       if (err || !zipFile) {
         reject(
-          new MinecraftKitError("ARCHIVE_INVALID", `Failed to open archive: ${filePath}`, {
-            cause: err,
-            context: { filePath },
-          }),
+          new MinecraftKitError(
+            MinecraftKitErrorCodes.ARCHIVE_INVALID,
+            `Failed to open archive: ${filePath}`,
+            {
+              cause: err,
+              context: { filePath },
+            },
+          ),
         );
         return;
       }
@@ -59,7 +63,7 @@ export class ZipReader {
       count++;
       if (count > EXTRACTION_MAX_ENTRY_COUNT) {
         throw new MinecraftKitError(
-          "ARCHIVE_TOO_LARGE",
+          MinecraftKitErrorCodes.ARCHIVE_TOO_LARGE,
           `Archive contains too many entries: ${this.filePath}`,
           { context: { filePath: this.filePath } },
         );
@@ -94,10 +98,14 @@ export class ZipReader {
       const onError = (err: unknown): void => {
         cleanup();
         reject(
-          new MinecraftKitError("ARCHIVE_INVALID", "Failed to read archive entry", {
-            cause: err,
-            context: { filePath: this.filePath },
-          }),
+          new MinecraftKitError(
+            MinecraftKitErrorCodes.ARCHIVE_INVALID,
+            "Failed to read archive entry",
+            {
+              cause: err,
+              context: { filePath: this.filePath },
+            },
+          ),
         );
       };
       const cleanup = (): void => {
@@ -123,7 +131,7 @@ export class ZipReader {
       readBuffer: async () => {
         if (entry.uncompressedSize > EXTRACTION_MAX_FILE_SIZE) {
           throw new MinecraftKitError(
-            "ARCHIVE_TOO_LARGE",
+            MinecraftKitErrorCodes.ARCHIVE_TOO_LARGE,
             `Archive entry exceeds size cap: ${name}`,
             { context: { filePath: this.filePath, entryName: name, size: entry.uncompressedSize } },
           );
@@ -133,7 +141,7 @@ export class ZipReader {
           entry.uncompressedSize / entry.compressedSize > EXTRACTION_MAX_COMPRESSION_RATIO
         ) {
           throw new MinecraftKitError(
-            "ARCHIVE_TOO_LARGE",
+            MinecraftKitErrorCodes.ARCHIVE_TOO_LARGE,
             `Archive entry exceeds compression-ratio cap: ${name}`,
             { context: { filePath: this.filePath, entryName: name } },
           );
@@ -160,7 +168,7 @@ const openStream = (
       if (err || !stream) {
         reject(
           new MinecraftKitError(
-            "ARCHIVE_INVALID",
+            MinecraftKitErrorCodes.ARCHIVE_INVALID,
             `Failed to open archive entry: ${entry.fileName}`,
             { cause: err, context: { filePath: archivePath, entryName: entry.fileName } },
           ),
@@ -201,14 +209,14 @@ export const extractAllToDir = async (
       totalSize += entry.uncompressedSize;
       if (totalSize > EXTRACTION_MAX_TOTAL_SIZE) {
         throw new MinecraftKitError(
-          "ARCHIVE_TOO_LARGE",
+          MinecraftKitErrorCodes.ARCHIVE_TOO_LARGE,
           `Archive total size cap exceeded: ${zipPath}`,
           { context: { filePath: zipPath } },
         );
       }
       if (entry.uncompressedSize > EXTRACTION_MAX_FILE_SIZE) {
         throw new MinecraftKitError(
-          "ARCHIVE_TOO_LARGE",
+          MinecraftKitErrorCodes.ARCHIVE_TOO_LARGE,
           `Archive entry exceeds size cap: ${entry.name}`,
           { context: { filePath: zipPath, entryName: entry.name } },
         );
@@ -260,7 +268,7 @@ export const assertSafeEntryName = (name: string): void => {
 
 const rejectEntry = (name: string, reason: string): MinecraftKitError => {
   return new MinecraftKitError(
-    "ARCHIVE_ENTRY_REJECTED",
+    MinecraftKitErrorCodes.ARCHIVE_ENTRY_REJECTED,
     `Archive entry rejected (${reason}): ${name}`,
     { context: { entryName: name, reason } },
   );
@@ -289,9 +297,13 @@ export const extractSingleEntry = async (
 ): Promise<void> => {
   const buffer = await readEntryBuffer(zipPath, entryName);
   if (!buffer) {
-    throw new MinecraftKitError("ARCHIVE_INVALID", `Archive entry not found: ${entryName}`, {
-      context: { filePath: zipPath, entryName },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.ARCHIVE_INVALID,
+      `Archive entry not found: ${entryName}`,
+      {
+        context: { filePath: zipPath, entryName },
+      },
+    );
   }
   await atomicWrite(destination, buffer);
 };

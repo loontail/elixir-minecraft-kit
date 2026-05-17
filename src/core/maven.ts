@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "./errors";
 
 /**
  * Parsed Maven coordinate of the form `group:artifact:version[:classifier][@extension]`.
@@ -24,14 +24,18 @@ export const parseMavenCoordinate = (input: string): MavenCoordinate => {
   const body = atIndex === -1 ? trimmed : trimmed.slice(0, atIndex);
   const parts = body.split(":");
   if (parts.length < 3 || parts.length > 4) {
-    throw new MinecraftKitError("INVALID_INPUT", `Invalid Maven coordinate: ${input}`, {
-      context: { input },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.INVALID_INPUT,
+      `Invalid Maven coordinate: ${input}`,
+      {
+        context: { input },
+      },
+    );
   }
   const [group, artifact, version, classifier] = parts as [string, string, string, string?];
   if (!group || !artifact || !version) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `Invalid Maven coordinate (missing component): ${input}`,
       { context: { input } },
     );

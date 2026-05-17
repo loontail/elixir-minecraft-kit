@@ -1,5 +1,5 @@
 import { ApiEndpoints } from "../constants/api";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { isMinecraftVersionManifestShape } from "../core/guards";
 import { fetchJson } from "../http/metadata";
 import type {
@@ -52,7 +52,7 @@ export class MinecraftVersionsApi {
     const summary = root.versions.find((v) => v.id === targetId);
     if (!summary) {
       throw new MinecraftKitError(
-        "MANIFEST_NOT_FOUND",
+        MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
         `Latest version ${targetId} not found in manifest`,
       );
     }
@@ -65,7 +65,7 @@ export class MinecraftVersionsApi {
     const summary = root.versions.find((v) => v.id === input.version);
     if (!summary) {
       throw new MinecraftKitError(
-        "MANIFEST_NOT_FOUND",
+        MinecraftKitErrorCodes.MANIFEST_NOT_FOUND,
         `Minecraft version not found: ${input.version}`,
         { context: { version: input.version } },
       );
@@ -83,7 +83,7 @@ export class MinecraftVersionsApi {
     });
     if (!isMinecraftVersionManifestShape(raw)) {
       throw new MinecraftKitError(
-        "MANIFEST_INVALID",
+        MinecraftKitErrorCodes.MANIFEST_INVALID,
         `Per-version manifest does not match the expected shape: ${summary.id}`,
         { context: { version: summary.id, url: summary.url } },
       );

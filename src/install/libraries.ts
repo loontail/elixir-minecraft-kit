@@ -1,6 +1,6 @@
 import path from "node:path";
 import { DEFAULT_LIBRARY_REPOSITORY } from "../constants/maven";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { mavenRelativePathFor, parseMavenCoordinate } from "../core/maven";
 import { targetPaths } from "../core/paths";
 import { archDigit, evaluateRules, resolveArchPlaceholder } from "../core/rules";
@@ -146,9 +146,13 @@ const mavenArtifactFromCoord = (coord: string, baseUrl: string): ArtifactDescrip
   const relativePath = mavenRelativePathFor(coord);
   const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   if (!relativePath) {
-    throw new MinecraftKitError("MANIFEST_INVALID", `Invalid library coordinate: ${coord}`, {
-      context: { input: coord },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.MANIFEST_INVALID,
+      `Invalid library coordinate: ${coord}`,
+      {
+        context: { input: coord },
+      },
+    );
   }
   return {
     relativePath,

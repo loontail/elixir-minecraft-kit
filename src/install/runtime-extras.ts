@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { ensureDir } from "../core/fs";
 import { targetPaths } from "../core/paths";
 import type { ResolvedRuntime, RuntimeFilesManifest } from "../types/runtime";
@@ -44,7 +44,7 @@ const unlinkIfPresent = async (target: string): Promise<void> => {
   } catch (cause) {
     if (isNotFound(cause)) return;
     throw new MinecraftKitError(
-      "FILESYSTEM_WRITE_ERROR",
+      MinecraftKitErrorCodes.FILESYSTEM_WRITE_ERROR,
       `Failed to remove stale runtime entry: ${target}`,
       { cause, context: { filePath: target } },
     );
@@ -69,7 +69,7 @@ const createLinkOrCopy = async (
       await fs.copyFile(absoluteSource, destination);
     } catch (copyError) {
       throw new MinecraftKitError(
-        "FILESYSTEM_WRITE_ERROR",
+        MinecraftKitErrorCodes.FILESYSTEM_WRITE_ERROR,
         `Failed to materialize runtime entry: ${destination}`,
         {
           cause: copyError,

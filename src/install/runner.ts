@@ -2,7 +2,7 @@ import pLimit from "p-limit";
 import { DOWNLOAD_CONCURRENCY } from "../constants/defaults";
 import { checkpoint as runCheckpoint } from "../core/abort";
 import { extractAllToDir } from "../core/archive";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { atomicWrite } from "../core/fs";
 import { targetPaths } from "../core/paths";
 import type { PauseController } from "../core/pause-controller";
@@ -264,7 +264,7 @@ const runProcessorsStage = async (
   const target = ctx.input.plan.target;
   if (target.loader?.type !== Loaders.FORGE) {
     throw new MinecraftKitError(
-      "FORGE_PROCESSOR_FAILED",
+      MinecraftKitErrorCodes.FORGE_PROCESSOR_FAILED,
       "Forge processors planned for a non-Forge target",
     );
   }

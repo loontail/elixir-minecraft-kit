@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "./errors";
 import type { PauseController } from "./pause-controller";
 
 /**
@@ -21,7 +21,7 @@ export type CheckpointSources = {
  */
 export const assertNotAborted = (signal: AbortSignal | undefined, message: string): void => {
   if (signal?.aborted) {
-    throw new MinecraftKitError("LAUNCH_ABORTED", message);
+    throw new MinecraftKitError(MinecraftKitErrorCodes.LAUNCH_ABORTED, message);
   }
 };
 

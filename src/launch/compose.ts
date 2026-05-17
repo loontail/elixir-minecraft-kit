@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { silentLogger } from "../core/logger";
 import { targetPaths } from "../core/paths";
 import type { LaunchComposition, LaunchOptions } from "../types/launch";
@@ -21,7 +21,7 @@ export const composeLaunch = async (input: ComposeLaunchInput): Promise<LaunchCo
   const { target, options } = input;
   if (!options.auth.username || options.auth.username.length === 0) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `Auth username must be non-empty (target ${target.id})`,
       { context: { targetId: target.id } },
     );

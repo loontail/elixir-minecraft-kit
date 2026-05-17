@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import type { HttpClient } from "../types/http";
 import type { Logger } from "../types/logger";
 
@@ -53,15 +53,19 @@ export const authenticateXbl = async (input: {
       ...(input.signal !== undefined ? { signal: input.signal } : {}),
     });
   } catch (cause) {
-    throw new MinecraftKitError("AUTH_XBOX_FAILED", "Xbox Live authentication failed.", {
-      cause,
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.AUTH_XBOX_FAILED,
+      "Xbox Live authentication failed.",
+      {
+        cause,
+      },
+    );
   }
   const parsed = (await response.json()) as XboxResponse;
   const userHash = parsed.DisplayClaims?.xui?.[0]?.uhs;
   if (!parsed.Token || !userHash) {
     throw new MinecraftKitError(
-      "AUTH_XBOX_FAILED",
+      MinecraftKitErrorCodes.AUTH_XBOX_FAILED,
       "Xbox Live authentication returned an incomplete response.",
     );
   }
@@ -97,13 +101,13 @@ export const authenticateXsts = async (input: {
   });
   if (response.status === 401) {
     const err = (await response.json().catch(() => ({}))) as XstsErrorResponse;
-    throw new MinecraftKitError("AUTH_XSTS_FAILED", explainXErr(err.XErr), {
+    throw new MinecraftKitError(MinecraftKitErrorCodes.AUTH_XSTS_FAILED, explainXErr(err.XErr), {
       context: { xerr: err.XErr ?? null, message: err.Message ?? null },
     });
   }
   if (response.status < 200 || response.status >= 300) {
     throw new MinecraftKitError(
-      "AUTH_XSTS_FAILED",
+      MinecraftKitErrorCodes.AUTH_XSTS_FAILED,
       `XSTS authorization failed with HTTP ${response.status}.`,
       { context: { httpStatus: response.status } },
     );
@@ -112,7 +116,7 @@ export const authenticateXsts = async (input: {
   const userHash = parsed.DisplayClaims?.xui?.[0]?.uhs;
   if (!parsed.Token || !userHash) {
     throw new MinecraftKitError(
-      "AUTH_XSTS_FAILED",
+      MinecraftKitErrorCodes.AUTH_XSTS_FAILED,
       "XSTS authorization returned an incomplete response.",
     );
   }

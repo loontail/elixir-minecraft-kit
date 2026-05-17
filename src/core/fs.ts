@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { MinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "./errors";
 
 /** Ensure a directory exists, creating intermediate directories as needed. */
 export const ensureDir = async (directory: string): Promise<void> => {
@@ -9,7 +9,7 @@ export const ensureDir = async (directory: string): Promise<void> => {
     await fs.mkdir(directory, { recursive: true });
   } catch (cause) {
     throw new MinecraftKitError(
-      "FILESYSTEM_WRITE_ERROR",
+      MinecraftKitErrorCodes.FILESYSTEM_WRITE_ERROR,
       `Failed to create directory: ${directory}`,
       { cause, context: { filePath: directory } },
     );
@@ -68,10 +68,14 @@ export const atomicWrite = async (target: string, data: Uint8Array | string): Pr
     } catch {
       // Best-effort cleanup.
     }
-    throw new MinecraftKitError("FILESYSTEM_WRITE_ERROR", `Failed to write file: ${target}`, {
-      cause,
-      context: { filePath: target },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.FILESYSTEM_WRITE_ERROR,
+      `Failed to write file: ${target}`,
+      {
+        cause,
+        context: { filePath: target },
+      },
+    );
   }
 };
 
@@ -80,10 +84,14 @@ export const readText = async (filePath: string): Promise<string> => {
   try {
     return await fs.readFile(filePath, "utf8");
   } catch (cause) {
-    throw new MinecraftKitError("FILESYSTEM_READ_ERROR", `Failed to read file: ${filePath}`, {
-      cause,
-      context: { filePath },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.FILESYSTEM_READ_ERROR,
+      `Failed to read file: ${filePath}`,
+      {
+        cause,
+        context: { filePath },
+      },
+    );
   }
 };
 
@@ -93,10 +101,14 @@ export const readBytes = async (filePath: string): Promise<Uint8Array> => {
     const buf = await fs.readFile(filePath);
     return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
   } catch (cause) {
-    throw new MinecraftKitError("FILESYSTEM_READ_ERROR", `Failed to read file: ${filePath}`, {
-      cause,
-      context: { filePath },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.FILESYSTEM_READ_ERROR,
+      `Failed to read file: ${filePath}`,
+      {
+        cause,
+        context: { filePath },
+      },
+    );
   }
 };
 
@@ -133,8 +145,12 @@ export const assertWithinRoot = (root: string, child: string): void => {
   const normalizedChild = path.resolve(root, child);
   const sep = path.sep;
   if (normalizedChild !== normalizedRoot && !normalizedChild.startsWith(normalizedRoot + sep)) {
-    throw new MinecraftKitError("FILESYSTEM_PATH_TRAVERSAL", `Path escapes root: ${child}`, {
-      context: { filePath: child, rootDirectory: root },
-    });
+    throw new MinecraftKitError(
+      MinecraftKitErrorCodes.FILESYSTEM_PATH_TRAVERSAL,
+      `Path escapes root: ${child}`,
+      {
+        context: { filePath: child, rootDirectory: root },
+      },
+    );
   }
 };

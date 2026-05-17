@@ -21,7 +21,12 @@ export type {
 // ─────────────────────────────────────────────────────────────────────────────────────
 // Errors + error codes (single error class for every public API)
 // ─────────────────────────────────────────────────────────────────────────────────────
-export { isErrorCode, isMinecraftKitError, MinecraftKitError } from "./core/errors";
+export {
+  isErrorCode,
+  isMinecraftKitError,
+  MinecraftKitError,
+  MinecraftKitErrorCodes,
+} from "./core/errors";
 export { assertNever } from "./core/assert-never";
 
 // ─────────────────────────────────────────────────────────────────────────────────────

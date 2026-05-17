@@ -1,5 +1,5 @@
 import { HTTP_TIMEOUT_MS, USER_AGENT } from "../constants/defaults";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import type { HttpClient, HttpHeaders, HttpRequestOptions, HttpResponse } from "../types/http";
 
 /** Sentinel used as the abort reason when our internal timer fires. */
@@ -45,28 +45,44 @@ export class FetchHttpClient implements HttpClient {
       clearTimeout(timer);
       options.signal?.removeEventListener("abort", onParentAbort);
       if (controller.signal.reason === TIMEOUT_REASON) {
-        throw new MinecraftKitError("NETWORK_TIMEOUT", `Request timed out: ${url}`, {
-          cause,
-          context: { url, timeoutMs },
-        });
+        throw new MinecraftKitError(
+          MinecraftKitErrorCodes.NETWORK_TIMEOUT,
+          `Request timed out: ${url}`,
+          {
+            cause,
+            context: { url, timeoutMs },
+          },
+        );
       }
       if (options.signal?.aborted) {
-        throw new MinecraftKitError("NETWORK_ABORTED", `Request aborted: ${url}`, {
+        throw new MinecraftKitError(
+          MinecraftKitErrorCodes.NETWORK_ABORTED,
+          `Request aborted: ${url}`,
+          {
+            cause,
+            context: { url },
+          },
+        );
+      }
+      throw new MinecraftKitError(
+        MinecraftKitErrorCodes.NETWORK_HTTP_ERROR,
+        `Network request failed: ${url}`,
+        {
           cause,
           context: { url },
-        });
-      }
-      throw new MinecraftKitError("NETWORK_HTTP_ERROR", `Network request failed: ${url}`, {
-        cause,
-        context: { url },
-      });
+        },
+      );
     }
     clearTimeout(timer);
     options.signal?.removeEventListener("abort", onParentAbort);
     if (!response.ok && options.acceptNonOk !== true) {
-      throw new MinecraftKitError("NETWORK_HTTP_ERROR", `HTTP ${response.status} for ${url}`, {
-        context: { url, httpStatus: response.status },
-      });
+      throw new MinecraftKitError(
+        MinecraftKitErrorCodes.NETWORK_HTTP_ERROR,
+        `HTTP ${response.status} for ${url}`,
+        {
+          context: { url, httpStatus: response.status },
+        },
+      );
     }
     return new FetchHttpResponse(response, url);
   }

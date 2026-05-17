@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import type { DeviceCodePrompt, DeviceCodeState } from "../types/auth";
 import type { HttpClient } from "../types/http";
 
@@ -65,7 +65,7 @@ export const startDeviceCode = async (input: {
   if (response.status < 200 || response.status >= 300) {
     const err = (await response.json().catch(() => ({}))) as TokenError;
     throw new MinecraftKitError(
-      "AUTH_DEVICE_CODE_FAILED",
+      MinecraftKitErrorCodes.AUTH_DEVICE_CODE_FAILED,
       explainDeviceCodeError(err, input.clientId),
       {
         context: {
@@ -112,13 +112,17 @@ export const pollDeviceCode = async (input: {
   let intervalSec = input.state.interval;
   while (true) {
     if (input.signal?.aborted) {
-      throw new MinecraftKitError("AUTH_CANCELLED", "Device-code polling aborted.", {
-        context: { reason: input.signal.reason },
-      });
+      throw new MinecraftKitError(
+        MinecraftKitErrorCodes.AUTH_CANCELLED,
+        "Device-code polling aborted.",
+        {
+          context: { reason: input.signal.reason },
+        },
+      );
     }
     if (Date.now() >= input.state.expiresAt) {
       throw new MinecraftKitError(
-        "AUTH_DEVICE_CODE_EXPIRED",
+        MinecraftKitErrorCodes.AUTH_DEVICE_CODE_EXPIRED,
         "Device code expired before the user signed in.",
       );
     }
@@ -140,7 +144,7 @@ export const pollDeviceCode = async (input: {
       const ok = (await response.json()) as TokenSuccess;
       if (!ok.refresh_token) {
         throw new MinecraftKitError(
-          "AUTH_DEVICE_CODE_FAILED",
+          MinecraftKitErrorCodes.AUTH_DEVICE_CODE_FAILED,
           "Microsoft did not return a refresh token. Make sure `offline_access` is in the requested scopes.",
         );
       }
@@ -159,17 +163,17 @@ export const pollDeviceCode = async (input: {
         continue;
       case "authorization_declined":
         throw new MinecraftKitError(
-          "AUTH_DEVICE_CODE_DECLINED",
+          MinecraftKitErrorCodes.AUTH_DEVICE_CODE_DECLINED,
           "The user declined the sign-in request.",
         );
       case "expired_token":
         throw new MinecraftKitError(
-          "AUTH_DEVICE_CODE_EXPIRED",
+          MinecraftKitErrorCodes.AUTH_DEVICE_CODE_EXPIRED,
           "Device code expired before the user signed in.",
         );
       default:
         throw new MinecraftKitError(
-          "AUTH_DEVICE_CODE_FAILED",
+          MinecraftKitErrorCodes.AUTH_DEVICE_CODE_FAILED,
           `Microsoft device-code exchange failed: ${err.error ?? "unknown_error"}${
             err.error_description ? ` — ${err.error_description}` : ""
           }`,
@@ -205,7 +209,7 @@ export const refreshMicrosoftToken = async (input: {
   if (response.status < 200 || response.status >= 300) {
     const err = (await response.json().catch(() => ({}))) as TokenError;
     throw new MinecraftKitError(
-      "AUTH_REFRESH_FAILED",
+      MinecraftKitErrorCodes.AUTH_REFRESH_FAILED,
       `Microsoft refused to refresh the token: ${err.error ?? "unknown_error"}${
         err.error_description ? ` — ${err.error_description}` : ""
       }`,
@@ -259,9 +263,13 @@ const wait = (ms: number, signal?: AbortSignal): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
       reject(
-        new MinecraftKitError("AUTH_CANCELLED", "Device-code polling aborted.", {
-          context: { reason: signal.reason },
-        }),
+        new MinecraftKitError(
+          MinecraftKitErrorCodes.AUTH_CANCELLED,
+          "Device-code polling aborted.",
+          {
+            context: { reason: signal.reason },
+          },
+        ),
       );
       return;
     }
@@ -272,9 +280,13 @@ const wait = (ms: number, signal?: AbortSignal): Promise<void> => {
     const onAbort = (): void => {
       clearTimeout(timer);
       reject(
-        new MinecraftKitError("AUTH_CANCELLED", "Device-code polling aborted.", {
-          context: { reason: signal?.reason },
-        }),
+        new MinecraftKitError(
+          MinecraftKitErrorCodes.AUTH_CANCELLED,
+          "Device-code polling aborted.",
+          {
+            context: { reason: signal?.reason },
+          },
+        ),
       );
     };
     signal?.addEventListener("abort", onAbort, { once: true });

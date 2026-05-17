@@ -1,5 +1,5 @@
 import { DEFAULT_KILL_GRACE_MS } from "../constants/defaults";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import type {
   LaunchComposition,
   LaunchExit,
@@ -69,7 +69,7 @@ export const runLaunch = (input: RunLaunchInput): LaunchSession => {
     options.onEvent?.({ type: "launch:exited", code, signal });
     if (!aborted && code !== 0 && code !== null) {
       throw new MinecraftKitError(
-        "LAUNCH_PROCESS_FAILED",
+        MinecraftKitErrorCodes.LAUNCH_PROCESS_FAILED,
         `Minecraft process exited with code ${code}`,
         { context: { exitCode: code } },
       );

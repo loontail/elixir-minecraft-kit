@@ -2,7 +2,7 @@ import path from "node:path";
 import { ApiEndpoints } from "../constants/api";
 import { extractSingleEntry, openZip, readEntryBuffer } from "../core/archive";
 import { dedupe, dedupeBy } from "../core/collections";
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { atomicWrite } from "../core/fs";
 import { parseJsonStrict } from "../core/json";
 import { mavenRelativePathFor } from "../core/maven";
@@ -142,13 +142,13 @@ const readJsonEntry = async <T>(zipPath: string, entryName: string): Promise<T> 
   const buffer = await readEntryBuffer(zipPath, entryName);
   if (!buffer) {
     throw new MinecraftKitError(
-      "FORGE_INSTALLER_INVALID",
+      MinecraftKitErrorCodes.FORGE_INSTALLER_INVALID,
       `Forge installer is missing required entry: ${entryName}`,
       { context: { filePath: zipPath, entryName } },
     );
   }
   return parseJsonStrict<T>(buffer.toString("utf8"), {
-    code: "FORGE_INSTALLER_INVALID",
+    code: MinecraftKitErrorCodes.FORGE_INSTALLER_INVALID,
     message: `Forge installer entry is not valid JSON: ${entryName}`,
     context: { filePath: zipPath, entryName },
   });
@@ -317,9 +317,13 @@ const substituteToken = (
   return raw.replaceAll(/\{([A-Z0-9_]+)\}/g, (match, key: string) => {
     const token = tokens[key];
     if (token === undefined) {
-      throw new MinecraftKitError("FORGE_INSTALLER_INVALID", `Unknown processor token: ${match}`, {
-        context: { token: key },
-      });
+      throw new MinecraftKitError(
+        MinecraftKitErrorCodes.FORGE_INSTALLER_INVALID,
+        `Unknown processor token: ${match}`,
+        {
+          context: { token: key },
+        },
+      );
     }
     return token.value;
   });

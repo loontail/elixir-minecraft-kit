@@ -1,7 +1,7 @@
 import os from "node:os";
 import { NODE_ARCH_TO_MOJANG_ARCH, NODE_PLATFORM_TO_MOJANG_OS } from "../constants/platform";
 import type { Architecture, OperatingSystem, RuntimeSystem } from "../types/system";
-import { MinecraftKitError } from "./errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "./errors";
 
 /** Inputs allowing the host system to be derived from current Node values or overrides. */
 export type DetectSystemInput = {
@@ -26,7 +26,7 @@ export const detectSystem = (input: DetectSystemInput = {}): RuntimeSystem => {
   const mojangArch = (NODE_ARCH_TO_MOJANG_ARCH as Record<string, Architecture | undefined>)[arch];
   if (mojangOs === undefined || mojangArch === undefined) {
     throw new MinecraftKitError(
-      "RUNTIME_UNSUPPORTED_PLATFORM",
+      MinecraftKitErrorCodes.RUNTIME_UNSUPPORTED_PLATFORM,
       `Unsupported platform/arch combination: ${platform}/${arch}`,
       { context: { platform, arch: String(arch) } },
     );

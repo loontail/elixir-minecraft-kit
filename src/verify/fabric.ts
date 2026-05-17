@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { targetPaths } from "../core/paths";
 import { planLibraryDownloads } from "../install/libraries";
 import type { MetadataCache } from "../types/cache";
@@ -23,7 +23,7 @@ export type VerifyFabricInput = {
 export const verifyFabric = async (input: VerifyFabricInput): Promise<VerificationResult> => {
   if (input.target.loader.type !== Loaders.FABRIC) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `verify.fabric requires a Fabric target (got ${input.target.loader.type})`,
     );
   }

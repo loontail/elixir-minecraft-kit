@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { parseJsonOrUndefined } from "../core/json";
 import type { HttpClient } from "../types/http";
 import { authDebug } from "./debug";
@@ -65,19 +65,19 @@ export const loginWithXbox = async (input: {
       // that specific error message and surface a precise fix.
       if (/invalid app registration/i.test(detail)) {
         throw new MinecraftKitError(
-          "AUTH_MINECRAFT_FAILED",
+          MinecraftKitErrorCodes.AUTH_MINECRAFT_FAILED,
           `Mojang has not approved this Azure AD application id for the Minecraft API. The OAuth + Xbox/XSTS exchange all succeeded, but api.minecraftservices.com only accepts client_ids that are on its allow-list. Apply at https://aka.ms/mce-reviewappid (Application ID, contact email, purpose) — approval typically takes a few days. Raw response: ${detail}`,
           { context: { httpStatus: 403, body: detail, reason: "invalid_app_registration" } },
         );
       }
       throw new MinecraftKitError(
-        "AUTH_NO_GAME_OWNERSHIP",
+        MinecraftKitErrorCodes.AUTH_NO_GAME_OWNERSHIP,
         `Mojang refused login_with_xbox (HTTP 403). The Xbox/Microsoft exchange succeeded, but api.minecraftservices.com declined to issue a Minecraft token. Most common causes: (1) you signed in to the browser with a DIFFERENT Microsoft account than the one owning Java Edition — re-check the email on https://www.minecraft.net/profile and make sure it matches what you typed at the device-code page; (2) this account never used Xbox services before — open https://www.xbox.com once with this account, then retry; (3) transient Mojang 5xx/403, just retry in 60s. Raw response: ${detail || "<empty>"}`,
         { context: { httpStatus: 403, body: detail } },
       );
     }
     throw new MinecraftKitError(
-      "AUTH_MINECRAFT_FAILED",
+      MinecraftKitErrorCodes.AUTH_MINECRAFT_FAILED,
       `Minecraft sign-in failed with HTTP ${response.status}. Response: ${detail || "<empty>"}`,
       { context: { httpStatus: response.status, body: detail } },
     );
@@ -85,7 +85,7 @@ export const loginWithXbox = async (input: {
   const parsed = (await response.json()) as LoginResponse;
   if (!parsed.access_token) {
     throw new MinecraftKitError(
-      "AUTH_MINECRAFT_FAILED",
+      MinecraftKitErrorCodes.AUTH_MINECRAFT_FAILED,
       "Minecraft sign-in returned no access token.",
     );
   }
@@ -109,14 +109,14 @@ export const fetchMinecraftProfile = async (input: {
   });
   if (response.status === 404) {
     throw new MinecraftKitError(
-      "AUTH_NO_GAME_OWNERSHIP",
+      MinecraftKitErrorCodes.AUTH_NO_GAME_OWNERSHIP,
       "This Microsoft account does not own Minecraft: Java Edition.",
       { context: { httpStatus: 404 } },
     );
   }
   if (response.status < 200 || response.status >= 300) {
     throw new MinecraftKitError(
-      "AUTH_MINECRAFT_FAILED",
+      MinecraftKitErrorCodes.AUTH_MINECRAFT_FAILED,
       `Failed to load Minecraft profile (HTTP ${response.status}).`,
       { context: { httpStatus: response.status } },
     );
@@ -124,7 +124,7 @@ export const fetchMinecraftProfile = async (input: {
   const parsed = (await response.json()) as ProfileResponse;
   if (parsed.errorMessage || !parsed.id || !parsed.name) {
     throw new MinecraftKitError(
-      "AUTH_MINECRAFT_FAILED",
+      MinecraftKitErrorCodes.AUTH_MINECRAFT_FAILED,
       parsed.errorMessage ?? "Minecraft profile response was malformed.",
     );
   }

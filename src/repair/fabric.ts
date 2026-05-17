@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { targetPaths } from "../core/paths";
 import {
   type DownloadAction,
@@ -19,7 +19,7 @@ export type PlanFabricRepairInput = AspectRepairInput;
 export const planFabricRepair = async (input: PlanFabricRepairInput): Promise<RepairPlan> => {
   if (input.target.loader.type !== Loaders.FABRIC) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `repair.fabric requires a Fabric target (got ${input.target.loader.type})`,
     );
   }

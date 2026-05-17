@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { targetPaths } from "../core/paths";
 import {
   type DownloadAction,
@@ -29,7 +29,7 @@ export type PlanForgeRepairInput = AspectRepairInput;
 export const planForgeRepair = async (input: PlanForgeRepairInput): Promise<RepairPlan> => {
   if (input.target.loader.type !== Loaders.FORGE) {
     throw new MinecraftKitError(
-      "INVALID_INPUT",
+      MinecraftKitErrorCodes.INVALID_INPUT,
       `repair.forge requires a Forge target (got ${input.target.loader.type})`,
     );
   }

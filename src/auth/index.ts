@@ -1,4 +1,4 @@
-import { MinecraftKitError } from "../core/errors";
+import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { AuthModes, type DeviceCodePrompt, type DeviceCodeState } from "../types/auth";
 import type { MojangSession, OnlineAuth } from "../types/auth";
 import type { HttpClient } from "../types/http";
@@ -202,7 +202,7 @@ const resolveClientId = (explicit: string | undefined): string => {
   const fromEnv = process.env[CLIENT_ID_ENV_VAR];
   if (typeof fromEnv === "string" && fromEnv.trim().length > 0) return fromEnv.trim();
   throw new MinecraftKitError(
-    "AUTH_MISSING_CLIENT_ID",
+    MinecraftKitErrorCodes.AUTH_MISSING_CLIENT_ID,
     `No Azure AD client id supplied. Pass \`clientId\` explicitly or set ${CLIENT_ID_ENV_VAR}. Register an Azure AD application in the 'Personal Microsoft accounts' audience with XboxLive.signin + offline_access scopes to obtain one.`,
   );
 };
