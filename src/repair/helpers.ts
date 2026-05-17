@@ -16,11 +16,11 @@ import {
 } from "../types/verify";
 
 /** Normalize the `from` option of a repair plan into an array. */
-export function asResultArray(
+export const asResultArray = (
   from: VerificationResult | readonly VerificationResult[],
-): readonly VerificationResult[] {
+): readonly VerificationResult[] => {
   return Array.isArray(from) ? from : [from];
-}
+};
 
 /**
  * Category-aware view over a set of verification results. Lets repair distinguish
@@ -45,9 +45,9 @@ export interface IssueIndex {
 }
 
 /** Build an {@link IssueIndex} from one or more verification results. */
-export function buildIssueIndex(
+export const buildIssueIndex = (
   from: VerificationResult | readonly VerificationResult[],
-): IssueIndex {
+): IssueIndex => {
   const map = new Map<string, Set<VerifyFileCategory>>();
   for (const v of asResultArray(from)) {
     for (const issue of v.issues) {
@@ -68,20 +68,20 @@ export function buildIssueIndex(
     },
     categoriesAt: (path) => map.get(path) ?? new Set<VerifyFileCategory>(),
   };
-}
+};
 
 /** Sum expected bytes of all DOWNLOAD_FILE actions in a list. */
-export function sumDownloadBytes(actions: readonly InstallAction[]): number {
+export const sumDownloadBytes = (actions: readonly InstallAction[]): number => {
   return actions.reduce((sum, action) => {
     if (action.kind === InstallActionKinds.DOWNLOAD_FILE) {
       return sum + ((action as DownloadAction).expectedSize ?? 0);
     }
     return sum;
   }, 0);
-}
+};
 
 /** Wrap a list of install actions in a {@link RepairPlan} for the given target. */
-export function buildRepairPlan(target: Target, actions: readonly InstallAction[]): RepairPlan {
+export const buildRepairPlan = (target: Target, actions: readonly InstallAction[]): RepairPlan => {
   return {
     targetId: target.id,
     directory: target.directory,
@@ -90,7 +90,7 @@ export function buildRepairPlan(target: Target, actions: readonly InstallAction[
     totalActions: actions.length,
     totalBytes: sumDownloadBytes(actions),
   };
-}
+};
 
 /** Predicate to keep only actions belonging to a specific repair aspect. */
 export type AspectFilter = (action: InstallAction) => boolean;
@@ -104,7 +104,7 @@ export type AspectFilter = (action: InstallAction) => boolean;
  *   4. Let the caller append any aspect-specific actions (e.g. Forge's defensive sweep).
  *   5. Wrap the actions in a {@link RepairPlan}.
  */
-export async function planAspectRepair(
+export const planAspectRepair = async (
   input: AspectRepairInput,
   aspectFilter: AspectFilter,
   postprocess?: (context: {
@@ -112,7 +112,7 @@ export async function planAspectRepair(
     installPlan: InstallPlan;
     issues: IssueIndex;
   }) => void,
-): Promise<RepairPlan> {
+): Promise<RepairPlan> => {
   const installPlan = await planInstall({
     target: input.target,
     http: input.http,
@@ -128,7 +128,7 @@ export async function planAspectRepair(
   });
   postprocess?.({ actions, installPlan, issues });
   return buildRepairPlan(input.target, actions);
-}
+};
 
 /**
  * Apply the standard repair-action selection rules, restricted to the actions accepted by
@@ -138,12 +138,12 @@ export async function planAspectRepair(
  *  - EXTRACT_NATIVE: include if the source JAR has any issue recorded.
  *  - Anything else admitted by `aspectFilter` is included unconditionally.
  */
-export function selectRepairActions(input: {
+export const selectRepairActions = (input: {
   readonly target: Target;
   readonly installPlan: InstallPlan;
   readonly issues: IssueIndex;
   readonly aspectFilter: AspectFilter;
-}): InstallAction[] {
+}): InstallAction[] => {
   const matching: InstallAction[] = [];
   for (const action of input.installPlan.actions) {
     if (!input.aspectFilter(action)) continue;
@@ -165,4 +165,4 @@ export function selectRepairActions(input: {
     }
   }
   return matching;
-}
+};

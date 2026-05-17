@@ -40,13 +40,13 @@ const versionManifest: MinecraftVersionManifest = {
   libraries: [],
 };
 
-function buildKit(): { api: MinecraftVersionsApi; http: FakeHttpClient } {
+const buildKit = (): { api: MinecraftVersionsApi; http: FakeHttpClient } => {
   const http = new FakeHttpClient()
     .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(manifestRoot) })
     .on("https://manifests/1.20.1", { body: JSON.stringify(versionManifest) });
   const api = new MinecraftVersionsApi({ http, cache: createMemoryCache(), logger: silentLogger });
   return { api, http };
-}
+};
 
 describe("MinecraftVersionsApi", () => {
   it("lists all versions", async () => {

@@ -14,7 +14,7 @@ export type ForgeBuildOutcome =
   | { readonly kind: "incompatible" };
 
 /** Choose between Vanilla / Fabric / Forge. */
-export async function pickInstallType(ui: Ui): Promise<WizardOutcome<InstallType>> {
+export const pickInstallType = async (ui: Ui): Promise<WizardOutcome<InstallType>> => {
   return ui.select<InstallType>({
     message: "Select installation type",
     options: [
@@ -29,13 +29,13 @@ export async function pickInstallType(ui: Ui): Promise<WizardOutcome<InstallType
     allowBack: true,
     allowCancel: true,
   });
-}
+};
 
 /** Pick a Fabric loader version for the given Minecraft version. */
-export async function pickFabricLoader(
+export const pickFabricLoader = async (
   ctx: ScenarioContext,
   minecraftVersion: string,
-): Promise<FabricLoaderOutcome> {
+): Promise<FabricLoaderOutcome> => {
   const spinner = ctx.ui.spinner();
   spinner.start(`Loading Fabric loaders for ${minecraftVersion}…`);
   try {
@@ -62,13 +62,13 @@ export async function pickFabricLoader(
     ctx.ui.log("warn", formatUserError(error));
     return { kind: "incompatible" };
   }
-}
+};
 
 /** Pick a Forge build for the given Minecraft version, surfacing recommended + latest. */
-export async function pickForgeBuild(
+export const pickForgeBuild = async (
   ctx: ScenarioContext,
   minecraftVersion: string,
-): Promise<ForgeBuildOutcome> {
+): Promise<ForgeBuildOutcome> => {
   const spinner = ctx.ui.spinner();
   spinner.start(`Loading Forge builds for ${minecraftVersion}…`);
   try {
@@ -96,11 +96,11 @@ export async function pickForgeBuild(
     ctx.ui.log("warn", formatUserError(error));
     return { kind: "incompatible" };
   }
-}
+};
 
-function buildForgeOptions(
+const buildForgeOptions = (
   builds: Awaited<ReturnType<ScenarioContext["kit"]["versions"]["forge"]["list"]>>,
-): SelectOption<string>[] {
+): SelectOption<string>[] => {
   const recommended = builds.find((b) => b.isRecommended);
   const latest = builds.find((b) => b.isLatest);
   const options: SelectOption<string>[] = [];
@@ -127,4 +127,4 @@ function buildForgeOptions(
     });
   }
   return options;
-}
+};

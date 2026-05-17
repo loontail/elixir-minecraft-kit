@@ -3,7 +3,7 @@ import { formatDetailed } from "./install-helpers";
 import type { ScenarioContext, ScenarioOutcome } from "./types";
 
 /** Scenario: inspect a single installation in detail. */
-export async function scenarioInspect(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioInspect = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   try {
     const list = await ctx.kit.targets.list({ rootDir: ctx.rootDir });
     if (list.length === 0) {
@@ -28,4 +28,4 @@ export async function scenarioInspect(ctx: ScenarioContext): Promise<ScenarioOut
     ctx.ui.log("error", formatUserError(error));
     return "cancelled";
   }
-}
+};

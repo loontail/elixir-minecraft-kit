@@ -21,7 +21,7 @@ export interface PlanInstallInput {
 }
 
 /** Build a flat install plan for the given target. */
-export async function planInstall(input: PlanInstallInput): Promise<InstallPlan> {
+export const planInstall = async (input: PlanInstallInput): Promise<InstallPlan> => {
   const { target } = input;
   const actions: InstallAction[] = [];
 
@@ -128,4 +128,4 @@ export async function planInstall(input: PlanInstallInput): Promise<InstallPlan>
     totalActions: actions.length,
     totalBytes,
   };
-}
+};

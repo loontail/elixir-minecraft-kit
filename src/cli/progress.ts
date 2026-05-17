@@ -256,7 +256,7 @@ export class ProgressRenderer {
 }
 
 /** Drop the verbose `downloading-` / `installing-` / etc. prefix to keep lines compact. */
-function shortPhase(phase: string): string {
+const shortPhase = (phase: string): string => {
   if (phase === "idle") return "starting";
   for (const prefix of [
     "downloading-",
@@ -269,7 +269,7 @@ function shortPhase(phase: string): string {
     if (phase.startsWith(prefix)) return phase.slice(prefix.length);
   }
   return phase;
-}
+};
 
 /**
  * Clip a single-line message to the available terminal width. Anything wider than the
@@ -277,25 +277,25 @@ function shortPhase(phase: string): string {
  * leave the original wrapped tail visible — the very bug that made the previous progress
  * renderer look like it was spamming new lines.
  */
-function clipToColumns(line: string, cols: number): string {
+const clipToColumns = (line: string, cols: number): string => {
   if (cols <= 0) return line;
   const limit = cols - SAFETY_MARGIN;
   if (limit <= 0) return "";
   if (line.length <= limit) return line;
   return `${line.slice(0, Math.max(0, limit - 1))}…`;
-}
+};
 
 /** Format bytes with binary-prefixed suffixes (KB/MB/GB). */
-export function formatBytes(bytes: number): string {
+export const formatBytes = (bytes: number): string => {
   if (!Number.isFinite(bytes) || bytes < 0) return "—";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
+};
 
 /** Format milliseconds as h:mm:ss / mm:ss / s. Used for elapsed durations only. */
-export function formatDuration(ms: number): string {
+export const formatDuration = (ms: number): string => {
   if (!Number.isFinite(ms) || ms < 0) return "—";
   const seconds = Math.round(ms / 1000);
   if (seconds < 60) return `${seconds}s`;
@@ -305,4 +305,4 @@ export function formatDuration(ms: number): string {
   const hours = Math.floor(minutes / 60);
   const remMin = minutes % 60;
   return `${hours}h${remMin.toString().padStart(2, "0")}m${remSec.toString().padStart(2, "0")}s`;
-}
+};

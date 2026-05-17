@@ -106,10 +106,10 @@ interface ClackModule {
  * Build the production {@link Ui} backed by `@clack/prompts`. Lazy import keeps the CLI
  * dependency out of the library's main entry point.
  */
-export async function createClackUi(): Promise<Ui> {
+export const createClackUi = async (): Promise<Ui> => {
   const clack = (await import("@clack/prompts")) as unknown as ClackModule;
   return buildUi(clack);
-}
+};
 
 /** Maximum number of options shown in a single select. Above this, a filter is required. */
 export const MAX_VISIBLE_OPTIONS = 50;
@@ -118,7 +118,7 @@ export const MAX_VISIBLE_OPTIONS = 50;
 export const DEFAULT_SEARCH_THRESHOLD = 30;
 
 /** Build a {@link Ui} from any module that implements the clack contract. Exposed for tests. */
-export function buildUi(clack: ClackModule): Ui {
+export const buildUi = (clack: ClackModule): Ui => {
   return {
     intro: (m) => clack.intro(m),
     outro: (m) => clack.outro(m),
@@ -154,7 +154,7 @@ export function buildUi(clack: ClackModule): Ui {
     // overwrite the previous line.
     spinner: () => createInPlaceSpinner(),
   };
-}
+};
 
 /**
  * Default writable stream used by the in-place spinner. Wrapped so tests can swap it.
@@ -183,7 +183,7 @@ export interface InPlaceSpinnerInput {
  * Exposed for tests; the production {@link Ui} created by {@link createClackUi} already uses
  * this internally.
  */
-export function createInPlaceSpinner(input: InPlaceSpinnerInput = {}): UiSpinner {
+export const createInPlaceSpinner = (input: InPlaceSpinnerInput = {}): UiSpinner => {
   const out = input.out ?? DEFAULT_OUT;
   let started = false;
   let lastLine = "";
@@ -236,9 +236,12 @@ export function createInPlaceSpinner(input: InPlaceSpinnerInput = {}): UiSpinner
       lastLine = "";
     },
   };
-}
+};
 
-async function runSelect<T>(clack: ClackModule, input: SelectInput<T>): Promise<WizardOutcome<T>> {
+const runSelect = async <T>(
+  clack: ClackModule,
+  input: SelectInput<T>,
+): Promise<WizardOutcome<T>> => {
   const augmentedOptions: { label: string; value: unknown; hint?: string }[] = input.options.map(
     (option) => {
       const opt: { label: string; value: unknown; hint?: string } = {
@@ -265,12 +268,12 @@ async function runSelect<T>(clack: ClackModule, input: SelectInput<T>): Promise<
   if (result === BACK) return { kind: "back" };
   if (result === CANCEL) return { kind: "cancel" };
   return { kind: "ok", value: result as T };
-}
+};
 
-async function searchableSelect<T>(
+const searchableSelect = async <T>(
   clack: ClackModule,
   input: SearchableSelectInput<T>,
-): Promise<WizardOutcome<T>> {
+): Promise<WizardOutcome<T>> => {
   const threshold = input.searchThreshold ?? DEFAULT_SEARCH_THRESHOLD;
   if (input.options.length <= threshold) {
     return runSelect(clack, input);
@@ -290,7 +293,7 @@ async function searchableSelect<T>(
     ...(input.allowBack === true ? { allowBack: true } : {}),
     ...(input.allowCancel === true ? { allowCancel: true } : {}),
   });
-}
+};
 
 /**
  * Stub UI used by tests. Each prompt consumes one entry from `script`. Allowed entries:
@@ -301,7 +304,7 @@ async function searchableSelect<T>(
  *
  * The stub also captures every log/note/intro/outro call so tests can assert on them.
  */
-export function createStubUi(script: readonly unknown[] = []): StubUi {
+export const createStubUi = (script: readonly unknown[] = []): StubUi => {
   const queue = [...script];
   const calls: StubUiCall[] = [];
   function consume<T>(prompt: StubUiCall): WizardOutcome<T> {
@@ -339,7 +342,7 @@ export function createStubUi(script: readonly unknown[] = []): StubUi {
       stop: (m) => calls.push({ kind: "spinner-stop", message: m ?? "" }),
     }),
   };
-}
+};
 
 /** Recorded stub-UI call. */
 export interface StubUiCall {

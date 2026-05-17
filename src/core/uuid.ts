@@ -6,21 +6,21 @@ import crypto from "node:crypto";
  * Mojang's offline-mode formula: `MD5("OfflinePlayer:" + name)` with the version/variant
  * bits patched to UUID v3.
  */
-export function offlineUuidFor(username: string): string {
+export const offlineUuidFor = (username: string): string => {
   const md5 = crypto.createHash("md5");
   md5.update(`OfflinePlayer:${username}`, "utf8");
   const bytes = md5.digest();
   bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x30; // v3
   bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80; // variant
   return formatUuid(bytes);
-}
+};
 
-function formatUuid(bytes: Buffer): string {
+const formatUuid = (bytes: Buffer): string => {
   const hex = bytes.toString("hex");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
-}
+};
 
 /** Strip the dashes from a UUID. Used by `${auth_uuid}`. */
-export function stripUuidDashes(uuid: string): string {
+export const stripUuidDashes = (uuid: string): string => {
   return uuid.replaceAll("-", "");
-}
+};

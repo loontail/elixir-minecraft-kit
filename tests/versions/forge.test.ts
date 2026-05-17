@@ -19,13 +19,13 @@ const promotions = {
   },
 };
 
-function buildKit(): { api: ForgeVersionsApi; http: FakeHttpClient } {
+const buildKit = (): { api: ForgeVersionsApi; http: FakeHttpClient } => {
   const http = new FakeHttpClient()
     .on(ApiEndpoints.forge.mavenMetadata(), { body: xml })
     .on(ApiEndpoints.forge.promotions(), { body: JSON.stringify(promotions) });
   const api = new ForgeVersionsApi({ http, cache: createMemoryCache(), logger: silentLogger });
   return { api, http };
-}
+};
 
 describe("ForgeVersionsApi", () => {
   it("lists all builds", async () => {

@@ -7,10 +7,10 @@ import type { ScenarioContext } from "../types";
 import { pickMinecraftVersionFromEntry } from "./version";
 
 /** Pick the install directory: default `<root>/<id>` or a user-typed path. */
-export async function pickDirectory(
+export const pickDirectory = async (
   ctx: ScenarioContext,
   suggestedId: string,
-): Promise<WizardOutcome<string>> {
+): Promise<WizardOutcome<string>> => {
   const defaultPath = path.join(ctx.rootDir, suggestedId);
   const choice = await ctx.ui.select<"default" | "custom">({
     message: "Where should the installation live?",
@@ -32,26 +32,26 @@ export async function pickDirectory(
   });
   if (text.kind !== "ok") return text;
   return { kind: "ok", value: (text.value ?? "").trim() };
-}
+};
 
 /** Show a summary table and confirm before kicking off an install. */
-export async function confirmInstall(
+export const confirmInstall = async (
   ctx: ScenarioContext,
   rows: readonly (readonly [string, string])[],
-): Promise<WizardOutcome<boolean>> {
+): Promise<WizardOutcome<boolean>> => {
   ctx.ui.note("Summary", rows.map(([k, v]) => `${k.padEnd(11)} ${v}`).join("\n"));
   return ctx.ui.confirm({
     message: "Proceed with install?",
     initial: true,
     allowBack: true,
   });
-}
+};
 
 /**
  * Discover installations under `ctx.rootDir`, let the user pick one, then resolve it back
  * to a {@link Target}. Returns `null` if the user cancels or no installations exist.
  */
-export async function pickInstalledTarget(ctx: ScenarioContext): Promise<Target | null> {
+export const pickInstalledTarget = async (ctx: ScenarioContext): Promise<Target | null> => {
   let list: readonly DiscoveredTarget[];
   try {
     list = await ctx.kit.targets.list({ rootDir: ctx.rootDir });
@@ -91,13 +91,15 @@ export async function pickInstalledTarget(ctx: ScenarioContext): Promise<Target 
     ctx.ui.log("error", formatUserError(error));
     return null;
   }
-}
+};
 
-function loaderHintToInput(hint: DiscoveredTarget["loaders"][number] | undefined): {
+const loaderHintToInput = (
+  hint: DiscoveredTarget["loaders"][number] | undefined,
+): {
   readonly type: typeof Loaders.VANILLA | typeof Loaders.FABRIC | typeof Loaders.FORGE;
   readonly version?: string;
   readonly preference?: typeof VersionPreference.LATEST | typeof VersionPreference.RECOMMENDED;
-} {
+} => {
   if (!hint) return { type: Loaders.VANILLA };
   if (hint.type === Loaders.FABRIC) {
     return hint.version
@@ -110,4 +112,4 @@ function loaderHintToInput(hint: DiscoveredTarget["loaders"][number] | undefined
       : { type: Loaders.FORGE, preference: VersionPreference.RECOMMENDED };
   }
   return { type: Loaders.VANILLA };
-}
+};

@@ -15,7 +15,7 @@ import { planAspectRepair } from "./helpers";
 export type PlanFabricRepairInput = AspectRepairInput;
 
 /** Build a repair plan covering the Fabric loader slice: profile JSON + libraries. */
-export async function planFabricRepair(input: PlanFabricRepairInput): Promise<RepairPlan> {
+export const planFabricRepair = async (input: PlanFabricRepairInput): Promise<RepairPlan> => {
   if (input.target.loader.type !== Loaders.FABRIC) {
     throw new MinecraftKitError(
       "INVALID_INPUT",
@@ -35,4 +35,4 @@ export async function planFabricRepair(input: PlanFabricRepairInput): Promise<Re
     }
     return false;
   });
-}
+};

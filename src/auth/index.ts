@@ -185,7 +185,7 @@ export class MojangAuthApi {
  * Project a {@link MojangSession} into the {@link OnlineAuth} shape that `kit.launch.compose`
  * accepts.
  */
-export function toOnlineAuth(session: MojangSession): OnlineAuth {
+export const toOnlineAuth = (session: MojangSession): OnlineAuth => {
   return {
     mode: AuthModes.ONLINE,
     username: session.minecraft.username,
@@ -195,9 +195,9 @@ export function toOnlineAuth(session: MojangSession): OnlineAuth {
     clientId: session.microsoft.clientId,
     xuid: session.minecraft.xuid,
   };
-}
+};
 
-function resolveClientId(explicit: string | undefined): string {
+const resolveClientId = (explicit: string | undefined): string => {
   if (typeof explicit === "string" && explicit.trim().length > 0) return explicit.trim();
   const fromEnv = process.env[CLIENT_ID_ENV_VAR];
   if (typeof fromEnv === "string" && fromEnv.trim().length > 0) return fromEnv.trim();
@@ -205,4 +205,4 @@ function resolveClientId(explicit: string | undefined): string {
     "AUTH_MISSING_CLIENT_ID",
     `No Azure AD client id supplied. Pass \`clientId\` explicitly or set ${CLIENT_ID_ENV_VAR}. Register an Azure AD application in the 'Personal Microsoft accounts' audience with XboxLive.signin + offline_access scopes to obtain one.`,
   );
-}
+};

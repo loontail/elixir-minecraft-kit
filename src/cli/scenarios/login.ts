@@ -9,7 +9,7 @@ import type { AuthState, ScenarioContext, ScenarioOutcome } from "./types";
  * Lets the user inspect the active session, refresh the Microsoft token, sign out (drop
  * back to offline + default username), or switch accounts entirely.
  */
-export async function scenarioLogin(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioLogin = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   const current = ctx.auth.current;
   if (current?.mode === AuthModes.ONLINE && ctx.auth.microsoftSession) {
     const session = ctx.auth.microsoftSession;
@@ -39,7 +39,7 @@ export async function scenarioLogin(ctx: ScenarioContext): Promise<ScenarioOutco
   }
   // Currently offline — let the user pick again (offline username / Microsoft).
   return await runSwitch(ctx);
-}
+};
 
 /**
  * Used by `runCli` at startup AND by the "Switch account" option. Prompts for offline /
@@ -47,10 +47,10 @@ export async function scenarioLogin(ctx: ScenarioContext): Promise<ScenarioOutco
  *
  * Returns `false` if the user cancels — `runCli` treats that as "exit before menu".
  */
-export async function pickInitialAuth(
+export const pickInitialAuth = async (
   ctx: Omit<ScenarioContext, "auth">,
   state: AuthState,
-): Promise<boolean> {
+): Promise<boolean> => {
   const mode = await ctx.ui.select<"offline" | "microsoft">({
     message: "How do you want to play?",
     options: [
@@ -84,14 +84,14 @@ export async function pickInitialAuth(
   state.microsoftSession = session;
   state.current = toOnlineAuth(session);
   return true;
-}
+};
 
-async function runSwitch(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+const runSwitch = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   const ok = await pickInitialAuth(ctx, ctx.auth);
   return ok ? "completed" : "cancelled";
-}
+};
 
-async function runRefresh(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+const runRefresh = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   if (!ctx.auth.microsoftSession) return "cancelled";
   const session = ctx.auth.microsoftSession;
   const spinner = ctx.ui.spinner();
@@ -110,11 +110,11 @@ async function runRefresh(ctx: ScenarioContext): Promise<ScenarioOutcome> {
     ctx.ui.log("error", formatUserError(error));
     return "cancelled";
   }
-}
+};
 
-async function runMicrosoftLogin(
+const runMicrosoftLogin = async (
   ctx: Omit<ScenarioContext, "auth">,
-): Promise<MojangSession | null> {
+): Promise<MojangSession | null> => {
   const clientId = await resolveClientId(ctx);
   if (clientId === null) return null;
   const spinner = ctx.ui.spinner();
@@ -150,9 +150,11 @@ async function runMicrosoftLogin(
     ctx.ui.log("error", formatUserError(error));
     return null;
   }
-}
+};
 
-async function promptOfflineAuth(ctx: Omit<ScenarioContext, "auth">): Promise<LaunchAuth | null> {
+const promptOfflineAuth = async (
+  ctx: Omit<ScenarioContext, "auth">,
+): Promise<LaunchAuth | null> => {
   const usernameOutcome = await ctx.ui.text({
     message: "Player username",
     placeholder: "Player",
@@ -161,9 +163,9 @@ async function promptOfflineAuth(ctx: Omit<ScenarioContext, "auth">): Promise<La
   });
   if (usernameOutcome.kind !== "ok") return null;
   return { mode: AuthModes.OFFLINE, username: usernameOutcome.value.trim() };
-}
+};
 
-function printSession(ctx: Pick<ScenarioContext, "ui">, session: MojangSession): void {
+const printSession = (ctx: Pick<ScenarioContext, "ui">, session: MojangSession): void => {
   const expiresIn = Math.max(0, Math.round((session.minecraft.expiresAt - Date.now()) / 1000 / 60));
   ctx.ui.note(
     "Active Mojang session",
@@ -174,9 +176,9 @@ function printSession(ctx: Pick<ScenarioContext, "ui">, session: MojangSession):
       `Token expires: in ~${expiresIn} min`,
     ].join("\n"),
   );
-}
+};
 
-async function resolveClientId(ctx: Omit<ScenarioContext, "auth">): Promise<string | null> {
+const resolveClientId = async (ctx: Omit<ScenarioContext, "auth">): Promise<string | null> => {
   const fromEnv = process.env[CLIENT_ID_ENV_VAR];
   if (typeof fromEnv === "string" && fromEnv.trim().length > 0) return fromEnv.trim();
   ctx.ui.note(
@@ -200,4 +202,4 @@ async function resolveClientId(ctx: Omit<ScenarioContext, "auth">): Promise<stri
   if (entered.kind !== "ok") return null;
   const trimmed = entered.value.trim();
   return trimmed.length > 0 ? trimmed : null;
-}
+};

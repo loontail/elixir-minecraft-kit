@@ -13,11 +13,11 @@ const MC_PROFILE_URL = "https://api.minecraftservices.com/minecraft/profile";
 
 // Build a JWT-ish access token whose middle segment decodes to JSON. The Minecraft auth
 // flow plucks `xuid` out of this segment, so a realistic shape avoids "" xuid noise.
-function buildAccessToken(payload: Record<string, unknown>): string {
+const buildAccessToken = (payload: Record<string, unknown>): string => {
   const b64 = (s: string): string =>
     Buffer.from(s).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
   return `${b64("hdr")}.${b64(JSON.stringify(payload))}.${b64("sig")}`;
-}
+};
 
 describe("MojangAuthApi.login", () => {
   it("runs the full 5-step flow end-to-end", async () => {

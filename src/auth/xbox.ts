@@ -29,11 +29,11 @@ interface XstsErrorResponse {
 /**
  * Step 2 — exchange the Microsoft access token for an Xbox Live user token.
  */
-export async function authenticateXbl(input: {
+export const authenticateXbl = async (input: {
   readonly http: HttpClient;
   readonly accessToken: string;
   readonly signal?: AbortSignal;
-}): Promise<XboxToken> {
+}): Promise<XboxToken> => {
   const body = JSON.stringify({
     Properties: {
       AuthMethod: "RPS",
@@ -66,7 +66,7 @@ export async function authenticateXbl(input: {
   }
   authDebug(`XBL ok — tokenLen=${parsed.Token.length}, userHash=${userHash}`);
   return { token: parsed.Token, userHash };
-}
+};
 
 /**
  * Step 3 — exchange the XBL token for an XSTS token bound to `api.minecraftservices.com`.
@@ -76,11 +76,11 @@ export async function authenticateXbl(input: {
  * `AUTH_XSTS_FAILED` error with a human-friendly message — callers can branch on `xerr` in
  * the context if they need finer-grained handling.
  */
-export async function authenticateXsts(input: {
+export const authenticateXsts = async (input: {
   readonly http: HttpClient;
   readonly xblToken: string;
   readonly signal?: AbortSignal;
-}): Promise<XboxToken> {
+}): Promise<XboxToken> => {
   const body = JSON.stringify({
     Properties: { SandboxId: "RETAIL", UserTokens: [input.xblToken] },
     RelyingParty: "rp://api.minecraftservices.com/",
@@ -116,9 +116,9 @@ export async function authenticateXsts(input: {
   }
   authDebug(`XSTS ok — tokenLen=${parsed.Token.length}, userHash=${userHash}`);
   return { token: parsed.Token, userHash };
-}
+};
 
-function explainXErr(xerr: number | undefined): string {
+const explainXErr = (xerr: number | undefined): string => {
   switch (xerr) {
     case 2148916227:
       return "This account has been banned from Xbox.";
@@ -134,4 +134,4 @@ function explainXErr(xerr: number | undefined): string {
     default:
       return xerr ? `XSTS authorization failed (XErr ${xerr}).` : "XSTS authorization failed.";
   }
-}
+};

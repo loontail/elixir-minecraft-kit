@@ -29,13 +29,13 @@ const runtimeIndex = {
   linux: {},
 };
 
-function buildKit(): { api: RuntimeVersionsApi; http: FakeHttpClient } {
+const buildKit = (): { api: RuntimeVersionsApi; http: FakeHttpClient } => {
   const http = new FakeHttpClient().on(ApiEndpoints.mojang.runtimeIndex(), {
     body: JSON.stringify(runtimeIndex),
   });
   const api = new RuntimeVersionsApi({ http, cache: createMemoryCache(), logger: silentLogger });
   return { api, http };
-}
+};
 
 describe("RuntimeVersionsApi", () => {
   it("lists components", async () => {

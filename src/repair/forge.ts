@@ -25,7 +25,7 @@ export type PlanForgeRepairInput = AspectRepairInput;
  * version JSON was missing during verify (so libraries couldn't be enumerated), every
  * forge-library download is added defensively — `downloadFile` skips files already on disk.
  */
-export async function planForgeRepair(input: PlanForgeRepairInput): Promise<RepairPlan> {
+export const planForgeRepair = async (input: PlanForgeRepairInput): Promise<RepairPlan> => {
   if (input.target.loader.type !== Loaders.FORGE) {
     throw new MinecraftKitError(
       "INVALID_INPUT",
@@ -72,4 +72,4 @@ export async function planForgeRepair(input: PlanForgeRepairInput): Promise<Repa
       }
     },
   );
-}
+};

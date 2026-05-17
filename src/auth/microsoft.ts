@@ -45,11 +45,11 @@ interface TokenError {
 }
 
 /** Start a device-code session against Microsoft's `/devicecode` endpoint. */
-export async function startDeviceCode(input: {
+export const startDeviceCode = async (input: {
   readonly http: HttpClient;
   readonly clientId: string;
   readonly signal?: AbortSignal;
-}): Promise<{ readonly prompt: DeviceCodePrompt; readonly state: DeviceCodeState }> {
+}): Promise<{ readonly prompt: DeviceCodePrompt; readonly state: DeviceCodeState }> => {
   const body = new URLSearchParams({ client_id: input.clientId, scope: SCOPE });
   const response = await input.http.request(DEVICE_CODE_URL, {
     method: "POST",
@@ -96,19 +96,19 @@ export async function startDeviceCode(input: {
     interval: data.interval,
   };
   return { prompt, state };
-}
+};
 
 /**
  * Poll Microsoft's `/token` endpoint until the user finishes signing in. The interval is
  * pulled from {@link DeviceCodeState} and increased on `slow_down` per RFC 8628.
  */
-export async function pollDeviceCode(input: {
+export const pollDeviceCode = async (input: {
   readonly http: HttpClient;
   readonly state: DeviceCodeState;
   readonly signal?: AbortSignal;
   /** Called once per polling tick — useful to surface "still waiting" feedback in a UI. */
   readonly onTick?: (info: { readonly nextDelayMs: number; readonly expiresAt: number }) => void;
-}): Promise<MicrosoftToken> {
+}): Promise<MicrosoftToken> => {
   let intervalSec = input.state.interval;
   while (true) {
     if (input.signal?.aborted) {
@@ -177,18 +177,18 @@ export async function pollDeviceCode(input: {
         );
     }
   }
-}
+};
 
 /**
  * Exchange a long-lived refresh token for a fresh Microsoft access token + (rotated)
  * refresh token. Mirrors the `refresh_token` grant from the OAuth 2.0 spec.
  */
-export async function refreshMicrosoftToken(input: {
+export const refreshMicrosoftToken = async (input: {
   readonly http: HttpClient;
   readonly refreshToken: string;
   readonly clientId: string;
   readonly signal?: AbortSignal;
-}): Promise<MicrosoftToken> {
+}): Promise<MicrosoftToken> => {
   const body = new URLSearchParams({
     grant_type: "refresh_token",
     client_id: input.clientId,
@@ -218,14 +218,14 @@ export async function refreshMicrosoftToken(input: {
     refreshToken: ok.refresh_token ?? input.refreshToken,
     expiresIn: ok.expires_in,
   };
-}
+};
 
 /**
  * Translate Microsoft's `/devicecode` error into a sentence that points the operator at the
  * Azure setting they likely got wrong. The vanilla `error_description` from MS is often a
  * 200-character wall of text — readable, but not actionable.
  */
-function explainDeviceCodeError(err: TokenError, clientId: string): string {
+const explainDeviceCodeError = (err: TokenError, clientId: string): string => {
   const desc = err.error_description ?? "";
   const ms = desc ? ` — ${desc}` : "";
   // AADSTS sub-codes carry the actual root cause. Microsoft maps several distinct app-side
@@ -253,9 +253,9 @@ function explainDeviceCodeError(err: TokenError, clientId: string): string {
     default:
       return `Microsoft device-code request failed: ${err.error ?? "unknown_error"}${ms}`;
   }
-}
+};
 
-function wait(ms: number, signal?: AbortSignal): Promise<void> {
+const wait = (ms: number, signal?: AbortSignal): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
       reject(
@@ -279,4 +279,4 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
     };
     signal?.addEventListener("abort", onAbort, { once: true });
   });
-}
+};

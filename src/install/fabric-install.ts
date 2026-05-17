@@ -13,7 +13,7 @@ import { planLibraryDownloads } from "./libraries";
  * Plan the Fabric-specific install steps for a resolved Fabric loader: write the profile
  * JSON (becomes `versions/<id>/<id>.json`) and download every Fabric library.
  */
-export function planFabricInstall(input: {
+export const planFabricInstall = (input: {
   readonly loader: ResolvedFabricLoader;
   readonly minecraft: ResolvedMinecraft;
   readonly directory: string;
@@ -23,7 +23,7 @@ export function planFabricInstall(input: {
   readonly libraryDownloads: readonly DownloadAction[];
   readonly classpathFiles: readonly string[];
   readonly versionId: string;
-} {
+} => {
   const versionId = input.loader.profile.id;
   const versionJsonPath = targetPaths.versionJson(input.directory, versionId);
   const versionJson: WriteVersionJsonAction = {
@@ -44,4 +44,4 @@ export function planFabricInstall(input: {
     classpathFiles: plan.classpathFiles,
     versionId,
   };
-}
+};

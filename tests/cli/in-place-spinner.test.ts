@@ -7,15 +7,15 @@ interface FakeOut {
   readonly isTTY: boolean;
 }
 
-function fakeTty(): FakeOut {
+const fakeTty = (): FakeOut => {
   const chunks: string[] = [];
   return { chunks, write: (c) => chunks.push(c), isTTY: true };
-}
+};
 
-function fakeNonTty(): FakeOut {
+const fakeNonTty = (): FakeOut => {
   const chunks: string[] = [];
   return { chunks, write: (c) => chunks.push(c), isTTY: false };
-}
+};
 
 const CR_ERASE = "\r\x1b[2K";
 

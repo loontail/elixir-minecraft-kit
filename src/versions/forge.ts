@@ -81,7 +81,10 @@ interface ForgePromotions {
   readonly promos: Readonly<Record<string, string>>;
 }
 
-function buildSummary(fullVersion: string, promotions: ForgePromotions): ForgeBuildSummary | null {
+const buildSummary = (
+  fullVersion: string,
+  promotions: ForgePromotions,
+): ForgeBuildSummary | null => {
   const dashIndex = fullVersion.indexOf("-");
   if (dashIndex <= 0 || dashIndex === fullVersion.length - 1) return null;
   const minecraftVersion = fullVersion.slice(0, dashIndex);
@@ -96,12 +99,12 @@ function buildSummary(fullVersion: string, promotions: ForgePromotions): ForgeBu
     isRecommended: recommended === forgeVersion,
     isLatest: latest === forgeVersion,
   };
-}
+};
 
-function pickForge(
+const pickForge = (
   builds: readonly ForgeBuildSummary[],
   input: ForgeResolveInput,
-): ForgeBuildSummary | undefined {
+): ForgeBuildSummary | undefined => {
   if (input.forgeVersion !== undefined) {
     return builds.find(
       (b) => b.forgeVersion === input.forgeVersion || b.fullVersion === input.forgeVersion,
@@ -115,4 +118,4 @@ function pickForge(
   const latest = builds.find((b) => b.isLatest);
   if (latest) return latest;
   return builds[builds.length - 1];
-}
+};

@@ -16,10 +16,10 @@ import { FakeHttpClient } from "../helpers/fake-http";
 
 const system: RuntimeSystem = { os: "windows", arch: "x64", osVersion: "10.0" };
 
-function buildApis(): {
+const buildApis = (): {
   targets: TargetsApi;
   http: FakeHttpClient;
-} {
+} => {
   const versionRoot = {
     latest: { release: "1.20.1", snapshot: "1.20.1" },
     versions: [
@@ -69,7 +69,7 @@ function buildApis(): {
     system,
   });
   return { targets, http };
-}
+};
 
 describe("TargetsApi", () => {
   it("create() validates id and directory", () => {

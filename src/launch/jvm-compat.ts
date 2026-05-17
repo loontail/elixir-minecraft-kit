@@ -18,7 +18,7 @@ export interface FilterArgsInput {
 }
 
 /** Drop JVM flags the chosen Java version cannot parse (safety net against pinned newer flags). */
-export function filterArgsForJava(input: FilterArgsInput): readonly string[] {
+export const filterArgsForJava = (input: FilterArgsInput): readonly string[] => {
   if (!Number.isFinite(input.javaMajor) || input.javaMajor <= 0) return input.args;
   const out: string[] = [];
   for (const arg of input.args) {
@@ -37,4 +37,4 @@ export function filterArgsForJava(input: FilterArgsInput): readonly string[] {
     out.push(arg);
   }
   return out;
-}
+};

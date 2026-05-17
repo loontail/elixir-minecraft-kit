@@ -18,10 +18,10 @@ import { parseMavenCoordinate } from "./maven";
  *  - `arguments.game` / `arguments.jvm` — additive concat.
  *  - `downloads` — shallow merge; child wins on conflict.
  */
-export function mergeManifest(
+export const mergeManifest = (
   parent: MinecraftVersionManifest,
   child: MinecraftVersionManifest,
-): MinecraftVersionManifest {
+): MinecraftVersionManifest => {
   const args = mergeArguments(parent.arguments, child.arguments);
   const minecraftArguments = child.minecraftArguments ?? parent.minecraftArguments;
   const javaVersion = child.javaVersion ?? parent.javaVersion;
@@ -49,9 +49,9 @@ export function mergeManifest(
     ...(minimumLauncherVersion !== undefined ? { minimumLauncherVersion } : {}),
     ...(complianceLevel !== undefined ? { complianceLevel } : {}),
   };
-}
+};
 
-function libraryDedupeKey(library: MinecraftLibrary): string | null {
+const libraryDedupeKey = (library: MinecraftLibrary): string | null => {
   if (!library.name) return null;
   try {
     const coord = parseMavenCoordinate(library.name);
@@ -60,12 +60,12 @@ function libraryDedupeKey(library: MinecraftLibrary): string | null {
   } catch {
     return null;
   }
-}
+};
 
-function mergeLibraries(
+const mergeLibraries = (
   parent: readonly MinecraftLibrary[],
   child: readonly MinecraftLibrary[],
-): readonly MinecraftLibrary[] {
+): readonly MinecraftLibrary[] => {
   // Fabric Knot's classpath verifier rejects two copies of intrinsic libraries
   // (ASM, mixin, intermediary, …). Dedupe by `group:artifact[:classifier]` with
   // child winning — loader profiles pin versions compatible with themselves.
@@ -82,12 +82,12 @@ function mergeLibraries(
     byKey.set(key, lib);
   }
   return [...byKey.values(), ...unkeyed];
-}
+};
 
-function mergeArguments(
+const mergeArguments = (
   parent: MinecraftArguments | undefined,
   child: MinecraftArguments | undefined,
-): MinecraftArguments | undefined {
+): MinecraftArguments | undefined => {
   if (!parent && !child) return undefined;
   const parentGame: readonly ArgumentEntry[] = parent?.game ?? [];
   const parentJvm: readonly ArgumentEntry[] = parent?.jvm ?? [];
@@ -97,4 +97,4 @@ function mergeArguments(
     game: [...parentGame, ...childGame],
     jvm: [...parentJvm, ...childJvm],
   };
-}
+};

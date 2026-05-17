@@ -35,7 +35,7 @@ export interface VerifyForgeInput {
  * declares. Libraries can only be enumerated once the JSON is present *and parsable*; a
  * malformed JSON is surfaced as a CORRUPT issue so repair rewrites it before re-running.
  */
-export async function verifyForge(input: VerifyForgeInput): Promise<VerificationResult> {
+export const verifyForge = async (input: VerifyForgeInput): Promise<VerificationResult> => {
   if (input.target.loader.type !== Loaders.FORGE) {
     throw new MinecraftKitError(
       "INVALID_INPUT",
@@ -93,4 +93,4 @@ export async function verifyForge(input: VerifyForgeInput): Promise<Verification
       }
     },
   );
-}
+};

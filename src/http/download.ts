@@ -37,10 +37,10 @@ export interface DownloadFileResult {
  * progress events. Skips the download when the destination already exists with matching
  * size + sha1.
  */
-export async function downloadFile(
+export const downloadFile = async (
   http: HttpClient,
   input: DownloadFileInput,
-): Promise<DownloadFileResult> {
+): Promise<DownloadFileResult> => {
   assertSafeDownloadUrl(input.url);
   const fileRef = {
     url: input.url,
@@ -168,13 +168,13 @@ export async function downloadFile(
       },
     },
   );
-}
+};
 
-async function checkExistingFile(
+const checkExistingFile = async (
   target: string,
   expectedSha1: string,
   expectedSize: number | undefined,
-): Promise<{ readonly matches: boolean; readonly sha1: string }> {
+): Promise<{ readonly matches: boolean; readonly sha1: string }> => {
   let stat: Awaited<ReturnType<typeof fs.stat>>;
   try {
     stat = await fs.stat(target);
@@ -190,21 +190,21 @@ async function checkExistingFile(
   const buf = await fs.readFile(target);
   const sha1 = crypto.createHash("sha1").update(buf).digest("hex");
   return { matches: sha1 === expectedSha1, sha1 };
-}
+};
 
-async function safeUnlink(filePath: string): Promise<void> {
+const safeUnlink = async (filePath: string): Promise<void> => {
   try {
     await fs.unlink(filePath);
   } catch {
     // Best-effort.
   }
-}
+};
 
 // Manifests are loaded over the network; an attacker controlling DNS or a man-in-the-middle
 // could rewrite `library.url` to `file:///etc/passwd` and the streaming `fetch` would happily
 // follow it. Restrict downloads to plain HTTP(S) so manifests can never coax `fetch` into
 // reading local files, executing JS, or following data URIs.
-function assertSafeDownloadUrl(url: string): void {
+const assertSafeDownloadUrl = (url: string): void => {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -220,4 +220,4 @@ function assertSafeDownloadUrl(url: string): void {
       { context: { url, scheme: parsed.protocol } },
     );
   }
-}
+};

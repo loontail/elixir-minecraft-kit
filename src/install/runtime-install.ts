@@ -24,7 +24,7 @@ export interface PlanRuntimeInstallInput {
  * install runner — directory placeholders and symlinks declared by the runtime manifest are
  * still materialized after downloads complete.
  */
-export async function planRuntimeInstall(input: PlanRuntimeInstallInput): Promise<InstallPlan> {
+export const planRuntimeInstall = async (input: PlanRuntimeInstallInput): Promise<InstallPlan> => {
   const runtimePlan = await planRuntimeDownloads({
     runtime: input.target.runtime,
     directory: input.target.directory,
@@ -45,7 +45,7 @@ export async function planRuntimeInstall(input: PlanRuntimeInstallInput): Promis
     totalActions: actions.length,
     totalBytes,
   };
-}
+};
 
 /** Inputs to {@link planStandaloneRuntimeInstall}. */
 export interface PlanStandaloneRuntimeInstallInput {
@@ -65,9 +65,9 @@ export interface PlanStandaloneRuntimeInstallInput {
  * {@link RuntimeOnlyInstallTarget} that carries only the runtime + directory — the runner skips
  * Minecraft/loader-specific stages because they have no actions in this plan.
  */
-export async function planStandaloneRuntimeInstall(
+export const planStandaloneRuntimeInstall = async (
   input: PlanStandaloneRuntimeInstallInput,
-): Promise<InstallPlan> {
+): Promise<InstallPlan> => {
   const runtimePlan = await planRuntimeDownloads({
     runtime: input.runtime,
     directory: input.directory,
@@ -93,4 +93,4 @@ export async function planStandaloneRuntimeInstall(
     totalActions: actions.length,
     totalBytes,
   };
-}
+};

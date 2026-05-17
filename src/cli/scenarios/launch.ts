@@ -7,7 +7,7 @@ import type { ScenarioContext, ScenarioOutcome } from "./types";
  * Scenario: launch Minecraft from a discovered installation. The active auth is taken from
  * `ctx.auth.current` (populated once at CLI startup) — no prompting here.
  */
-export async function scenarioLaunch(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioLaunch = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   const target = await pickInstalledTarget(ctx);
   if (!target) return "cancelled";
   const auth = ctx.auth.current;
@@ -53,4 +53,4 @@ export async function scenarioLaunch(ctx: ScenarioContext): Promise<ScenarioOutc
     ctx.ui.log("error", formatUserError(error));
     return "cancelled";
   }
-}
+};

@@ -374,11 +374,11 @@ describe("scenarioInspect", () => {
   });
 });
 
-function discoveredFor(id: string): DiscoveredTarget {
+const discoveredFor = (id: string): DiscoveredTarget => {
   return {
     id,
     directory: path.join(ROOT_DIR, id),
     minecraftVersions: ["1.20.1"],
     loaders: [{ type: Loaders.VANILLA, minecraftVersion: "1.20.1" }],
   };
-}
+};

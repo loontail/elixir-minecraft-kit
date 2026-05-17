@@ -6,11 +6,11 @@ import type { ProgressEvent, ProgressListener } from "../types/events";
  *
  * Throttling is per-target (event.file.target) so independent downloads don't starve each other.
  */
-export function throttleProgress(
+export const throttleProgress = (
   listener: ProgressListener,
   intervalMs: number,
   now: () => number = () => Date.now(),
-): ProgressListener {
+): ProgressListener => {
   const lastEmitByTarget = new Map<string, number>();
   return (event: ProgressEvent) => {
     if (event.type !== "download:progress") {
@@ -26,4 +26,4 @@ export function throttleProgress(
     lastEmitByTarget.set(key, ts);
     listener(event);
   };
-}
+};

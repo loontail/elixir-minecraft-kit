@@ -14,10 +14,10 @@ export interface RuleEvaluationContext {
  * `allowed` flag (`allow` → true, `disallow` → false). Last matching rule wins.
  * When the rule list is empty, the result is `true`.
  */
-export function evaluateRules(
+export const evaluateRules = (
   rules: readonly LibraryRule[] | undefined,
   context: RuleEvaluationContext,
-): boolean {
+): boolean => {
   if (!rules || rules.length === 0) {
     return true;
   }
@@ -28,9 +28,9 @@ export function evaluateRules(
     }
   }
   return allowed;
-}
+};
 
-function matchesRule(rule: LibraryRule, context: RuleEvaluationContext): boolean {
+const matchesRule = (rule: LibraryRule, context: RuleEvaluationContext): boolean => {
   if (rule.os !== undefined) {
     if (rule.os.name !== undefined && rule.os.name !== context.system.os) {
       return false;
@@ -58,24 +58,24 @@ function matchesRule(rule: LibraryRule, context: RuleEvaluationContext): boolean
     }
   }
   return true;
-}
+};
 
 /**
  * Mojang manifests sometimes use `x86` (32-bit) where Node uses `ia32`. We canonicalize
  * to Mojang names elsewhere and treat `x86` as `x86`.
  */
-function normalizeArch(arch: string): string {
+const normalizeArch = (arch: string): string => {
   return arch === "ia32" ? "x86" : arch;
-}
+};
 
 /** Resolve the `${arch}` placeholder used in legacy native classifier names. */
-export function resolveArchPlaceholder(template: string, archDigit: string): string {
+export const resolveArchPlaceholder = (template: string, archDigit: string): string => {
   return template.replaceAll("${arch}", archDigit);
-}
+};
 
 /** The numeric arch suffix used by legacy LWJGL natives (`x64` → `64`, `x86` → `32`). */
-export function archDigit(arch: RuntimeSystem["arch"]): string {
+export const archDigit = (arch: RuntimeSystem["arch"]): string => {
   if (arch === "x86") return "32";
   if (arch === "x64") return "64";
   return "64";
-}
+};

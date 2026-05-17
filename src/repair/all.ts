@@ -34,7 +34,7 @@ export interface RepairAllReport {
 }
 
 /** Verify every applicable aspect and repair each broken one. */
-export async function repairAll(input: RepairAllInput): Promise<RepairAllReport> {
+export const repairAll = async (input: RepairAllInput): Promise<RepairAllReport> => {
   const startedAt = Date.now();
   const ctx = {
     target: input.target,
@@ -81,7 +81,7 @@ export async function repairAll(input: RepairAllInput): Promise<RepairAllReport>
     bytesDownloaded,
     durationMs: Date.now() - startedAt,
   };
-}
+};
 
 const PLANNERS = {
   minecraft: planMinecraftRepair,

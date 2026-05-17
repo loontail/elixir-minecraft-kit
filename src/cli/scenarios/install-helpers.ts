@@ -11,11 +11,11 @@ import type { InstallSelection, InstallType, ScenarioContext } from "./types";
  * Plan + run an install and pipe progress events into the {@link ProgressRenderer}.
  * Throws if either step fails; the renderer's `fail()` message is the user-facing error.
  */
-export async function runInstallWithProgress(
+export const runInstallWithProgress = async (
   ctx: ScenarioContext,
   target: Target,
   label: string,
-): Promise<void> {
+): Promise<void> => {
   const planSpinner = ctx.ui.spinner();
   planSpinner.start(`Planning ${label}…`);
   let plan: Awaited<ReturnType<typeof ctx.kit.install.plan>>;
@@ -45,7 +45,7 @@ export async function runInstallWithProgress(
     renderer.fail(formatUserError(error));
     throw error;
   }
-}
+};
 
 /**
  * Resolve a target from the wizard selection and execute the install. Returns:
@@ -55,10 +55,10 @@ export async function runInstallWithProgress(
  *                   retrying without changing inputs almost never recovers.
  *   - `"install-type"` target resolution failed; loader choice probably needs to change.
  */
-export async function runInstallFromSelection(
+export const runInstallFromSelection = async (
   ctx: ScenarioContext,
   sel: InstallSelection,
-): Promise<"ok" | "cancelled" | "install-type"> {
+): Promise<"ok" | "cancelled" | "install-type"> => {
   const v = sel.version as MinecraftVersionSummary;
   const dir = sel.directory as string;
   const loaderInput = buildLoaderInput(sel);
@@ -86,12 +86,12 @@ export async function runInstallFromSelection(
     // the wizard would only re-trigger the same failure.
     return "cancelled";
   }
-}
+};
 
-export async function runStandaloneRuntimeInstallWithProgress(
+export const runStandaloneRuntimeInstallWithProgress = async (
   ctx: ScenarioContext,
   input: { readonly id: string; readonly directory: string; readonly runtime: ResolvedRuntime },
-): Promise<void> {
+): Promise<void> => {
   const label = `runtime ${input.runtime.component}`;
   const planSpinner = ctx.ui.spinner();
   planSpinner.start(`Planning ${label}…`);
@@ -123,12 +123,14 @@ export async function runStandaloneRuntimeInstallWithProgress(
     renderer.fail(formatUserError(error));
     throw error;
   }
-}
+};
 
-export function buildLoaderInput(sel: InstallSelection): {
+export const buildLoaderInput = (
+  sel: InstallSelection,
+): {
   readonly type: InstallType;
   readonly version?: string;
-} {
+} => {
   if (sel.installType === Loaders.VANILLA) {
     return { type: Loaders.VANILLA };
   }
@@ -136,16 +138,16 @@ export function buildLoaderInput(sel: InstallSelection): {
     return { type: Loaders.FABRIC, version: sel.fabricLoader as string };
   }
   return { type: Loaders.FORGE, version: sel.forgeBuild as string };
-}
+};
 
-export function describeLoader(sel: InstallSelection): string {
+export const describeLoader = (sel: InstallSelection): string => {
   const v = (sel.version as MinecraftVersionSummary).id;
   if (sel.installType === Loaders.VANILLA) return `Vanilla ${v}`;
   if (sel.installType === Loaders.FABRIC) return `Fabric ${sel.fabricLoader} on ${v}`;
   return `Forge ${sel.forgeLabel ?? sel.forgeBuild} on ${v}`;
-}
+};
 
-export function summaryRows(sel: InstallSelection): readonly (readonly [string, string])[] {
+export const summaryRows = (sel: InstallSelection): readonly (readonly [string, string])[] => {
   const v = sel.version as MinecraftVersionSummary;
   const rows: [string, string][] = [
     ["Minecraft", v.id],
@@ -160,23 +162,23 @@ export function summaryRows(sel: InstallSelection): readonly (readonly [string, 
   rows.push(["Runtime", sel.runtimeOverride ?? "auto-detect"]);
   rows.push(["Directory", sel.directory as string]);
   return rows;
-}
+};
 
-function labelForType(type: InstallType | null): string {
+const labelForType = (type: InstallType | null): string => {
   if (type === Loaders.FABRIC) return "Fabric";
   if (type === Loaders.FORGE) return "Forge (modern)";
   return "Vanilla";
-}
+};
 
-export function previousFromDirectory(
+export const previousFromDirectory = (
   sel: InstallSelection,
-): "fabric-loader" | "forge-build" | "install-type" {
+): "fabric-loader" | "forge-build" | "install-type" => {
   if (sel.installType === Loaders.FABRIC) return "fabric-loader";
   if (sel.installType === Loaders.FORGE) return "forge-build";
   return "install-type";
-}
+};
 
-export function defaultIdFromSelection(sel: InstallSelection): string {
+export const defaultIdFromSelection = (sel: InstallSelection): string => {
   const v = (sel.version as MinecraftVersionSummary).id;
   if (sel.installType === Loaders.FABRIC) {
     return defaultIdFor("fabric", `${v}-${sel.fabricLoader ?? ""}`);
@@ -185,13 +187,13 @@ export function defaultIdFromSelection(sel: InstallSelection): string {
     return defaultIdFor("forge", `${v}-${sel.forgeBuild ?? ""}`);
   }
   return defaultIdFor("vanilla", v);
-}
+};
 
-export function defaultIdFor(loader: string, suffix: string): string {
+export const defaultIdFor = (loader: string, suffix: string): string => {
   return `${loader}-${suffix}`.replace(/[^a-zA-Z0-9._-]+/g, "-").toLowerCase();
-}
+};
 
-export function formatDetailed(entry: DiscoveredTarget): string {
+export const formatDetailed = (entry: DiscoveredTarget): string => {
   const versions =
     entry.minecraftVersions.length === 0 ? "(none)" : entry.minecraftVersions.join(", ");
   const loaders =
@@ -209,9 +211,9 @@ export function formatDetailed(entry: DiscoveredTarget): string {
     `Runtime component: ${runtimeComponent}`,
     `Runtime version:   ${runtimeVersion}`,
   ].join("\n");
-}
+};
 
-export function formatSummary(summary: ProgressSummary): string {
+export const formatSummary = (summary: ProgressSummary): string => {
   const lines = [
     `Files downloaded: ${summary.filesDownloaded}`,
     `Files skipped:    ${summary.filesSkipped}`,
@@ -225,4 +227,4 @@ export function formatSummary(summary: ProgressSummary): string {
     `Duration:         ${formatDuration(summary.durationMs)}`,
   );
   return lines.join("\n");
-}
+};

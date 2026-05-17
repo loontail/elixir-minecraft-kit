@@ -6,12 +6,12 @@ import type { MinecraftLibrary, MinecraftVersionManifest } from "../types/minecr
 import type { RuntimeSystem } from "../types/system";
 
 /** Build the classpath entries for a launch. */
-export function buildClasspath(input: {
+export const buildClasspath = (input: {
   readonly directory: string;
   readonly versionId: string;
   readonly merged: MinecraftVersionManifest;
   readonly system: RuntimeSystem;
-}): readonly string[] {
+}): readonly string[] => {
   const seen = new Set<string>();
   const entries: string[] = [];
   for (const library of input.merged.libraries) {
@@ -27,13 +27,13 @@ export function buildClasspath(input: {
   const versionJar = targetPaths.versionJar(input.directory, input.versionId);
   if (!seen.has(versionJar)) entries.push(versionJar);
   return entries;
-}
+};
 
-function relativeFor(library: MinecraftLibrary): string | null {
+const relativeFor = (library: MinecraftLibrary): string | null => {
   if (library.downloads?.artifact?.path) return library.downloads.artifact.path;
   if (library.name) {
     const coord = parseMavenCoordinate(library.name);
     return mavenRelativePath(coord);
   }
   return null;
-}
+};

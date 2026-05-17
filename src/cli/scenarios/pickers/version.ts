@@ -9,21 +9,21 @@ import type { SelectOption, Ui, WizardOutcome } from "../../ui";
 import { CHANNEL_OPTIONS, type ScenarioContext } from "../types";
 
 /** Channel preset picker (release / snapshot / old / all). */
-export async function pickChannel(
+export const pickChannel = async (
   ui: Ui,
-): Promise<WizardOutcome<MinecraftChannel | "old" | "all">> {
+): Promise<WizardOutcome<MinecraftChannel | "old" | "all">> => {
   return ui.select({
     message: "Select Minecraft channel",
     options: CHANNEL_OPTIONS,
     allowCancel: true,
   });
-}
+};
 
 /** Pick a specific Minecraft version, filtered + de-duplicated by channel. */
-export async function pickMinecraftVersion(
+export const pickMinecraftVersion = async (
   ctx: ScenarioContext,
   channel: MinecraftChannel | "old" | "all",
-): Promise<WizardOutcome<MinecraftVersionSummary>> {
+): Promise<WizardOutcome<MinecraftVersionSummary>> => {
   const spinner = ctx.ui.spinner();
   spinner.start("Loading Minecraft versions…");
   let versions: readonly MinecraftVersionSummary[];
@@ -52,16 +52,16 @@ export async function pickMinecraftVersion(
     allowBack: true,
     allowCancel: true,
   });
-}
+};
 
 /**
  * Pick a Minecraft version from an already-discovered installation. Skips the picker if
  * the installation only has one version on disk.
  */
-export async function pickMinecraftVersionFromEntry(
+export const pickMinecraftVersionFromEntry = async (
   ctx: ScenarioContext,
   entry: DiscoveredTarget,
-): Promise<string | null> {
+): Promise<string | null> => {
   if (entry.minecraftVersions.length === 0) {
     ctx.ui.log("warn", "Installation has no Minecraft versions on disk.");
     return null;
@@ -76,11 +76,11 @@ export async function pickMinecraftVersionFromEntry(
   });
   if (choice.kind !== "ok") return null;
   return choice.value;
-}
+};
 
-function dedupeAndSortNewestFirst(
+const dedupeAndSortNewestFirst = (
   versions: readonly MinecraftVersionSummary[],
-): readonly MinecraftVersionSummary[] {
+): readonly MinecraftVersionSummary[] => {
   const seen = new Set<string>();
   const unique: MinecraftVersionSummary[] = [];
   for (const v of versions) {
@@ -89,12 +89,12 @@ function dedupeAndSortNewestFirst(
     unique.push(v);
   }
   return [...unique].sort((a, b) => (b.releaseTime ?? "").localeCompare(a.releaseTime ?? ""));
-}
+};
 
-function filterVersionsByChannel(
+const filterVersionsByChannel = (
   versions: readonly MinecraftVersionSummary[],
   channel: MinecraftChannel | "old" | "all",
-): readonly MinecraftVersionSummary[] {
+): readonly MinecraftVersionSummary[] => {
   if (channel === "all") return versions;
   if (channel === "old") {
     return versions.filter(
@@ -102,4 +102,4 @@ function filterVersionsByChannel(
     );
   }
   return versions.filter((v) => v.type === channel);
-}
+};

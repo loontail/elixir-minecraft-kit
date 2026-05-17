@@ -25,7 +25,7 @@ const profile = {
   libraries: [],
 };
 
-function buildKit(): { api: FabricVersionsApi; http: FakeHttpClient } {
+const buildKit = (): { api: FabricVersionsApi; http: FakeHttpClient } => {
   const http = new FakeHttpClient()
     .on(ApiEndpoints.fabric.loaderForGame("1.20.1"), { body: JSON.stringify(compat) })
     .on(ApiEndpoints.fabric.profile("1.20.1", "0.14.21"), { body: JSON.stringify(profile) })
@@ -37,7 +37,7 @@ function buildKit(): { api: FabricVersionsApi; http: FakeHttpClient } {
     });
   const api = new FabricVersionsApi({ http, cache: createMemoryCache(), logger: silentLogger });
   return { api, http };
-}
+};
 
 describe("FabricVersionsApi", () => {
   it("lists for minecraft version", async () => {

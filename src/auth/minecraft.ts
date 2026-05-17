@@ -26,12 +26,12 @@ interface ProfileResponse {
 }
 
 /** Step 4 — trade the XSTS token for a Minecraft bearer token. */
-export async function loginWithXbox(input: {
+export const loginWithXbox = async (input: {
   readonly http: HttpClient;
   readonly xstsToken: string;
   readonly userHash: string;
   readonly signal?: AbortSignal;
-}): Promise<MinecraftLoginResult> {
+}): Promise<MinecraftLoginResult> => {
   const body = JSON.stringify({
     identityToken: `XBL3.0 x=${input.userHash};${input.xstsToken}`,
   });
@@ -90,14 +90,14 @@ export async function loginWithXbox(input: {
     );
   }
   return { accessToken: parsed.access_token, expiresIn: parsed.expires_in };
-}
+};
 
 /** Step 5 — fetch the player profile (UUID + display name) using the Minecraft bearer token. */
-export async function fetchMinecraftProfile(input: {
+export const fetchMinecraftProfile = async (input: {
   readonly http: HttpClient;
   readonly accessToken: string;
   readonly signal?: AbortSignal;
-}): Promise<{ readonly uuid: string; readonly username: string }> {
+}): Promise<{ readonly uuid: string; readonly username: string }> => {
   const response = await input.http.request(MC_PROFILE_URL, {
     headers: {
       authorization: `Bearer ${input.accessToken}`,
@@ -129,14 +129,14 @@ export async function fetchMinecraftProfile(input: {
     );
   }
   return { uuid: dashUuid(parsed.id), username: parsed.name };
-}
+};
 
 /**
  * Decode the XUID out of the JWT-shaped Minecraft access token. The token has three base64url
  * segments — we read the middle (payload) one and pluck `xuid`. Errors are non-fatal; we
  * return an empty string so the rest of the flow can still proceed.
  */
-export function extractXuid(accessToken: string): string {
+export const extractXuid = (accessToken: string): string => {
   const parts = accessToken.split(".");
   const payload = parts[1];
   if (typeof payload !== "string") return "";
@@ -145,14 +145,14 @@ export function extractXuid(accessToken: string): string {
   );
   const parsed = parseJsonOrUndefined<{ xuid?: unknown }>(json);
   return typeof parsed?.xuid === "string" ? parsed.xuid : "";
-}
+};
 
 /** Convert a dashless UUID (Mojang format) into the dashed canonical form. */
-function dashUuid(raw: string): string {
+const dashUuid = (raw: string): string => {
   if (raw.includes("-")) return raw;
   if (raw.length !== 32) return raw;
   return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(
     16,
     20,
   )}-${raw.slice(20)}`;
-}
+};

@@ -17,7 +17,7 @@ import process from "node:process";
  *   race the actual process-start and report success for commands that ENOENT'd.
  * - `windowsHide: true` keeps a console window from flashing.
  */
-export async function openBrowser(url: string): Promise<boolean> {
+export const openBrowser = async (url: string): Promise<boolean> => {
   if (!isSafeBrowserUrl(url)) return false;
   const { command, args } = pickCommand(url);
   return await new Promise<boolean>((resolve) => {
@@ -43,21 +43,21 @@ export async function openBrowser(url: string): Promise<boolean> {
       finish(false);
     }
   });
-}
+};
 
 // Reject anything that isn't a parseable http(s) URL — handing arbitrary strings
 // (e.g. `file://`, `data:`, or a string with quotes) to `cmd /c start` is a shell-quoting
 // hazard on Windows.
-function isSafeBrowserUrl(url: string): boolean {
+const isSafeBrowserUrl = (url: string): boolean => {
   try {
     const parsed = new URL(url);
     return parsed.protocol === "https:" || parsed.protocol === "http:";
   } catch {
     return false;
   }
-}
+};
 
-function pickCommand(url: string): { command: string; args: string[] } {
+const pickCommand = (url: string): { command: string; args: string[] } => {
   switch (process.platform) {
     case "win32":
       return { command: process.env.ComSpec ?? "cmd.exe", args: ["/c", "start", '""', url] };
@@ -66,4 +66,4 @@ function pickCommand(url: string): { command: string; args: string[] } {
     default:
       return { command: "xdg-open", args: [url] };
   }
-}
+};

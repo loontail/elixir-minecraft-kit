@@ -4,7 +4,7 @@ import path from "node:path";
 import { MinecraftKitError } from "./errors";
 
 /** Ensure a directory exists, creating intermediate directories as needed. */
-export async function ensureDir(directory: string): Promise<void> {
+export const ensureDir = async (directory: string): Promise<void> => {
   try {
     await fs.mkdir(directory, { recursive: true });
   } catch (cause) {
@@ -14,37 +14,37 @@ export async function ensureDir(directory: string): Promise<void> {
       { cause, context: { filePath: directory } },
     );
   }
-}
+};
 
 /** Returns true if a path exists and is a regular file. */
-export async function fileExists(filePath: string): Promise<boolean> {
+export const fileExists = async (filePath: string): Promise<boolean> => {
   try {
     const stat = await fs.stat(filePath);
     return stat.isFile();
   } catch {
     return false;
   }
-}
+};
 
 /** Returns true if a path exists and is a directory. */
-export async function dirExists(filePath: string): Promise<boolean> {
+export const dirExists = async (filePath: string): Promise<boolean> => {
   try {
     const stat = await fs.stat(filePath);
     return stat.isDirectory();
   } catch {
     return false;
   }
-}
+};
 
 /** Get file size in bytes; returns -1 when the file is absent. */
-export async function fileSize(filePath: string): Promise<number> {
+export const fileSize = async (filePath: string): Promise<number> => {
   try {
     const stat = await fs.stat(filePath);
     return stat.size;
   } catch {
     return -1;
   }
-}
+};
 
 /**
  * Atomically write `data` to `target`. Writes to a temp sibling and renames.
@@ -52,7 +52,7 @@ export async function fileSize(filePath: string): Promise<number> {
  * Creates parent directories if missing. Throws {@link MinecraftKitError} with
  * code `FILESYSTEM_WRITE_ERROR` on failure.
  */
-export async function atomicWrite(target: string, data: Uint8Array | string): Promise<void> {
+export const atomicWrite = async (target: string, data: Uint8Array | string): Promise<void> => {
   await ensureDir(path.dirname(target));
   const tmp = `${target}.${crypto.randomBytes(4).toString("hex")}.tmp`;
   try {
@@ -73,10 +73,10 @@ export async function atomicWrite(target: string, data: Uint8Array | string): Pr
       context: { filePath: target },
     });
   }
-}
+};
 
 /** Read a file as UTF-8 text, mapping fs errors to a domain error. */
-export async function readText(filePath: string): Promise<string> {
+export const readText = async (filePath: string): Promise<string> => {
   try {
     return await fs.readFile(filePath, "utf8");
   } catch (cause) {
@@ -85,10 +85,10 @@ export async function readText(filePath: string): Promise<string> {
       context: { filePath },
     });
   }
-}
+};
 
 /** Read a file as bytes, mapping fs errors to a domain error. */
-export async function readBytes(filePath: string): Promise<Uint8Array> {
+export const readBytes = async (filePath: string): Promise<Uint8Array> => {
   try {
     const buf = await fs.readFile(filePath);
     return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
@@ -98,20 +98,20 @@ export async function readBytes(filePath: string): Promise<Uint8Array> {
       context: { filePath },
     });
   }
-}
+};
 
 /** List immediate child directory names of `directory`. Returns [] when directory is missing. */
-export async function listChildDirectories(directory: string): Promise<readonly string[]> {
+export const listChildDirectories = async (directory: string): Promise<readonly string[]> => {
   try {
     const entries = await fs.readdir(directory, { withFileTypes: true });
     return entries.filter((e) => e.isDirectory()).map((e) => e.name);
   } catch {
     return [];
   }
-}
+};
 
 /** Set the executable bit on a file (best-effort; no-op on Windows). */
-export async function chmodExecutable(filePath: string): Promise<void> {
+export const chmodExecutable = async (filePath: string): Promise<void> => {
   if (process.platform === "win32") {
     return;
   }
@@ -120,7 +120,7 @@ export async function chmodExecutable(filePath: string): Promise<void> {
   } catch {
     // Best-effort.
   }
-}
+};
 
 /**
  * Verify that `child` is contained in `root`. Used to defeat zip-slip and absolute-path
@@ -128,7 +128,7 @@ export async function chmodExecutable(filePath: string): Promise<void> {
  *
  * @throws `FILESYSTEM_PATH_TRAVERSAL` when `child` escapes `root`.
  */
-export function assertWithinRoot(root: string, child: string): void {
+export const assertWithinRoot = (root: string, child: string): void => {
   const normalizedRoot = path.resolve(root);
   const normalizedChild = path.resolve(root, child);
   const sep = path.sep;
@@ -137,4 +137,4 @@ export function assertWithinRoot(root: string, child: string): void {
       context: { filePath: child, rootDirectory: root },
     });
   }
-}
+};

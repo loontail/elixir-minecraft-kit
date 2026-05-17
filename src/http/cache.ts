@@ -9,7 +9,7 @@ export interface MemoryCacheOptions {
 }
 
 /** In-memory metadata cache backed by `lru-cache`. */
-export function createMemoryCache(options: MemoryCacheOptions = {}): MetadataCache {
+export const createMemoryCache = (options: MemoryCacheOptions = {}): MetadataCache => {
   const cache = new LRUCache<string, object>({
     max: options.maxEntries ?? CACHE_MAX_ENTRIES,
     ttl: options.ttlMs ?? CACHE_TTL_MS,
@@ -34,4 +34,4 @@ export function createMemoryCache(options: MemoryCacheOptions = {}): MetadataCac
       cache.clear();
     },
   };
-}
+};

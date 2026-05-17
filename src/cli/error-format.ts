@@ -4,7 +4,7 @@ import { isMinecraftKitError } from "../core/errors";
  * Translate any error into a short, user-friendly sentence the CLI can show. Avoids leaking
  * raw `NETWORK_HTTP_ERROR: HTTP 400 …` strings to the operator.
  */
-export function formatUserError(error: unknown): string {
+export const formatUserError = (error: unknown): string => {
   if (isMinecraftKitError(error)) {
     const status =
       typeof error.context.httpStatus === "number" ? error.context.httpStatus : undefined;
@@ -71,4 +71,4 @@ export function formatUserError(error: unknown): string {
   }
   if (error instanceof Error) return error.message;
   return String(error);
-}
+};

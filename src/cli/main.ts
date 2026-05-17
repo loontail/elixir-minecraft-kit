@@ -36,7 +36,7 @@ export interface RunCliInput {
 }
 
 /** Programmatic CLI entrypoint, used by both the bin and the tests. */
-export async function runCli(input: RunCliInput): Promise<number> {
+export const runCli = async (input: RunCliInput): Promise<number> => {
   if (input.args.includes("--help") || input.args.includes("-h")) {
     input.ui.note(
       "mckit — minecraft-kit CLI",
@@ -80,7 +80,7 @@ export async function runCli(input: RunCliInput): Promise<number> {
       }
     }
   }
-}
+};
 
 /** Main-menu options exported so tests can assert their composition. */
 export const MAIN_MENU: ReadonlyArray<{ label: string; value: string; hint?: string }> = [
@@ -98,7 +98,7 @@ export const MAIN_MENU: ReadonlyArray<{ label: string; value: string; hint?: str
   { label: "Exit", value: SCENARIO_KEYS.EXIT },
 ];
 
-async function dispatch(choice: string, ctx: ScenarioContext): Promise<ScenarioOutcome> {
+const dispatch = async (choice: string, ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   switch (choice) {
     case SCENARIO_KEYS.INSTALL_MC:
       return scenarioInstallMinecraft(ctx);
@@ -118,10 +118,10 @@ async function dispatch(choice: string, ctx: ScenarioContext): Promise<ScenarioO
       ctx.ui.log("warn", `Unknown action: ${choice}`);
       return "cancelled";
   }
-}
+};
 
 /** Bin entrypoint. */
-export async function bin(): Promise<void> {
+export const bin = async (): Promise<void> => {
   const ui = await createClackUi();
   const code = await runCli({
     args: process.argv.slice(2),
@@ -129,4 +129,4 @@ export async function bin(): Promise<void> {
     rootDir: process.cwd(),
   });
   process.exit(code);
-}
+};

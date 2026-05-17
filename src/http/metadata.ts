@@ -16,11 +16,11 @@ export interface FetchJsonInput {
  *
  * Cache key defaults to the URL.
  */
-export async function fetchJson<T>(
+export const fetchJson = async <T>(
   http: HttpClient,
   cache: MetadataCache,
   input: FetchJsonInput,
-): Promise<T> {
+): Promise<T> => {
   const key = input.cacheKey ?? `json:${input.url}`;
   const cached = cache.get<T>(key);
   if (cached !== undefined) {
@@ -32,14 +32,14 @@ export async function fetchJson<T>(
   const value = await response.json<T>();
   cache.set(key, value, input.ttlMs ?? CACHE_TTL_MS);
   return value;
-}
+};
 
 /** GET a URL and return raw text, with caching. */
-export async function fetchText(
+export const fetchText = async (
   http: HttpClient,
   cache: MetadataCache,
   input: FetchJsonInput,
-): Promise<string> {
+): Promise<string> => {
   const key = input.cacheKey ?? `text:${input.url}`;
   const cached = cache.get<string>(key);
   if (cached !== undefined) {
@@ -51,4 +51,4 @@ export async function fetchText(
   const text = await response.text();
   cache.set(key, text, input.ttlMs ?? CACHE_TTL_MS);
   return text;
-}
+};

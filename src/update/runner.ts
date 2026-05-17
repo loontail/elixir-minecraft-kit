@@ -20,14 +20,14 @@ export interface PlanUpdateInput {
  * already skips files whose on-disk size + sha1 match the manifest, so "update" and
  * "install" share the same action list.
  */
-export async function planUpdate(input: PlanUpdateInput): Promise<UpdatePlan> {
+export const planUpdate = async (input: PlanUpdateInput): Promise<UpdatePlan> => {
   return planInstall({
     target: input.target,
     http: input.http,
     cache: input.cache,
     ...(input.signal !== undefined ? { signal: input.signal } : {}),
   });
-}
+};
 
 /** Inputs to the update runner. */
 export interface RunUpdateInput {
@@ -43,7 +43,7 @@ export interface RunUpdateInput {
  * Execute an update plan. Reuses the install runner; already-correct files are skipped
  * automatically and counted in the `actionsSkipped` field of the report.
  */
-export async function runUpdate(input: RunUpdateInput): Promise<UpdateReport> {
+export const runUpdate = async (input: RunUpdateInput): Promise<UpdateReport> => {
   const report = await runInstall({
     plan: input.plan,
     http: input.http,
@@ -59,4 +59,4 @@ export async function runUpdate(input: RunUpdateInput): Promise<UpdateReport> {
     actionsSkipped: report.actionsSkipped,
     durationMs: report.durationMs,
   };
-}
+};

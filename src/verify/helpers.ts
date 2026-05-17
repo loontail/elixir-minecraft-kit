@@ -17,14 +17,14 @@ export type VerificationRecorder = (result: VerificationFileResult) => void;
  * Run the boilerplate shared by every aspect verifier: tracks the per-file results emitted
  * via the recorder, fires `verify:file-checked` events, and assembles the {@link VerificationResult}.
  */
-export async function runVerification(
+export const runVerification = async (
   input: {
     readonly targetId: string;
     readonly kind: VerificationKind;
     readonly onEvent?: ProgressListener;
   },
   check: (record: VerificationRecorder) => Promise<void>,
-): Promise<VerificationResult> {
+): Promise<VerificationResult> => {
   const startedAt = Date.now();
   const results: VerificationFileResult[] = [];
   const record: VerificationRecorder = (result) => {
@@ -40,16 +40,16 @@ export async function runVerification(
     checkedFiles: results.length,
     durationMs: Date.now() - startedAt,
   };
-}
+};
 
 /** Verify a file by existence + optional size + optional sha1. */
-export async function verifyHashedFile(input: {
+export const verifyHashedFile = async (input: {
   readonly path: string;
   readonly expectedSha1?: string;
   readonly expectedSize?: number;
   readonly url?: string;
   readonly category: VerificationFileResult["category"];
-}): Promise<VerificationFileResult> {
+}): Promise<VerificationFileResult> => {
   if (!(await fileExists(input.path))) {
     return {
       path: input.path,
@@ -96,14 +96,14 @@ export async function verifyHashedFile(input: {
     ...(input.expectedSize !== undefined ? { expectedSize: input.expectedSize } : {}),
     ...(input.url !== undefined ? { url: input.url } : {}),
   };
-}
+};
 
 /** Verify by existence only (no hash/size check). */
-export async function verifyExistence(input: {
+export const verifyExistence = async (input: {
   readonly path: string;
   readonly category: VerificationFileResult["category"];
   readonly url?: string;
-}): Promise<VerificationFileResult> {
+}): Promise<VerificationFileResult> => {
   if (await fileExists(input.path)) {
     return {
       path: input.path,
@@ -118,7 +118,7 @@ export async function verifyExistence(input: {
     status: VerifyFileStatuses.MISSING,
     ...(input.url !== undefined ? { url: input.url } : {}),
   };
-}
+};
 
 /**
  * Locate a Forge version JSON on disk for the given Minecraft version. Returns the
@@ -126,10 +126,10 @@ export async function verifyExistence(input: {
  * a MISSING issue and trigger a write/repair downstream. Returns null when the versions
  * directory has no Forge folder for this Minecraft version.
  */
-export async function findForgeVersionJsonPath(
+export const findForgeVersionJsonPath = async (
   directory: string,
   minecraftVersion: string,
-): Promise<string | null> {
+): Promise<string | null> => {
   const versionsDir = targetPaths.versionsDir(directory);
   const dirs = await listChildDirectories(versionsDir);
   for (const id of dirs) {
@@ -142,11 +142,11 @@ export async function findForgeVersionJsonPath(
     if (parsed === minecraftVersion) return jsonPath;
   }
   return null;
-}
+};
 
-async function tryParseInheritsFrom(jsonPath: string): Promise<string | undefined> {
+const tryParseInheritsFrom = async (jsonPath: string): Promise<string | undefined> => {
   // Malformed JSON cannot match by inheritsFrom; treated as a non-match. The next
   // verify pass over this file will surface it through the regular file check path.
   const parsed = parseJsonOrUndefined<{ inheritsFrom?: string }>(await readText(jsonPath));
   return parsed?.inheritsFrom;
-}
+};

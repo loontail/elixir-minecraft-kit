@@ -11,7 +11,7 @@ interface FakeClack {
   readonly module: Parameters<typeof buildUi>[0];
 }
 
-function makeFakeClack(answers: readonly unknown[]): FakeClack {
+const makeFakeClack = (answers: readonly unknown[]): FakeClack => {
   const queue = [...answers];
   const recorded: Recorded[] = [];
   const module: Parameters<typeof buildUi>[0] = {
@@ -37,7 +37,7 @@ function makeFakeClack(answers: readonly unknown[]): FakeClack {
     isCancel: (value: unknown) => value === Symbol.for("mckit:test:cancel"),
   };
   return { recorded, module };
-}
+};
 
 describe("Ui.searchableSelect", () => {
   it("shows the list immediately — no filter prompt, no filter sentinel option", async () => {

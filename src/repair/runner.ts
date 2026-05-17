@@ -16,7 +16,7 @@ export interface RunRepairInput {
 }
 
 /** Execute any repair plan. Reuses the install runner. */
-export async function runRepair(input: RunRepairInput): Promise<RepairReport> {
+export const runRepair = async (input: RunRepairInput): Promise<RepairReport> => {
   const report = await runInstall({
     plan: {
       ...input.plan,
@@ -35,4 +35,4 @@ export async function runRepair(input: RunRepairInput): Promise<RepairReport> {
     actionsCompleted: report.actionsCompleted,
     durationMs: report.durationMs,
   };
-}
+};

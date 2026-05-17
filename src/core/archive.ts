@@ -25,7 +25,7 @@ export interface ZipEntry {
 }
 
 /** Open a zip/jar file for streaming inspection. */
-export function openZip(filePath: string): Promise<ZipReader> {
+export const openZip = (filePath: string): Promise<ZipReader> => {
   return new Promise((resolve, reject) => {
     yauzl.open(filePath, { lazyEntries: true, autoClose: false }, (err, zipFile) => {
       if (err || !zipFile) {
@@ -40,7 +40,7 @@ export function openZip(filePath: string): Promise<ZipReader> {
       resolve(new ZipReader(zipFile, filePath));
     });
   });
-}
+};
 
 /** Reader for a single zip file. */
 export class ZipReader {
@@ -150,11 +150,11 @@ export class ZipReader {
   }
 }
 
-function openStream(
+const openStream = (
   file: yauzl.ZipFile,
   entry: yauzl.Entry,
   archivePath: string,
-): Promise<Readable> {
+): Promise<Readable> => {
   return new Promise((resolve, reject) => {
     file.openReadStream(entry, (err, stream) => {
       if (err || !stream) {
@@ -170,7 +170,7 @@ function openStream(
       resolve(stream);
     });
   });
-}
+};
 
 /** Inputs to {@link extractEntryToDir}. */
 export interface ExtractOptions {
@@ -181,11 +181,11 @@ export interface ExtractOptions {
 }
 
 /** Extract every file entry from a zip into `targetDir`, applying safety checks. */
-export async function extractAllToDir(
+export const extractAllToDir = async (
   zipPath: string,
   targetDir: string,
   options: ExtractOptions = {},
-): Promise<{ readonly fileCount: number }> {
+): Promise<{ readonly fileCount: number }> => {
   const exclude = options.excludePrefixes ?? ["META-INF/"];
   let fileCount = 0;
   let totalSize = 0;
@@ -229,12 +229,12 @@ export async function extractAllToDir(
     reader.close();
   }
   return { fileCount };
-}
+};
 
 const RESERVED_NAME = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$/i;
 
 /** Reject entry names that are dangerous regardless of containment. */
-export function assertSafeEntryName(name: string): void {
+export const assertSafeEntryName = (name: string): void => {
   if (!name) {
     throw rejectEntry(name, "empty entry name");
   }
@@ -256,21 +256,21 @@ export function assertSafeEntryName(name: string): void {
       throw rejectEntry(name, "trailing dot or whitespace");
     }
   }
-}
+};
 
-function rejectEntry(name: string, reason: string): MinecraftKitError {
+const rejectEntry = (name: string, reason: string): MinecraftKitError => {
   return new MinecraftKitError(
     "ARCHIVE_ENTRY_REJECTED",
     `Archive entry rejected (${reason}): ${name}`,
     { context: { entryName: name, reason } },
   );
-}
+};
 
 /** Read a single named entry to a Buffer. Returns undefined if missing. */
-export async function readEntryBuffer(
+export const readEntryBuffer = async (
   zipPath: string,
   entryName: string,
-): Promise<Buffer | undefined> {
+): Promise<Buffer | undefined> => {
   const reader = await openZip(zipPath);
   try {
     const entry = await reader.findEntry(entryName);
@@ -279,14 +279,14 @@ export async function readEntryBuffer(
   } finally {
     reader.close();
   }
-}
+};
 
 /** Extract a single entry to a destination path. */
-export async function extractSingleEntry(
+export const extractSingleEntry = async (
   zipPath: string,
   entryName: string,
   destination: string,
-): Promise<void> {
+): Promise<void> => {
   const buffer = await readEntryBuffer(zipPath, entryName);
   if (!buffer) {
     throw new MinecraftKitError("ARCHIVE_INVALID", `Archive entry not found: ${entryName}`, {
@@ -294,7 +294,7 @@ export async function extractSingleEntry(
     });
   }
   await atomicWrite(destination, buffer);
-}
+};
 
 /**
  * JAR manifest line-continuation: a line break followed by a single space or tab joins
@@ -304,7 +304,7 @@ const MANIFEST_LINE_CONTINUATION = /\r?\n[ \t]/g;
 const MANIFEST_MAIN_CLASS = /^Main-Class:\s*(.+)$/i;
 
 /** Read the `Main-Class` attribute from a JAR's `META-INF/MANIFEST.MF`. */
-export async function readJarMainClass(zipPath: string): Promise<string | undefined> {
+export const readJarMainClass = async (zipPath: string): Promise<string | undefined> => {
   const buf = await readEntryBuffer(zipPath, "META-INF/MANIFEST.MF");
   if (!buf) return undefined;
   const text = buf.toString("utf8").replaceAll(MANIFEST_LINE_CONTINUATION, "");
@@ -313,4 +313,4 @@ export async function readJarMainClass(zipPath: string): Promise<string | undefi
     if (match?.[1]) return match[1].trim();
   }
   return undefined;
-}
+};

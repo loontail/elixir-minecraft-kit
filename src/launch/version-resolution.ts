@@ -18,7 +18,7 @@ export interface ResolvedLaunchVersion {
 }
 
 /** Read the installed version JSON appropriate for a target's loader and merge inheritsFrom. */
-export async function resolveLaunchVersion(target: Target): Promise<ResolvedLaunchVersion> {
+export const resolveLaunchVersion = async (target: Target): Promise<ResolvedLaunchVersion> => {
   if (target.loader.type === Loaders.VANILLA) {
     return {
       versionId: target.minecraft.version,
@@ -30,7 +30,7 @@ export async function resolveLaunchVersion(target: Target): Promise<ResolvedLaun
   const merged = await loadAndMerge(target.directory, versionId, target.minecraft.manifest);
   // Fabric and modern Forge inherit directly from vanilla — a two-level chain.
   return { versionId, merged, chain: [versionId, target.minecraft.version] };
-}
+};
 
 /**
  * Pick the version id whose `versions/<id>/<id>.jar` should land on the launch classpath.
@@ -43,10 +43,10 @@ export async function resolveLaunchVersion(target: Target): Promise<ResolvedLaun
  * absent and routes the patched client jar through `libraries/`. Walking the chain picks
  * the right id for both shapes without special-casing.
  */
-export async function pickClientJarVersionId(
+export const pickClientJarVersionId = async (
   directory: string,
   chain: readonly string[],
-): Promise<string> {
+): Promise<string> => {
   for (const id of chain) {
     const jar = targetPaths.versionJar(directory, id);
     if (await fileExists(jar)) return id;
@@ -61,9 +61,9 @@ export async function pickClientJarVersionId(
   // Nothing on disk yet — fall back to the root vanilla id so the launch composition still
   // produces a valid path; install/repair will materialise the jar before run-time.
   return fallback;
-}
+};
 
-async function pickInstalledVersionId(target: Target): Promise<string> {
+const pickInstalledVersionId = async (target: Target): Promise<string> => {
   if (target.loader.type === Loaders.FABRIC) {
     const candidate = target.loader.profile.id;
     const versionJsonPath = targetPaths.versionJson(target.directory, candidate);
@@ -89,13 +89,13 @@ async function pickInstalledVersionId(target: Target): Promise<string> {
     `Could not find an installed version JSON for target ${target.id}`,
     { context: { targetId: target.id, loaderType: target.loader.type } },
   );
-}
+};
 
-async function loadAndMerge(
+const loadAndMerge = async (
   directory: string,
   versionId: string,
   parentManifest: MinecraftVersionManifest,
-): Promise<MinecraftVersionManifest> {
+): Promise<MinecraftVersionManifest> => {
   const versionJsonPath = targetPaths.versionJson(directory, versionId);
   const text = await readText(versionJsonPath);
   const child = parseJsonStrict<MinecraftVersionManifest>(text, {
@@ -108,4 +108,4 @@ async function loadAndMerge(
     return mergeManifest(parentManifest, child);
   }
   return mergeManifest(parentManifest, child);
-}
+};

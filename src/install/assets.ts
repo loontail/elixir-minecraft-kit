@@ -10,7 +10,7 @@ import type { AssetIndexDocument, AssetIndexReference } from "../types/minecraft
  * Plan asset downloads: fetch the asset index and emit a download action per object plus the
  * index file itself.
  */
-export async function planAssetDownloads(input: {
+export const planAssetDownloads = async (input: {
   readonly directory: string;
   readonly assetIndex: AssetIndexReference;
   readonly http: HttpClient;
@@ -19,7 +19,7 @@ export async function planAssetDownloads(input: {
 }): Promise<{
   readonly actions: readonly DownloadAction[];
   readonly indexDocument: AssetIndexDocument;
-}> {
+}> => {
   const indexUrl = input.assetIndex.url;
   const indexPath = targetPaths.assetIndex(input.directory, input.assetIndex.id);
   const indexDocument = await fetchJson<AssetIndexDocument>(input.http, input.cache, {
@@ -55,4 +55,4 @@ export async function planAssetDownloads(input: {
     });
   }
   return { actions, indexDocument };
-}
+};

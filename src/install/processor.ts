@@ -16,7 +16,7 @@ export interface RunProcessorInput {
 }
 
 /** Execute a single Forge processor and verify its declared outputs. */
-export async function runProcessor(input: RunProcessorInput): Promise<void> {
+export const runProcessor = async (input: RunProcessorInput): Promise<void> => {
   const startedAt = Date.now();
   const mainClass = await resolveProcessorMainClass(input.action);
   emit(input, { type: "forge:processor-started", index: input.action.index, mainClass });
@@ -43,9 +43,9 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
   });
 
   await verifyProcessorOutputs(input, mainClass);
-}
+};
 
-async function resolveProcessorMainClass(action: RunForgeProcessorAction): Promise<string> {
+const resolveProcessorMainClass = async (action: RunForgeProcessorAction): Promise<string> => {
   // Resolve Main-Class from the processor JAR (always classpath[0]) now that all
   // libraries have been downloaded. Deferring this from planning to runtime is what
   // lets newer Forge versions work, since their processor JARs ship as regular Maven
@@ -67,14 +67,17 @@ async function resolveProcessorMainClass(action: RunForgeProcessorAction): Promi
     );
   }
   return mainClass;
-}
+};
 
 interface ProcessorExit {
   readonly code: number | null;
   readonly stderr: string;
 }
 
-async function spawnProcessor(input: RunProcessorInput, mainClass: string): Promise<ProcessorExit> {
+const spawnProcessor = async (
+  input: RunProcessorInput,
+  mainClass: string,
+): Promise<ProcessorExit> => {
   const classpathSeparator = process.platform === "win32" ? ";" : ":";
   const args = [
     "-cp",
@@ -93,9 +96,12 @@ async function spawnProcessor(input: RunProcessorInput, mainClass: string): Prom
   });
   const exit = await child.exited;
   return { code: exit.code, stderr: stderrTail.join("\n") };
-}
+};
 
-async function verifyProcessorOutputs(input: RunProcessorInput, mainClass: string): Promise<void> {
+const verifyProcessorOutputs = async (
+  input: RunProcessorInput,
+  mainClass: string,
+): Promise<void> => {
   for (const [outputPath, expectedSha1] of Object.entries(input.action.outputs)) {
     const sha1 = await sha1OfFile(outputPath);
     if (sha1 !== expectedSha1) {
@@ -111,15 +117,15 @@ async function verifyProcessorOutputs(input: RunProcessorInput, mainClass: strin
       path: outputPath,
     });
   }
-}
+};
 
-function emit(
+const emit = (
   input: RunProcessorInput,
   event: { type: "forge:processor-started"; index: number; mainClass: string },
-): void {
+): void => {
   input.onEvent?.({
     type: event.type,
     processor: { index: event.index, mainClass: event.mainClass },
     total: input.total,
   });
-}
+};

@@ -11,10 +11,10 @@ import type { ScenarioContext, ScenarioOutcome } from "./types";
  * Run every verify aspect that applies to a target: always `minecraft` and `runtime`, plus
  * `fabric` / `forge` when the target uses that loader.
  */
-async function verifyAllAspects(
+const verifyAllAspects = async (
   ctx: ScenarioContext,
   target: Target,
-): Promise<readonly VerificationResult[]> {
+): Promise<readonly VerificationResult[]> => {
   const results: VerificationResult[] = [];
   results.push(await ctx.kit.verify.minecraft.run(target));
   if (target.loader.type === Loaders.FABRIC) {
@@ -24,19 +24,21 @@ async function verifyAllAspects(
   }
   results.push(await ctx.kit.verify.runtime.run(target));
   return results;
-}
+};
 
-function summarizeVerifications(results: readonly VerificationResult[]): {
+const summarizeVerifications = (
+  results: readonly VerificationResult[],
+): {
   readonly totalIssues: number;
   readonly perKind: ReadonlyArray<{ readonly kind: string; readonly count: number }>;
-} {
+} => {
   const perKind = results.map((r) => ({ kind: r.kind, count: r.issues.length }));
   const totalIssues = perKind.reduce((sum, p) => sum + p.count, 0);
   return { totalIssues, perKind };
-}
+};
 
 /** Scenario: verify a discovered installation across minecraft, loader, and runtime. */
-export async function scenarioVerify(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioVerify = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   const target = await pickInstalledTarget(ctx);
   if (!target) return "cancelled";
   const spinner = ctx.ui.spinner();
@@ -63,10 +65,10 @@ export async function scenarioVerify(ctx: ScenarioContext): Promise<ScenarioOutc
     ctx.ui.log("error", formatUserError(error));
     return "cancelled";
   }
-}
+};
 
 /** Scenario: repair a discovered installation. */
-export async function scenarioRepair(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioRepair = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   const target = await pickInstalledTarget(ctx);
   if (!target) return "cancelled";
   const verifySpinner = ctx.ui.spinner();
@@ -122,4 +124,4 @@ export async function scenarioRepair(ctx: ScenarioContext): Promise<ScenarioOutc
     ctx.ui.log("error", formatUserError(error));
     return "cancelled";
   }
-}
+};

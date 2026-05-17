@@ -176,10 +176,10 @@ export class TargetsApi {
   }
 }
 
-async function discoverInstallation(
+const discoverInstallation = async (
   id: string,
   directory: string,
-): Promise<DiscoveredTarget | null> {
+): Promise<DiscoveredTarget | null> => {
   const versionsDir = path.join(directory, VERSIONS_DIR);
   const librariesDir = path.join(directory, LIBRARIES_DIR);
   const assetsDir = path.join(directory, ASSETS_DIR);
@@ -203,9 +203,9 @@ async function discoverInstallation(
   }
   const runtime = await discoverRuntime(directory);
   return { id, directory, minecraftVersions, loaders, ...(runtime ? { runtime } : {}) };
-}
+};
 
-async function discoverRuntime(directory: string): Promise<DiscoveredRuntimeHint | undefined> {
+const discoverRuntime = async (directory: string): Promise<DiscoveredRuntimeHint | undefined> => {
   const runtimeDir = path.join(directory, RUNTIMES_DIR);
   if (!(await dirExists(runtimeDir))) return undefined;
   let components: readonly string[];
@@ -227,9 +227,9 @@ async function discoverRuntime(directory: string): Promise<DiscoveredRuntimeHint
     }
   }
   return undefined;
-}
+};
 
-function inferLoaderFromVersionId(versionId: string): DiscoveredLoaderHint | null {
+const inferLoaderFromVersionId = (versionId: string): DiscoveredLoaderHint | null => {
   const fabricMatch = /^fabric-loader-([^-]+)-(.+)$/.exec(versionId);
   if (fabricMatch?.[1] && fabricMatch[2]) {
     return { type: Loaders.FABRIC, version: fabricMatch[1], minecraftVersion: fabricMatch[2] };
@@ -239,4 +239,4 @@ function inferLoaderFromVersionId(versionId: string): DiscoveredLoaderHint | nul
     return { type: Loaders.FORGE, minecraftVersion: forgeMatch[1], version: forgeMatch[2] };
   }
   return null;
-}
+};

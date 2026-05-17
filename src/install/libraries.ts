@@ -24,13 +24,13 @@ export interface LibraryPlan {
  * native-extraction actions. Library entries that don't apply on the target platform are
  * silently filtered.
  */
-export function planLibraryDownloads(input: {
+export const planLibraryDownloads = (input: {
   readonly libraries: readonly MinecraftLibrary[];
   readonly directory: string;
   readonly system: RuntimeSystem;
   readonly versionId: string;
   readonly category: DownloadAction["category"];
-}): LibraryPlan {
+}): LibraryPlan => {
   const downloads: DownloadAction[] = [];
   const nativeExtractions: ExtractNativeAction[] = [];
   const classpathFiles: string[] = [];
@@ -90,7 +90,7 @@ export function planLibraryDownloads(input: {
     }
   }
   return { downloads, nativeExtractions, classpathFiles };
-}
+};
 
 interface ArtifactDescription {
   readonly relativePath: string;
@@ -99,7 +99,7 @@ interface ArtifactDescription {
   readonly size: number | undefined;
 }
 
-function pickPrimaryArtifact(library: MinecraftLibrary): ArtifactDescription | null {
+const pickPrimaryArtifact = (library: MinecraftLibrary): ArtifactDescription | null => {
   if (library.downloads?.artifact) {
     return artifactFromDownload(library.downloads.artifact);
   }
@@ -110,9 +110,12 @@ function pickPrimaryArtifact(library: MinecraftLibrary): ArtifactDescription | n
     return mavenArtifactFromCoord(library.name, DEFAULT_LIBRARY_REPOSITORY);
   }
   return null;
-}
+};
 
-function pickNative(library: MinecraftLibrary, system: RuntimeSystem): ArtifactDescription | null {
+const pickNative = (
+  library: MinecraftLibrary,
+  system: RuntimeSystem,
+): ArtifactDescription | null => {
   if (!library.natives) return null;
   const classifierTemplate = library.natives[system.os];
   if (!classifierTemplate) return null;
@@ -127,18 +130,18 @@ function pickNative(library: MinecraftLibrary, system: RuntimeSystem): ArtifactD
     return mavenArtifactFromCoord(withClassifier, library.url ?? DEFAULT_LIBRARY_REPOSITORY);
   }
   return null;
-}
+};
 
-function artifactFromDownload(artifact: LibraryArtifact): ArtifactDescription {
+const artifactFromDownload = (artifact: LibraryArtifact): ArtifactDescription => {
   return {
     relativePath: artifact.path,
     url: artifact.url,
     sha1: artifact.sha1,
     size: artifact.size,
   };
-}
+};
 
-function mavenArtifactFromCoord(coord: string, baseUrl: string): ArtifactDescription {
+const mavenArtifactFromCoord = (coord: string, baseUrl: string): ArtifactDescription => {
   const relativePath = mavenRelativePathFor(coord);
   const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
   if (!relativePath) {
@@ -152,4 +155,4 @@ function mavenArtifactFromCoord(coord: string, baseUrl: string): ArtifactDescrip
     sha1: undefined,
     size: undefined,
   };
-}
+};

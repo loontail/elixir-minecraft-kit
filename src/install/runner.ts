@@ -80,7 +80,7 @@ interface PlannedActions {
 }
 
 /** Execute an install plan. */
-export async function runInstall(input: RunInstallInput): Promise<InstallReport> {
+export const runInstall = async (input: RunInstallInput): Promise<InstallReport> => {
   const startedAt = Date.now();
   const counters: InstallCounters = { bytesDownloaded: 0, actionsCompleted: 0, actionsSkipped: 0 };
   const ctx = createContext(input, counters);
@@ -103,9 +103,9 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
     actionsSkipped: counters.actionsSkipped,
     durationMs: Date.now() - startedAt,
   };
-}
+};
 
-function createContext(input: RunInstallInput, counters: InstallCounters): InstallRunnerContext {
+const createContext = (input: RunInstallInput, counters: InstallCounters): InstallRunnerContext => {
   let currentPhase: InstallPhase | null = null;
   const enterPhase = (phase: InstallPhase): void => {
     if (phase === currentPhase) return;
@@ -128,9 +128,9 @@ function createContext(input: RunInstallInput, counters: InstallCounters): Insta
     enterPhase,
     limit: pLimit(input.concurrency ?? DOWNLOAD_CONCURRENCY),
   };
-}
+};
 
-function partitionActions(input: RunInstallInput): PlannedActions {
+const partitionActions = (input: RunInstallInput): PlannedActions => {
   const filter = input.actionCategories;
   return {
     downloads: input.plan.actions
@@ -140,12 +140,12 @@ function partitionActions(input: RunInstallInput): PlannedActions {
     writes: input.plan.actions.filter(isWrite),
     processors: input.plan.actions.filter(isProcessor),
   };
-}
+};
 
-async function runDownloadsStage(
+const runDownloadsStage = async (
   ctx: InstallRunnerContext,
   downloads: readonly DownloadAction[],
-): Promise<void> {
+): Promise<void> => {
   if (downloads.length === 0) return;
   for (const group of DOWNLOAD_GROUPS) {
     const groupActions = downloads.filter((action) => group.categories.includes(action.category));
@@ -164,12 +164,12 @@ async function runDownloadsStage(
     ctx.enterPhase(InstallPhases.DOWNLOADING_LIBRARIES);
     await runDownloadGroup(ctx, ungrouped);
   }
-}
+};
 
-async function runDownloadGroup(
+const runDownloadGroup = async (
   ctx: InstallRunnerContext,
   groupActions: readonly DownloadAction[],
-): Promise<void> {
+): Promise<void> => {
   await Promise.all(
     groupActions.map((action) =>
       ctx.limit(async () => {
@@ -192,12 +192,12 @@ async function runDownloadGroup(
       }),
     ),
   );
-}
+};
 
-async function runWritesStage(
+const runWritesStage = async (
   ctx: InstallRunnerContext,
   writes: ReadonlyArray<WriteVersionJsonAction | WriteLoggingConfigAction>,
-): Promise<void> {
+): Promise<void> => {
   if (writes.length === 0) return;
   await ctx.checkpoint();
   ctx.enterPhase(InstallPhases.WRITING_FILES);
@@ -206,12 +206,12 @@ async function runWritesStage(
     await atomicWrite(action.path, action.content);
     ctx.counters.actionsCompleted++;
   }
-}
+};
 
-async function runNativesStage(
+const runNativesStage = async (
   ctx: InstallRunnerContext,
   natives: readonly ExtractNativeAction[],
-): Promise<void> {
+): Promise<void> => {
   if (natives.length === 0) return;
   await ctx.checkpoint();
   ctx.enterPhase(InstallPhases.EXTRACTING_NATIVES);
@@ -228,9 +228,9 @@ async function runNativesStage(
     });
     ctx.counters.actionsCompleted++;
   }
-}
+};
 
-async function runRuntimeStage(ctx: InstallRunnerContext): Promise<void> {
+const runRuntimeStage = async (ctx: InstallRunnerContext): Promise<void> => {
   const runtime = ctx.input.plan.target.runtime;
   if (runtime === undefined) return;
   await ctx.checkpoint();
@@ -247,12 +247,12 @@ async function runRuntimeStage(ctx: InstallRunnerContext): Promise<void> {
     directory: ctx.input.plan.directory,
     manifest: runtimePlan.manifest,
   });
-}
+};
 
-async function runProcessorsStage(
+const runProcessorsStage = async (
   ctx: InstallRunnerContext,
   processors: readonly RunForgeProcessorAction[],
-): Promise<void> {
+): Promise<void> => {
   if (processors.length === 0) return;
   await ctx.checkpoint();
   ctx.enterPhase(InstallPhases.RUNNING_FORGE_PROCESSORS);
@@ -280,25 +280,25 @@ async function runProcessorsStage(
     });
     ctx.counters.actionsCompleted++;
   }
-}
+};
 
-function isDownload(action: InstallAction): action is DownloadAction {
+const isDownload = (action: InstallAction): action is DownloadAction => {
   return action.kind === InstallActionKinds.DOWNLOAD_FILE;
-}
+};
 
-function isNative(action: InstallAction): action is ExtractNativeAction {
+const isNative = (action: InstallAction): action is ExtractNativeAction => {
   return action.kind === InstallActionKinds.EXTRACT_NATIVE;
-}
+};
 
-function isProcessor(action: InstallAction): action is RunForgeProcessorAction {
+const isProcessor = (action: InstallAction): action is RunForgeProcessorAction => {
   return action.kind === InstallActionKinds.RUN_FORGE_PROCESSOR;
-}
+};
 
-function isWrite(
+const isWrite = (
   action: InstallAction,
-): action is WriteVersionJsonAction | WriteLoggingConfigAction {
+): action is WriteVersionJsonAction | WriteLoggingConfigAction => {
   return (
     action.kind === InstallActionKinds.WRITE_VERSION_JSON ||
     action.kind === InstallActionKinds.WRITE_LOGGING_CONFIG
   );
-}
+};

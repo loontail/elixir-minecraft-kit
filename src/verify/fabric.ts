@@ -19,7 +19,7 @@ export interface VerifyFabricInput {
 }
 
 /** Verify the Fabric loader slice: profile JSON + every library it pulls in. */
-export async function verifyFabric(input: VerifyFabricInput): Promise<VerificationResult> {
+export const verifyFabric = async (input: VerifyFabricInput): Promise<VerificationResult> => {
   if (input.target.loader.type !== Loaders.FABRIC) {
     throw new MinecraftKitError(
       "INVALID_INPUT",
@@ -60,4 +60,4 @@ export async function verifyFabric(input: VerifyFabricInput): Promise<Verificati
       }
     },
   );
-}
+};

@@ -29,7 +29,7 @@ export interface VerifyMinecraftInput {
  * libraries (incl. native jars), assets (index + objects), logging config, and the
  * extracted natives directory.
  */
-export async function verifyMinecraft(input: VerifyMinecraftInput): Promise<VerificationResult> {
+export const verifyMinecraft = async (input: VerifyMinecraftInput): Promise<VerificationResult> => {
   return runVerification(
     {
       targetId: input.target.id,
@@ -140,4 +140,4 @@ export async function verifyMinecraft(input: VerifyMinecraftInput): Promise<Veri
       }
     },
   );
-}
+};

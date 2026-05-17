@@ -16,7 +16,7 @@ const lzma = lzmaModule as unknown as LzmaApi;
  * Mojang's runtime LZMA sidecars use this format — not `.xz`, not `.zip`. Decompression is
  * pure-JS so no native build is required.
  */
-export function decodeLzma(input: Uint8Array): Promise<Uint8Array> {
+export const decodeLzma = (input: Uint8Array): Promise<Uint8Array> => {
   return new Promise((resolve, reject) => {
     lzma.decompress(input, (result, error) => {
       if (error) {
@@ -34,4 +34,4 @@ export function decodeLzma(input: Uint8Array): Promise<Uint8Array> {
       resolve(result instanceof Uint8Array ? result : Uint8Array.from(result));
     });
   });
-}
+};

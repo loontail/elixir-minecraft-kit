@@ -17,7 +17,7 @@ export interface RetryOptions {
 }
 
 /** Default sleep that respects the abort signal. */
-export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> {
+export const abortableSleep = (ms: number, signal?: AbortSignal): Promise<void> => {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
       reject(toAbortError(signal));
@@ -33,23 +33,23 @@ export function abortableSleep(ms: number, signal?: AbortSignal): Promise<void> 
     };
     signal?.addEventListener("abort", onAbort, { once: true });
   });
-}
+};
 
-function toAbortError(signal?: AbortSignal): Error {
+const toAbortError = (signal?: AbortSignal): Error => {
   return new MinecraftKitError("NETWORK_ABORTED", "Operation aborted", {
     context: { reason: signal?.reason },
   });
-}
+};
 
 /**
  * Run `op` with full-jitter exponential backoff. Retries only when {@link isRetryable}
  * returns true.
  */
-export async function withRetry<T>(
+export const withRetry = async <T>(
   op: (attempt: number) => Promise<T>,
   isRetryable: (error: unknown) => boolean,
   options: RetryOptions = {},
-): Promise<T> {
+): Promise<T> => {
   const max = options.maxAttempts ?? HTTP_RETRY_MAX;
   const base = options.baseMs ?? HTTP_RETRY_BACKOFF_BASE_MS;
   const cap = options.capMs ?? HTTP_RETRY_BACKOFF_CAP_MS;
@@ -75,10 +75,10 @@ export async function withRetry<T>(
   }
   // Should be unreachable; the for-loop returns or throws.
   throw lastError ?? new Error("withRetry exhausted attempts");
-}
+};
 
 /** Default retry predicate for HTTP-like errors. */
-export function isHttpRetryable(error: unknown): boolean {
+export const isHttpRetryable = (error: unknown): boolean => {
   if (!isMinecraftKitError(error)) {
     return false;
   }
@@ -91,4 +91,4 @@ export function isHttpRetryable(error: unknown): boolean {
     return status === 0;
   }
   return false;
-}
+};

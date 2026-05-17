@@ -85,7 +85,7 @@ export interface FakeKitInput {
  * actually called by the scenarios are implemented; the cast to `MinecraftKit` is fine
  * because scenarios consume the public surface only.
  */
-export function buildFakeKit(input: FakeKitInput = {}): MinecraftKit {
+export const buildFakeKit = (input: FakeKitInput = {}): MinecraftKit => {
   const minecraftVersions =
     input.minecraftVersions ??
     ([
@@ -261,4 +261,4 @@ export function buildFakeKit(input: FakeKitInput = {}): MinecraftKit {
     },
   };
   return stubKit as unknown as MinecraftKit;
-}
+};

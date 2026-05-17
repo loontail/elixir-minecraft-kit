@@ -11,11 +11,11 @@ import type { ResolvedRuntime, RuntimeFilesManifest } from "../types/runtime";
  * Plain file entries are handled by the regular downloader; this function fills in the
  * non-file entry types after the downloads have completed.
  */
-export async function materializeRuntimeExtras(input: {
+export const materializeRuntimeExtras = async (input: {
   readonly runtime: ResolvedRuntime;
   readonly directory: string;
   readonly manifest: RuntimeFilesManifest;
-}): Promise<void> {
+}): Promise<void> => {
   const root = targetPaths.runtimeRoot(
     input.directory,
     input.runtime.component,
@@ -36,9 +36,9 @@ export async function materializeRuntimeExtras(input: {
       await fs.chmod(fullPath, 0o755).catch(() => {});
     }
   }
-}
+};
 
-async function unlinkIfPresent(target: string): Promise<void> {
+const unlinkIfPresent = async (target: string): Promise<void> => {
   try {
     await fs.unlink(target);
   } catch (cause) {
@@ -49,14 +49,14 @@ async function unlinkIfPresent(target: string): Promise<void> {
       { cause, context: { filePath: target } },
     );
   }
-}
+};
 
-async function createLinkOrCopy(
+const createLinkOrCopy = async (
   root: string,
   relativePath: string,
   linkTarget: string,
   destination: string,
-): Promise<void> {
+): Promise<void> => {
   try {
     await fs.symlink(linkTarget, destination);
     return;
@@ -82,17 +82,17 @@ async function createLinkOrCopy(
       );
     }
   }
-}
+};
 
-function isNotFound(error: unknown): boolean {
+const isNotFound = (error: unknown): boolean => {
   return (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     (error as { code: unknown }).code === "ENOENT"
   );
-}
+};
 
-function errorMessage(error: unknown): string {
+const errorMessage = (error: unknown): string => {
   return error instanceof Error ? error.message : String(error);
-}
+};

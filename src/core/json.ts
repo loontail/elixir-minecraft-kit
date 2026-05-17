@@ -10,14 +10,14 @@ import { MinecraftKitError } from "./errors";
  * runtime check (or use {@link parseJsonAs} which accepts a guard) when the payload comes
  * from an untrusted source.
  */
-export function parseJsonStrict<T>(
+export const parseJsonStrict = <T>(
   text: string,
   options: {
     readonly code: MinecraftKitErrorCode;
     readonly message: string;
     readonly context?: MinecraftKitErrorContext;
   },
-): T {
+): T => {
   try {
     return JSON.parse(text) as T;
   } catch (cause) {
@@ -26,14 +26,14 @@ export function parseJsonStrict<T>(
       ...(options.context !== undefined ? { context: options.context } : {}),
     });
   }
-}
+};
 
 /**
  * Like {@link parseJsonStrict} but also runs `guard` against the parsed value. The runtime
  * validation step is the difference between "the JSON parsed" and "the JSON matches what we
  * expect" — important on responses pulled over the network.
  */
-export function parseJsonAs<T>(
+export const parseJsonAs = <T>(
   text: string,
   guard: (value: unknown) => value is T,
   options: {
@@ -41,7 +41,7 @@ export function parseJsonAs<T>(
     readonly message: string;
     readonly context?: MinecraftKitErrorContext;
   },
-): T {
+): T => {
   const value = parseJsonStrict<unknown>(text, options);
   if (!guard(value)) {
     throw new MinecraftKitError(options.code, options.message, {
@@ -49,16 +49,16 @@ export function parseJsonAs<T>(
     });
   }
   return value;
-}
+};
 
 /**
  * Parse JSON or return `undefined` on failure. Use when "couldn't parse" and "doesn't apply
  * here" should produce the same outcome (e.g. peeking at unverified files on disk).
  */
-export function parseJsonOrUndefined<T>(text: string): T | undefined {
+export const parseJsonOrUndefined = <T>(text: string): T | undefined => {
   try {
     return JSON.parse(text) as T;
   } catch {
     return undefined;
   }
-}
+};

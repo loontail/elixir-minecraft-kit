@@ -24,7 +24,7 @@ export type PlanMinecraftRepairInput = AspectRepairInput;
  * Build a repair plan covering only the vanilla Minecraft slice: client jar, version JSON,
  * libraries (incl. native jars), assets, logging config, and native extractions.
  */
-export async function planMinecraftRepair(input: PlanMinecraftRepairInput): Promise<RepairPlan> {
+export const planMinecraftRepair = async (input: PlanMinecraftRepairInput): Promise<RepairPlan> => {
   const vanillaJsonPath = targetPaths.versionJson(
     input.target.directory,
     input.target.minecraft.version,
@@ -41,4 +41,4 @@ export async function planMinecraftRepair(input: PlanMinecraftRepairInput): Prom
     }
     return false;
   });
-}
+};

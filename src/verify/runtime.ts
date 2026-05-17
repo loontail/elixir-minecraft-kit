@@ -28,7 +28,7 @@ export interface VerifyRuntimeInput {
  * shared/global runtime install is checked at its real location instead of the per-target
  * `runtime/` subfolder.
  */
-export async function verifyRuntime(input: VerifyRuntimeInput): Promise<VerificationResult> {
+export const verifyRuntime = async (input: VerifyRuntimeInput): Promise<VerificationResult> => {
   return runVerification(
     {
       targetId: input.target.id,
@@ -72,4 +72,4 @@ export async function verifyRuntime(input: VerifyRuntimeInput): Promise<Verifica
       }
     },
   );
-}
+};

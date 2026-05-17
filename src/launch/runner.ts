@@ -19,7 +19,7 @@ export interface RunLaunchInput {
  * Spawn the configured Java process. Returns a {@link LaunchSession} immediately after the
  * process is created; the `exited` promise resolves when the game terminates.
  */
-export function runLaunch(input: RunLaunchInput): LaunchSession {
+export const runLaunch = (input: RunLaunchInput): LaunchSession => {
   const composition = input.composition;
   const options = input.options ?? {};
   const args = [...composition.jvmArgs, composition.mainClass, ...composition.gameArgs];
@@ -84,11 +84,11 @@ export function runLaunch(input: RunLaunchInput): LaunchSession {
       doAbort(reason ?? "user");
     },
   };
-}
+};
 
-function reasonFrom(value: unknown): string {
+const reasonFrom = (value: unknown): string => {
   if (value === undefined) return "aborted";
   if (typeof value === "string") return value;
   if (value instanceof Error) return value.message;
   return String(value);
-}
+};

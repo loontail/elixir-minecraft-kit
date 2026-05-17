@@ -41,14 +41,14 @@ export class MinecraftKitError extends Error {
 }
 
 /** True when `e` is an {@link MinecraftKitError}. */
-export function isMinecraftKitError(e: unknown): e is MinecraftKitError {
+export const isMinecraftKitError = (e: unknown): e is MinecraftKitError => {
   return e instanceof MinecraftKitError;
-}
+};
 
 /** True when `e` is an {@link MinecraftKitError} carrying the given code. */
-export function isErrorCode<C extends MinecraftKitErrorCode>(
+export const isErrorCode = <C extends MinecraftKitErrorCode>(
   e: unknown,
   code: C,
-): e is MinecraftKitError & { code: C } {
+): e is MinecraftKitError & { code: C } => {
   return isMinecraftKitError(e) && e.code === code;
-}
+};

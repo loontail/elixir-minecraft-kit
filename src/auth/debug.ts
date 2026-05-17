@@ -8,8 +8,8 @@ import process from "node:process";
 export const DEBUG_ENV_VAR = "MINECRAFT_KIT_AUTH_DEBUG";
 
 /** Print a single debug line if {@link DEBUG_ENV_VAR} is enabled. */
-export function authDebug(message: string): void {
+export const authDebug = (message: string): void => {
   if (process.env[DEBUG_ENV_VAR]) {
     process.stderr.write(`[auth] ${message}\n`);
   }
-}
+};

@@ -56,7 +56,7 @@ export interface PlanForgeInstallInput {
  * Plan the Forge install steps. Downloads the installer, parses install_profile + version.json,
  * extracts embedded artifacts to `libraries/`, and prepares processor invocations.
  */
-export async function planForgeInstall(input: PlanForgeInstallInput): Promise<ForgeInstallPlan> {
+export const planForgeInstall = async (input: PlanForgeInstallInput): Promise<ForgeInstallPlan> => {
   const installerPath = targetPaths.forgeInstaller(input.directory, input.loader.fullVersion);
   await downloadFile(input.http, {
     url: input.loader.installerUrl,
@@ -135,9 +135,9 @@ export async function planForgeInstall(input: PlanForgeInstallInput): Promise<Fo
     profile,
     version,
   };
-}
+};
 
-async function readJsonEntry<T>(zipPath: string, entryName: string): Promise<T> {
+const readJsonEntry = async <T>(zipPath: string, entryName: string): Promise<T> => {
   const buffer = await readEntryBuffer(zipPath, entryName);
   if (!buffer) {
     throw new MinecraftKitError(
@@ -151,12 +151,12 @@ async function readJsonEntry<T>(zipPath: string, entryName: string): Promise<T> 
     message: `Forge installer entry is not valid JSON: ${entryName}`,
     context: { filePath: zipPath, entryName },
   });
-}
+};
 
-async function extractInstallerMavenEntries(
+const extractInstallerMavenEntries = async (
   installerPath: string,
   directory: string,
-): Promise<void> {
+): Promise<void> => {
   const reader = await openZip(installerPath);
   try {
     for await (const entry of reader.entries()) {
@@ -169,7 +169,7 @@ async function extractInstallerMavenEntries(
   } finally {
     reader.close();
   }
-}
+};
 
 interface ResolvedProfileData {
   readonly tokens: Readonly<Record<string, ResolvedTokenValue>>;
@@ -182,24 +182,24 @@ interface ResolvedTokenValue {
   readonly isPath: boolean;
 }
 
-async function resolveProfileData(input: {
+const resolveProfileData = async (input: {
   readonly profile: ForgeInstallProfile;
   readonly installerPath: string;
   readonly directory: string;
-}): Promise<ResolvedProfileData> {
+}): Promise<ResolvedProfileData> => {
   const tokens: Record<string, ResolvedTokenValue> = {};
   for (const [key, sided] of Object.entries(input.profile.data)) {
     const raw = sided.client;
     tokens[key] = await resolveDataValue(raw, input.installerPath, input.directory);
   }
   return { tokens };
-}
+};
 
-async function resolveDataValue(
+const resolveDataValue = async (
   raw: string,
   installerPath: string,
   directory: string,
-): Promise<ResolvedTokenValue> {
+): Promise<ResolvedTokenValue> => {
   if (raw.startsWith("[") && raw.endsWith("]")) {
     const coord = raw.slice(1, -1);
     const relativePath = mavenRelativePathFor(coord);
@@ -218,16 +218,16 @@ async function resolveDataValue(
     return { value: destination, isPath: true };
   }
   return { value: raw, isPath: false };
-}
+};
 
-async function buildProcessorActions(input: {
+const buildProcessorActions = async (input: {
   readonly profile: ForgeInstallProfile;
   readonly minecraft: ResolvedMinecraft;
   readonly installerPath: string;
   readonly directory: string;
   readonly system: RuntimeSystem;
   readonly dataResolved: ResolvedProfileData;
-}): Promise<readonly RunForgeProcessorAction[]> {
+}): Promise<readonly RunForgeProcessorAction[]> => {
   const builtIns: Record<string, ResolvedTokenValue> = {
     SIDE: { value: "client", isPath: false },
     MINECRAFT_JAR: {
@@ -262,19 +262,19 @@ async function buildProcessorActions(input: {
     index++;
   }
   return actions;
-}
+};
 
-function processorAppliesToClient(processor: ForgeProcessor): boolean {
+const processorAppliesToClient = (processor: ForgeProcessor): boolean => {
   if (!processor.sides || processor.sides.length === 0) return true;
   return processor.sides.includes("client");
-}
+};
 
-function buildProcessorAction(input: {
+const buildProcessorAction = (input: {
   readonly processor: ForgeProcessor;
   readonly directory: string;
   readonly tokens: Readonly<Record<string, ResolvedTokenValue>>;
   readonly index: number;
-}): RunForgeProcessorAction {
+}): RunForgeProcessorAction => {
   const jarPath = path.join(
     targetPaths.librariesDir(input.directory),
     mavenRelativePathFor(input.processor.jar),
@@ -304,12 +304,12 @@ function buildProcessorAction(input: {
     args,
     outputs,
   };
-}
+};
 
-function substituteToken(
+const substituteToken = (
   raw: string,
   tokens: Readonly<Record<string, ResolvedTokenValue>>,
-): string {
+): string => {
   if (raw.startsWith("[") && raw.endsWith("]")) {
     return path.join(...mavenRelativePathFor(raw.slice(1, -1)).split("/"));
   }
@@ -322,17 +322,17 @@ function substituteToken(
     }
     return token.value;
   });
-}
+};
 
 /** @internal */
-export function stripLiteralPrefix(value: string): string {
+export const stripLiteralPrefix = (value: string): string => {
   // Forge install_profile.json wraps literal values in single quotes (vs `{token}` /
   // `[g:a:v]` maven coords). Both quotes must be stripped.
   const stripped = value.startsWith("'") ? value.slice(1) : value;
   return stripped.endsWith("'") ? stripped.slice(0, -1) : stripped;
-}
+};
 
 /** Build the Forge installer download URL. Used by repair flows that need to refetch. */
-export function forgeInstallerUrl(fullVersion: string): string {
+export const forgeInstallerUrl = (fullVersion: string): string => {
   return ApiEndpoints.forge.installer(fullVersion);
-}
+};

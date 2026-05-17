@@ -6,7 +6,7 @@ import type { ScenarioContext } from "../types";
  * Pick a runtime component for an install plan. Returns `null` to mean "use whatever the
  * version manifest declares" (auto). Used by the install scenario.
  */
-export async function pickRuntime(ctx: ScenarioContext): Promise<WizardOutcome<string | null>> {
+export const pickRuntime = async (ctx: ScenarioContext): Promise<WizardOutcome<string | null>> => {
   const initial = await ctx.ui.select<"auto" | "specific">({
     message: "Select Java/runtime",
     options: [
@@ -56,12 +56,12 @@ export async function pickRuntime(ctx: ScenarioContext): Promise<WizardOutcome<s
     ctx.ui.log("warn", `${formatUserError(error)} Falling back to auto-detect.`);
     return { kind: "ok", value: null };
   }
-}
+};
 
 /** Same as {@link pickRuntime} but always returns a component (no auto fallback). */
-export async function pickRuntimeComponent(
+export const pickRuntimeComponent = async (
   ctx: ScenarioContext,
-): Promise<WizardOutcome<{ readonly component: string; readonly versionName: string }>> {
+): Promise<WizardOutcome<{ readonly component: string; readonly versionName: string }>> => {
   const spinner = ctx.ui.spinner();
   spinner.start("Loading runtime components…");
   let entries: Awaited<ReturnType<typeof ctx.kit.versions.runtime.list>>;
@@ -94,12 +94,12 @@ export async function pickRuntimeComponent(
   const picked = componentChoices.find((c) => c.component === choice.value);
   if (!picked) return { kind: "cancel" };
   return { kind: "ok", value: picked };
-}
+};
 
 /** Pick where runtime files live — per-target dir or a shared install root. */
-export async function pickRuntimeInstallRoot(
+export const pickRuntimeInstallRoot = async (
   ctx: ScenarioContext,
-): Promise<WizardOutcome<string | null>> {
+): Promise<WizardOutcome<string | null>> => {
   const choice = await ctx.ui.select<"per-target" | "custom">({
     message: "Where should the runtime files live?",
     options: [
@@ -129,13 +129,13 @@ export async function pickRuntimeInstallRoot(
   const trimmed = (text.value ?? "").trim();
   if (trimmed.length === 0) return { kind: "ok", value: null };
   return { kind: "ok", value: trimmed };
-}
+};
 
 // Mojang sometimes ships several entries per component (release history). Keep the first
 // (usually newest) per component for the picker.
-function dedupeComponents(
+const dedupeComponents = (
   entries: ReadonlyArray<{ readonly component: string; readonly versionName: string }>,
-): { component: string; versionName: string }[] {
+): { component: string; versionName: string }[] => {
   const seen = new Set<string>();
   const out: { component: string; versionName: string }[] = [];
   for (const entry of entries) {
@@ -144,4 +144,4 @@ function dedupeComponents(
     out.push({ component: entry.component, versionName: entry.versionName });
   }
   return out;
-}
+};

@@ -25,7 +25,7 @@ import {
 import type { InstallSelection, ScenarioContext, ScenarioOutcome } from "./types";
 
 /** Unified install scenario: covers vanilla, Fabric, and Forge through a single wizard. */
-export async function scenarioInstallMinecraft(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioInstallMinecraft = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   type Step =
     | "channel"
     | "version"
@@ -143,14 +143,14 @@ export async function scenarioInstallMinecraft(ctx: ScenarioContext): Promise<Sc
       step = result;
     }
   }
-}
+};
 
 /**
  * Standalone: install a Mojang Java runtime directly, without going through a Minecraft
  * version. The user picks a runtime component, a destination directory, and an optional
  * shared install root — that's it.
  */
-export async function scenarioInstallRuntime(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+export const scenarioInstallRuntime = async (ctx: ScenarioContext): Promise<ScenarioOutcome> => {
   type Step = "component" | "directory" | "install-root" | "summary";
   let step: Step = "component";
   let component: string | null = null;
@@ -217,4 +217,4 @@ export async function scenarioInstallRuntime(ctx: ScenarioContext): Promise<Scen
       }
     }
   }
-}
+};

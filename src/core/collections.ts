@@ -1,5 +1,5 @@
 /** Return a new array preserving first-occurrence order, keyed by `key(value)`. */
-export function dedupeBy<T, K>(values: readonly T[], key: (value: T) => K): readonly T[] {
+export const dedupeBy = <T, K>(values: readonly T[], key: (value: T) => K): readonly T[] => {
   const seen = new Set<K>();
   const result: T[] = [];
   for (const value of values) {
@@ -9,9 +9,9 @@ export function dedupeBy<T, K>(values: readonly T[], key: (value: T) => K): read
     result.push(value);
   }
   return result;
-}
+};
 
 /** Return a new array preserving first-occurrence order, deduplicated by value identity. */
-export function dedupe<T>(values: readonly T[]): readonly T[] {
+export const dedupe = <T>(values: readonly T[]): readonly T[] => {
   return dedupeBy(values, (v) => v);
-}
+};

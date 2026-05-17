@@ -25,14 +25,14 @@ export interface ComposedArgs {
  * Caller-extra entries land last so the user can override anything emitted by the manifest
  * (last-wins for JVM `-Xms`/`-Xmx`, additive for game args).
  */
-export function composeArgs(input: {
+export const composeArgs = (input: {
   readonly target: Target;
   readonly merged: MinecraftVersionManifest;
   readonly options: LaunchOptions;
   readonly placeholderValues: Readonly<Record<string, string>>;
   readonly features: Readonly<Record<string, boolean>>;
   readonly logger?: Logger;
-}): ComposedArgs {
+}): ComposedArgs => {
   const minMb = input.options.memory?.minMb ?? DEFAULT_MIN_MB;
   const maxMb = input.options.memory?.maxMb ?? DEFAULT_MAX_MB;
   const memoryArgs = [`-Xms${minMb}M`, `-Xmx${maxMb}M`];
@@ -92,4 +92,4 @@ export function composeArgs(input: {
   }
 
   return { jvmArgs: [...jvmArgs, ...extraJvm], gameArgs };
-}
+};

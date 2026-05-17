@@ -59,7 +59,7 @@ const runtimeIndex = {
   },
 };
 
-function buildHttp(extra: Record<string, string> = {}): FakeHttpClient {
+const buildHttp = (extra: Record<string, string> = {}): FakeHttpClient => {
   const http = new FakeHttpClient()
     .on(ApiEndpoints.mojang.versionManifest(), { body: JSON.stringify(versionRoot) })
     .on("https://m/1.20.1", { body: JSON.stringify(versionManifest) })
@@ -68,9 +68,9 @@ function buildHttp(extra: Record<string, string> = {}): FakeHttpClient {
     .on("https://rm/", { body: '{"files":{}}' });
   for (const [url, body] of Object.entries(extra)) http.on(url, { body });
   return http;
-}
+};
 
-function buildVanillaTarget(http: FakeHttpClient, opts: { runtimeInstallRoot?: string } = {}) {
+const buildVanillaTarget = (http: FakeHttpClient, opts: { runtimeInstallRoot?: string } = {}) => {
   const cache = createMemoryCache();
   const targets = new TargetsApi({
     minecraft: new MinecraftVersionsApi({ http, cache, logger: silentLogger }),
@@ -88,7 +88,7 @@ function buildVanillaTarget(http: FakeHttpClient, opts: { runtimeInstallRoot?: s
       ? { runtime: { installRoot: opts.runtimeInstallRoot } }
       : {}),
   });
-}
+};
 
 describe("planMinecraftRepair", () => {
   it("includes the client jar when its path is reported missing", async () => {

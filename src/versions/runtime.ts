@@ -107,14 +107,14 @@ export class RuntimeVersionsApi {
   }
 }
 
-function pickPlatformKey(system: RuntimeSystem): string {
+const pickPlatformKey = (system: RuntimeSystem): string => {
   const archMap = RUNTIME_PLATFORM_KEYS[system.os];
   return archMap[system.arch];
-}
+};
 
-function pickLatestAcrossComponents(
+const pickLatestAcrossComponents = (
   entries: readonly [string, readonly RuntimeIndexEntry[]][],
-): { readonly component: string; readonly entry: RuntimeIndexEntry } | null {
+): { readonly component: string; readonly entry: RuntimeIndexEntry } | null => {
   let bestComponent: string | null = null;
   let bestEntry: RuntimeIndexEntry | null = null;
   for (const [component, list] of entries) {
@@ -127,14 +127,14 @@ function pickLatestAcrossComponents(
   }
   if (!bestComponent || !bestEntry) return null;
   return { component: bestComponent, entry: bestEntry };
-}
+};
 
-function toResolved(
+const toResolved = (
   component: string,
   platformKey: string,
   entry: RuntimeIndexEntry,
   system: RuntimeSystem,
-): ResolvedRuntime {
+): ResolvedRuntime => {
   const majorVersion = parseMajorVersion(entry.version.name);
   return {
     component,
@@ -145,12 +145,12 @@ function toResolved(
     manifestUrl: entry.manifest.url,
     manifestSha1: entry.manifest.sha1,
   };
-}
+};
 
 /** Parse the leading integer from a runtime versionName (`"21.0.8"` → 21). */
-export function parseMajorVersion(versionName: string): number | undefined {
+export const parseMajorVersion = (versionName: string): number | undefined => {
   const match = /^(\d+)/.exec(versionName);
   if (!match || !match[1]) return undefined;
   const parsed = Number.parseInt(match[1], 10);
   return Number.isFinite(parsed) ? parsed : undefined;
-}
+};

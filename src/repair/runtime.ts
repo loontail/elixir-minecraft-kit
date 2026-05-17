@@ -11,11 +11,11 @@ export type PlanRuntimeRepairInput = AspectRepairInput;
  * honoured automatically because both `planInstall` and the verify side resolve runtime
  * paths through the same `targetPaths.runtimeRoot(..., installRoot)` helper.
  */
-export async function planRuntimeRepair(input: PlanRuntimeRepairInput): Promise<RepairPlan> {
+export const planRuntimeRepair = async (input: PlanRuntimeRepairInput): Promise<RepairPlan> => {
   return planAspectRepair(
     input,
     (action: InstallAction) =>
       action.kind === InstallActionKinds.DOWNLOAD_FILE &&
       (action as DownloadAction).category === "runtime-file",
   );
-}
+};

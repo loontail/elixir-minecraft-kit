@@ -8,13 +8,13 @@ import type { LaunchOptions } from "../types/launch";
 import type { Target } from "../types/target";
 
 /** Resolve every `${...}` value the launch arguments substitute against. */
-export function buildPlaceholderValues(input: {
+export const buildPlaceholderValues = (input: {
   readonly target: Target;
   readonly versionId: string;
   readonly auth: LaunchAuth;
   readonly classpath: readonly string[];
   readonly options: LaunchOptions;
-}): Readonly<Record<string, string>> {
+}): Readonly<Record<string, string>> => {
   const cpSeparator = process.platform === "win32" ? ";" : ":";
   const directory = input.target.directory;
   const username = input.auth.username;
@@ -51,4 +51,4 @@ export function buildPlaceholderValues(input: {
     resolution_width: input.options.resolution?.width.toString() ?? "",
     resolution_height: input.options.resolution?.height.toString() ?? "",
   };
-}
+};

@@ -31,7 +31,7 @@ export class ChildProcessSpawner implements Spawner {
   }
 }
 
-function streamFromBuffer(stream: NodeJS.ReadableStream | null): ProcessStream {
+const streamFromBuffer = (stream: NodeJS.ReadableStream | null): ProcessStream => {
   if (!stream) {
     return { on() {} };
   }
@@ -72,9 +72,9 @@ function streamFromBuffer(stream: NodeJS.ReadableStream | null): ProcessStream {
       listeners.add(listener);
     },
   };
-}
+};
 
-function emitBounded(emit: (line: string) => void, line: string): void {
+const emitBounded = (emit: (line: string) => void, line: string): void => {
   if (line.length <= SPAWNER_MAX_LINE_BYTES) {
     emit(line);
     return;
@@ -82,4 +82,4 @@ function emitBounded(emit: (line: string) => void, line: string): void {
   for (let i = 0; i < line.length; i += SPAWNER_MAX_LINE_BYTES) {
     emit(line.slice(i, i + SPAWNER_MAX_LINE_BYTES));
   }
-}
+};

@@ -29,11 +29,11 @@ export const consoleLogger: Logger = {
  * The merged `fields` argument lets a scope attach default context (e.g. a request id) without
  * the call site repeating it on every message.
  */
-export function scopedLogger(
+export const scopedLogger = (
   base: Logger,
   scope: string,
   baseFields?: Readonly<Record<string, unknown>>,
-): Logger {
+): Logger => {
   if (base === silentLogger) return silentLogger;
   return {
     log(level, message, fields) {
@@ -46,11 +46,11 @@ export function scopedLogger(
       }
     },
   };
-}
+};
 
-function pickConsole(level: LogLevel): (...args: unknown[]) => void {
+const pickConsole = (level: LogLevel): ((...args: unknown[]) => void) => {
   if (level === LogLevels.ERROR) return console.error.bind(console);
   if (level === LogLevels.WARN) return console.warn.bind(console);
   if (level === LogLevels.INFO) return console.info.bind(console);
   return console.debug.bind(console);
-}
+};

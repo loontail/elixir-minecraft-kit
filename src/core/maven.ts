@@ -16,7 +16,7 @@ export interface MavenCoordinate {
  *
  * @throws `INVALID_INPUT` when the input cannot be parsed.
  */
-export function parseMavenCoordinate(input: string): MavenCoordinate {
+export const parseMavenCoordinate = (input: string): MavenCoordinate => {
   // Strip enclosing brackets used in Forge install profiles.
   const trimmed = input.startsWith("[") && input.endsWith("]") ? input.slice(1, -1) : input;
   const atIndex = trimmed.indexOf("@");
@@ -40,17 +40,17 @@ export function parseMavenCoordinate(input: string): MavenCoordinate {
     return { group, artifact, version, extension };
   }
   return { group, artifact, version, classifier, extension };
-}
+};
 
 /** Build the relative path under a Maven repository for a coordinate. */
-export function mavenRelativePath(coord: MavenCoordinate): string {
+export const mavenRelativePath = (coord: MavenCoordinate): string => {
   const groupPath = coord.group.replaceAll(".", "/");
   const classifierSegment = coord.classifier === undefined ? "" : `-${coord.classifier}`;
   const filename = `${coord.artifact}-${coord.version}${classifierSegment}.${coord.extension}`;
   return `${groupPath}/${coord.artifact}/${coord.version}/${filename}`;
-}
+};
 
 /** Convenience: parse + relative path. */
-export function mavenRelativePathFor(input: string): string {
+export const mavenRelativePathFor = (input: string): string => {
   return mavenRelativePath(parseMavenCoordinate(input));
-}
+};

@@ -17,7 +17,7 @@ export interface ComposeLaunchInput {
 }
 
 /** Build a fully resolved {@link LaunchComposition} ready to hand to {@link runLaunch}. */
-export async function composeLaunch(input: ComposeLaunchInput): Promise<LaunchComposition> {
+export const composeLaunch = async (input: ComposeLaunchInput): Promise<LaunchComposition> => {
   const { target, options } = input;
   if (!options.auth.username || options.auth.username.length === 0) {
     throw new MinecraftKitError(
@@ -75,12 +75,12 @@ export async function composeLaunch(input: ComposeLaunchInput): Promise<LaunchCo
     auth: options.auth,
     workingDirectory: target.directory,
   };
-}
+};
 
-function buildFeatures(options: LaunchOptions): Readonly<Record<string, boolean>> {
+const buildFeatures = (options: LaunchOptions): Readonly<Record<string, boolean>> => {
   const features: Record<string, boolean> = { ...(options.features ?? {}) };
   if (options.resolution !== undefined) {
     features.has_custom_resolution = true;
   }
   return features;
-}
+};

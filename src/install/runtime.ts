@@ -7,7 +7,7 @@ import { type DownloadAction, InstallActionKinds } from "../types/install";
 import type { ResolvedRuntime, RuntimeFilesManifest } from "../types/runtime";
 
 /** Plan the per-file downloads required to install a runtime. */
-export async function planRuntimeDownloads(input: {
+export const planRuntimeDownloads = async (input: {
   readonly runtime: ResolvedRuntime;
   readonly directory: string;
   readonly http: HttpClient;
@@ -16,7 +16,7 @@ export async function planRuntimeDownloads(input: {
 }): Promise<{
   readonly actions: readonly DownloadAction[];
   readonly manifest: RuntimeFilesManifest;
-}> {
+}> => {
   const manifest = await fetchJson<RuntimeFilesManifest>(input.http, input.cache, {
     url: input.runtime.manifestUrl,
     cacheKey: `runtime-manifest:${input.runtime.component}:${input.runtime.platformKey}:${input.runtime.manifestSha1}`,
@@ -41,4 +41,4 @@ export async function planRuntimeDownloads(input: {
     });
   }
   return { actions, manifest };
-}
+};

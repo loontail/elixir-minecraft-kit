@@ -86,10 +86,10 @@ export class FabricVersionsApi {
   }
 }
 
-function pickFabricLoader(
+const pickFabricLoader = (
   loaders: readonly FabricLoaderSummary[],
   input: FabricResolveInput,
-): FabricLoaderSummary | undefined {
+): FabricLoaderSummary | undefined => {
   if (input.loaderVersion !== undefined) {
     return loaders.find((l) => l.version === input.loaderVersion);
   }
@@ -99,4 +99,4 @@ function pickFabricLoader(
     if (stable) return stable;
   }
   return loaders[0];
-}
+};

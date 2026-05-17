@@ -17,7 +17,7 @@ import type { Spawner } from "../../src/types/spawner";
 import { fakeTarget } from "../helpers/fake-kit";
 import { sha1OfBytes } from "../helpers/hash";
 
-function makeResponse(url: string, body: Uint8Array): HttpResponse {
+const makeResponse = (url: string, body: Uint8Array): HttpResponse => {
   return {
     status: 200,
     headers: { "content-length": String(body.byteLength) },
@@ -35,7 +35,7 @@ function makeResponse(url: string, body: Uint8Array): HttpResponse {
       yield body;
     },
   };
-}
+};
 
 const okHttp: HttpClient = {
   async request(url): Promise<HttpResponse> {
@@ -54,11 +54,11 @@ const spawner: Spawner = {
   },
 };
 
-function makeAction(
+const makeAction = (
   tmpDir: string,
   category: DownloadAction["category"],
   index: number,
-): DownloadAction {
+): DownloadAction => {
   const url = `https://x/${category}/${index}`;
   const body = new TextEncoder().encode(url);
   return {
@@ -69,9 +69,9 @@ function makeAction(
     expectedSize: body.byteLength,
     category,
   };
-}
+};
 
-function makePlan(tmpDir: string, actions: readonly DownloadAction[]): InstallPlan {
+const makePlan = (tmpDir: string, actions: readonly DownloadAction[]): InstallPlan => {
   return {
     targetId: fakeTarget.id,
     directory: tmpDir,
@@ -80,7 +80,7 @@ function makePlan(tmpDir: string, actions: readonly DownloadAction[]): InstallPl
     totalActions: actions.length,
     totalBytes: actions.reduce((s, a) => s + (a.expectedSize ?? 0), 0),
   };
-}
+};
 
 describe("install runner — grouped phases", () => {
   let tmpDir: string;

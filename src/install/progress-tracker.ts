@@ -78,10 +78,10 @@ const ALL_STAGES: readonly InstallStage[] = [
 ];
 
 /** Aggregate `ProgressEvent`s from one install/repair run into throttled UI snapshots. */
-export function createInstallProgressTracker(
+export const createInstallProgressTracker = (
   plan: Pick<InstallPlan, "actions">,
   options: ProgressTrackerOptions = {},
-): InstallProgressTracker {
+): InstallProgressTracker => {
   const throttleMs = options.throttleMs ?? 100;
 
   const stageOfTarget = new Map<string, InstallStage>();
@@ -262,10 +262,10 @@ export function createInstallProgressTracker(
       for (const listener of listeners) listener(snap);
     },
   };
-}
+};
 
-function clamp(value: number): number {
+const clamp = (value: number): number => {
   if (value <= 0) return 0;
   if (value >= 100) return 100;
   return value;
-}
+};

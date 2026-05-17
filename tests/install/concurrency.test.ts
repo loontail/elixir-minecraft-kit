@@ -17,7 +17,7 @@ describe("install runner concurrency", () => {
   });
 });
 
-function waitFor(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
+const waitFor = (predicate: () => boolean, timeoutMs = 2000): Promise<void> => {
   return new Promise((resolve, reject) => {
     const startedAt = Date.now();
     const tick = (): void => {
@@ -33,7 +33,7 @@ function waitFor(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
     };
     tick();
   });
-}
+};
 
 describe("install runner worker-pool", () => {
   let tmpDir: string;
@@ -126,7 +126,7 @@ describe("install runner worker-pool", () => {
   }, 10_000);
 });
 
-function makeResponse(url: string, body: Uint8Array): HttpResponse {
+const makeResponse = (url: string, body: Uint8Array): HttpResponse => {
   return {
     status: 200,
     headers: { "content-length": String(body.byteLength) },
@@ -144,4 +144,4 @@ function makeResponse(url: string, body: Uint8Array): HttpResponse {
       yield body;
     },
   };
-}
+};

@@ -59,10 +59,10 @@ const runtimeIndex = {
   },
 };
 
-function buildVanillaTarget(
+const buildVanillaTarget = (
   http: FakeHttpClient,
   opts: { directory?: string; runtimeInstallRoot?: string } = {},
-) {
+) => {
   const cache = createMemoryCache();
   const targets = new TargetsApi({
     minecraft: new MinecraftVersionsApi({ http, cache, logger: silentLogger }),
@@ -80,7 +80,7 @@ function buildVanillaTarget(
       ? { runtime: { installRoot: opts.runtimeInstallRoot } }
       : {}),
   });
-}
+};
 
 describe("verifyMinecraft", () => {
   it("emits kind: 'minecraft' and reports missing client jar as an issue", async () => {

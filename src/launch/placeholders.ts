@@ -1,7 +1,7 @@
 import { MinecraftKitError } from "../core/errors";
 
 /** Substitute `${...}` placeholders in a single argument. */
-export function substituteArg(raw: string, values: Readonly<Record<string, string>>): string {
+export const substituteArg = (raw: string, values: Readonly<Record<string, string>>): string => {
   return raw.replaceAll(/\$\{([a-zA-Z0-9_]+)\}/g, (match, key: string) => {
     const value = values[key];
     if (value === undefined) {
@@ -11,12 +11,12 @@ export function substituteArg(raw: string, values: Readonly<Record<string, strin
     }
     return value;
   });
-}
+};
 
 /** Substitute placeholders in every entry of an arguments list. */
-export function substituteArgs(
+export const substituteArgs = (
   args: readonly string[],
   values: Readonly<Record<string, string>>,
-): readonly string[] {
+): readonly string[] => {
   return args.map((arg) => substituteArg(arg, values));
-}
+};

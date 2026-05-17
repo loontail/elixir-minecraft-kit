@@ -16,7 +16,7 @@ export interface DetectSystemInput {
  * @throws {@link MinecraftKitError} with code `RUNTIME_UNSUPPORTED_PLATFORM` when the
  * platform/arch combination is not understood.
  */
-export function detectSystem(input: DetectSystemInput = {}): RuntimeSystem {
+export const detectSystem = (input: DetectSystemInput = {}): RuntimeSystem => {
   const platform = input.platform ?? process.platform;
   const arch = input.arch ?? process.arch;
   const osVersion = input.osVersion ?? os.release();
@@ -32,4 +32,4 @@ export function detectSystem(input: DetectSystemInput = {}): RuntimeSystem {
     );
   }
   return { os: mojangOs, arch: mojangArch, osVersion };
-}
+};
