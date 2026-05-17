@@ -30,12 +30,7 @@ export class FakeHttpClient implements HttpClient {
     }
     const status = spec.status ?? 200;
     const headers = spec.headers ?? {};
-    const bodyBytes =
-      typeof spec.body === "function"
-        ? spec.body()
-        : typeof spec.body === "string"
-          ? new TextEncoder().encode(spec.body)
-          : spec.body;
+    const bodyBytes = toBytes(spec.body);
     return {
       status,
       headers,
@@ -58,3 +53,9 @@ export class FakeHttpClient implements HttpClient {
     };
   }
 }
+
+const toBytes = (body: FakeResponseSpec["body"]): Uint8Array => {
+  if (typeof body === "function") return body();
+  if (typeof body === "string") return new TextEncoder().encode(body);
+  return body;
+};

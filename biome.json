@@ -48,8 +48,11 @@
         "recommended": true,
         "useImportType": "error",
         "useExportType": "error",
-        "noNonNullAssertion": "off",
+        "noNonNullAssertion": "error",
         "useNamingConvention": "off"
+      },
+      "nursery": {
+        "noNestedTernary": "error"
       },
       "security": {
         "recommended": true

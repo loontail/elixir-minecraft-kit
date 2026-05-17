@@ -216,12 +216,7 @@ const discoverRuntime = async (directory: string): Promise<DiscoveredRuntimeHint
   }
   for (const component of components) {
     const root = path.join(runtimeDir, component);
-    const javaPath =
-      process.platform === "win32"
-        ? path.join(root, "bin", "javaw.exe")
-        : process.platform === "darwin"
-          ? path.join(root, "jre.bundle", "Contents", "Home", "bin", "java")
-          : path.join(root, "bin", "java");
+    const javaPath = javaExecutablePath(root);
     if (await fileExists(javaPath)) {
       return { component, javaPath };
     }
@@ -239,4 +234,12 @@ const inferLoaderFromVersionId = (versionId: string): DiscoveredLoaderHint | nul
     return { type: Loaders.FORGE, minecraftVersion: forgeMatch[1], version: forgeMatch[2] };
   }
   return null;
+};
+
+const javaExecutablePath = (runtimeRoot: string): string => {
+  if (process.platform === "win32") return path.join(runtimeRoot, "bin", "javaw.exe");
+  if (process.platform === "darwin") {
+    return path.join(runtimeRoot, "jre.bundle", "Contents", "Home", "bin", "java");
+  }
+  return path.join(runtimeRoot, "bin", "java");
 };

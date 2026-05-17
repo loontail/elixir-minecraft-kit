@@ -173,7 +173,8 @@ describe("planRuntimeInstall", () => {
 
     const plan = await planRuntimeInstall({ target, http, cache });
     expect(plan.actions.length).toBe(1);
-    const action = plan.actions[0]!;
+    const action = plan.actions[0];
+    if (action === undefined) throw new Error("expected one action");
     if (action.kind === "download-file") {
       expect(action.target).toBe(path.join(customRoot, "java-runtime-gamma", "bin", "javaw.exe"));
     }

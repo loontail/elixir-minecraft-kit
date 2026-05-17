@@ -233,7 +233,8 @@ describe("planRuntimeRepair with installRoot", () => {
       },
     });
     expect(plan.actions.length).toBe(1);
-    const action = plan.actions[0]!;
+    const action = plan.actions[0];
+    if (action === undefined) throw new Error("expected one action");
     expect(action.kind).toBe("download-file");
     if (action.kind === "download-file") {
       expect(action.target).toBe(expectedRuntimePath);
