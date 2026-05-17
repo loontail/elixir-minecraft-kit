@@ -14,7 +14,7 @@ import { authenticateXbl, authenticateXsts } from "./xbox";
 /** Env var consulted when no explicit `clientId` is supplied. */
 export const CLIENT_ID_ENV_VAR = "MINECRAFT_KIT_MSA_CLIENT_ID";
 
-export { authDebug, DEBUG_ENV_VAR } from "./debug";
+export { authDebug, buildAuthLogger, DEBUG_ENV_VAR } from "./debug";
 
 /** Options accepted by {@link MojangAuthApi.login}. */
 export type LoginOptions = {

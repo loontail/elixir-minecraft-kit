@@ -1,13 +1,29 @@
 import process from "node:process";
+import { consoleLogger, scopedLogger, silentLogger } from "../core/logger";
+import type { Logger } from "../types/logger";
 
 /**
- * When set to a truthy value, every auth step writes a short trace line to stderr — token
- * lengths, endpoint URLs, response previews. Intentionally stderr-only so it doesn't pollute
- * clack's rendered UI on stdout.
+ * When set to a truthy value, the kit ships a stderr-bound `Logger` to the auth modules
+ * even if the caller didn't supply one. Useful for one-off CLI debugging without wiring a
+ * logger all the way through `MinecraftKit`.
  */
 export const DEBUG_ENV_VAR = "MINECRAFT_KIT_AUTH_DEBUG";
 
-/** Print a single debug line if {@link DEBUG_ENV_VAR} is enabled. */
+/**
+ * Build the `auth` scope's logger. Caller-supplied logger wins; otherwise we honour
+ * `MINECRAFT_KIT_AUTH_DEBUG=1` by routing through `consoleLogger`. Default is silent so
+ * the auth flow stays quiet in production.
+ */
+export const buildAuthLogger = (base: Logger | undefined): Logger => {
+  if (base !== undefined) return scopedLogger(base, "auth");
+  if (process.env[DEBUG_ENV_VAR]) return scopedLogger(consoleLogger, "auth");
+  return silentLogger;
+};
+
+/**
+ * Legacy stderr writer kept for the existing internal auth helpers. New code threads a
+ * `Logger` explicitly through `buildAuthLogger`.
+ */
 export const authDebug = (message: string): void => {
   if (process.env[DEBUG_ENV_VAR]) {
     process.stderr.write(`[auth] ${message}\n`);

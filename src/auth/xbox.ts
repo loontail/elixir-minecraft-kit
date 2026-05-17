@@ -1,6 +1,6 @@
 import { MinecraftKitError } from "../core/errors";
 import type { HttpClient } from "../types/http";
-import { authDebug } from "./debug";
+import type { Logger } from "../types/logger";
 
 const XBL_URL = "https://user.auth.xboxlive.com/user/authenticate";
 const XSTS_URL = "https://xsts.auth.xboxlive.com/xsts/authorize";
@@ -33,6 +33,7 @@ export const authenticateXbl = async (input: {
   readonly http: HttpClient;
   readonly accessToken: string;
   readonly signal?: AbortSignal;
+  readonly logger?: Logger;
 }): Promise<XboxToken> => {
   const body = JSON.stringify({
     Properties: {
@@ -64,7 +65,7 @@ export const authenticateXbl = async (input: {
       "Xbox Live authentication returned an incomplete response.",
     );
   }
-  authDebug(`XBL ok — tokenLen=${parsed.Token.length}, userHash=${userHash}`);
+  input.logger?.log("debug", `XBL ok — tokenLen=${parsed.Token.length}, userHash=${userHash}`);
   return { token: parsed.Token, userHash };
 };
 
@@ -80,6 +81,7 @@ export const authenticateXsts = async (input: {
   readonly http: HttpClient;
   readonly xblToken: string;
   readonly signal?: AbortSignal;
+  readonly logger?: Logger;
 }): Promise<XboxToken> => {
   const body = JSON.stringify({
     Properties: { SandboxId: "RETAIL", UserTokens: [input.xblToken] },
@@ -114,7 +116,7 @@ export const authenticateXsts = async (input: {
       "XSTS authorization returned an incomplete response.",
     );
   }
-  authDebug(`XSTS ok — tokenLen=${parsed.Token.length}, userHash=${userHash}`);
+  input.logger?.log("debug", `XSTS ok — tokenLen=${parsed.Token.length}, userHash=${userHash}`);
   return { token: parsed.Token, userHash };
 };
 
