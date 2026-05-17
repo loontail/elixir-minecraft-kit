@@ -103,4 +103,32 @@ describe("downloadFile", () => {
     );
     expect(http.requests.length).toBe(0);
   });
+
+  it("rejects URLs whose host is not in the allow-list", async () => {
+    const body = new TextEncoder().encode("ok");
+    const http = new FakeHttpClient().on("https://evil.example.com/", { body });
+    const target = path.join(tmpDir, "x");
+    await expect(
+      downloadFile(http, {
+        url: "https://evil.example.com/",
+        target,
+        hostAllowList: ["*.minecraft.net", "maven.minecraftforge.net"],
+      }),
+    ).rejects.toThrow(/allow-list/);
+    expect(http.requests.length).toBe(0);
+  });
+
+  it("accepts URLs whose host matches a wildcard allow-list entry", async () => {
+    const body = new TextEncoder().encode("ok");
+    const expectedSha1 = sha1OfBytes(body);
+    const http = new FakeHttpClient().on("https://piston-data.minecraft.net/file", { body });
+    const target = path.join(tmpDir, "x");
+    const result = await downloadFile(http, {
+      url: "https://piston-data.minecraft.net/file",
+      target,
+      expectedSha1,
+      hostAllowList: ["*.minecraft.net"],
+    });
+    expect(result.bytesDownloaded).toBe(body.byteLength);
+  });
 });

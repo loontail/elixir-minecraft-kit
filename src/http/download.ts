@@ -24,6 +24,13 @@ export type DownloadFileInput = {
   readonly onEvent?: ProgressListener;
   /** Checked between chunks; pauses an in-flight download without aborting. */
   readonly pauseController?: PauseController;
+  /**
+   * Optional host allow-list. When set, downloads whose hostname does not match any entry
+   * are rejected before fetch. Entries support a leading wildcard label, e.g.
+   * `"*.minecraft.net"` matches `"piston-data.minecraft.net"`. Hostnames are compared
+   * case-insensitively.
+   */
+  readonly hostAllowList?: readonly string[];
 };
 
 /** Outputs from a successful download. */
@@ -42,7 +49,7 @@ export const downloadFile = async (
   http: HttpClient,
   input: DownloadFileInput,
 ): Promise<DownloadFileResult> => {
-  assertSafeDownloadUrl(input.url);
+  assertSafeDownloadUrl(input.url, input.hostAllowList);
   const fileRef = {
     url: input.url,
     target: input.target,
@@ -207,8 +214,9 @@ const safeUnlink = async (filePath: string): Promise<void> => {
 // Manifests are loaded over the network; an attacker controlling DNS or a man-in-the-middle
 // could rewrite `library.url` to `file:///etc/passwd` and the streaming `fetch` would happily
 // follow it. Restrict downloads to plain HTTP(S) so manifests can never coax `fetch` into
-// reading local files, executing JS, or following data URIs.
-const assertSafeDownloadUrl = (url: string): void => {
+// reading local files, executing JS, or following data URIs. Callers that ship in a hostile
+// environment can additionally pin to a host allow-list.
+const assertSafeDownloadUrl = (url: string, allowList: readonly string[] | undefined): void => {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -224,4 +232,24 @@ const assertSafeDownloadUrl = (url: string): void => {
       { context: { url, scheme: parsed.protocol } },
     );
   }
+  if (allowList !== undefined && !matchesHostAllowList(parsed.hostname, allowList)) {
+    throw new MinecraftKitError(
+      "INVALID_INPUT",
+      `Download URL host is not in the allow-list: ${parsed.hostname}`,
+      { context: { url, host: parsed.hostname } },
+    );
+  }
+};
+
+const matchesHostAllowList = (hostname: string, allowList: readonly string[]): boolean => {
+  const host = hostname.toLowerCase();
+  return allowList.some((entry) => matchesHostEntry(host, entry.toLowerCase()));
+};
+
+const matchesHostEntry = (host: string, entry: string): boolean => {
+  if (entry.startsWith("*.")) {
+    const suffix = entry.slice(1);
+    return host === entry.slice(2) || host.endsWith(suffix);
+  }
+  return host === entry;
 };
