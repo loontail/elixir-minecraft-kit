@@ -1,3 +1,13 @@
+/** Discriminator values for {@link WizardOutcome}. */
+export const WizardOutcomes = {
+  OK: "ok",
+  BACK: "back",
+  CANCEL: "cancel",
+} as const;
+
+/** Literal union of {@link WizardOutcome} discriminators. */
+export type WizardOutcomeKind = (typeof WizardOutcomes)[keyof typeof WizardOutcomes];
+
 /**
  * Outcome of a single interactive step.
  *
@@ -6,9 +16,9 @@
  * - `cancel` — user pressed Ctrl+C, picked the explicit "Cancel" option, or otherwise aborted.
  */
 export type WizardOutcome<T> =
-  | { readonly kind: "ok"; readonly value: T }
-  | { readonly kind: "back" }
-  | { readonly kind: "cancel" };
+  | { readonly kind: typeof WizardOutcomes.OK; readonly value: T }
+  | { readonly kind: typeof WizardOutcomes.BACK }
+  | { readonly kind: typeof WizardOutcomes.CANCEL };
 
 /** A select option. */
 export type SelectOption<T> = {

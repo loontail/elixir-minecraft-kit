@@ -27,6 +27,17 @@ const SCENARIO_KEYS = {
   EXIT: "exit",
 } as const;
 
+/** Recognised command-line flags. */
+const CLI_FLAGS = {
+  HELP: ["--help", "-h"],
+  VERSION: ["--version", "-v"],
+  DEBUG: ["--debug"],
+} as const;
+
+/** True when the parsed args array contains any of the given flag aliases. */
+const hasFlag = (args: readonly string[], aliases: readonly string[]): boolean =>
+  aliases.some((flag) => args.includes(flag));
+
 /** Inputs to {@link runCli}. */
 export type RunCliInput = {
   readonly args: readonly string[];
@@ -37,18 +48,18 @@ export type RunCliInput = {
 
 /** Programmatic CLI entrypoint, used by both the bin and the tests. */
 export const runCli = async (input: RunCliInput): Promise<number> => {
-  if (input.args.includes("--help") || input.args.includes("-h")) {
+  if (hasFlag(input.args, CLI_FLAGS.HELP)) {
     input.ui.note(
       "mckit — minecraft-kit CLI",
       "Run with no arguments for the interactive menu.\n--version, --help, --debug",
     );
     return 0;
   }
-  if (input.args.includes("--version") || input.args.includes("-v")) {
+  if (hasFlag(input.args, CLI_FLAGS.VERSION)) {
     input.ui.log("info", "0.1.0");
     return 0;
   }
-  const debug = input.args.includes("--debug");
+  const debug = hasFlag(input.args, CLI_FLAGS.DEBUG);
   const kit = input.kit ?? new MinecraftKit();
   const auth: AuthState = { current: null, microsoftSession: null };
   input.ui.intro("mckit — Minecraft launcher kit");

@@ -5,7 +5,15 @@ import type { ResolvedRuntime } from "../../types/runtime";
 import type { DiscoveredTarget, Target } from "../../types/target";
 import { formatUserError } from "../error-format";
 import { ProgressRenderer, type ProgressSummary, formatBytes, formatDuration } from "../progress";
-import type { InstallSelection, InstallType, ScenarioContext } from "./types";
+import {
+  type InstallRunResult,
+  InstallRunResults,
+  type InstallSelection,
+  type InstallType,
+  type InstallWizardStep,
+  InstallWizardSteps,
+  type ScenarioContext,
+} from "./types";
 
 /**
  * Plan + run an install and pipe progress events into the {@link ProgressRenderer}.
@@ -58,7 +66,7 @@ export const runInstallWithProgress = async (
 export const runInstallFromSelection = async (
   ctx: ScenarioContext,
   sel: InstallSelection,
-): Promise<"ok" | "cancelled" | "install-type"> => {
+): Promise<InstallRunResult> => {
   const v = sel.version as MinecraftVersionSummary;
   const dir = sel.directory as string;
   const loaderInput = buildLoaderInput(sel);
@@ -75,16 +83,16 @@ export const runInstallFromSelection = async (
     });
   } catch (error) {
     ctx.ui.log("error", formatUserError(error));
-    return "install-type";
+    return InstallRunResults.INSTALL_TYPE;
   }
   try {
     await runInstallWithProgress(ctx, target, describeLoader(sel));
-    return "ok";
+    return InstallRunResults.OK;
   } catch {
     // runInstallWithProgress already logged the error (plan-stage via ctx.ui.log,
     // run-stage via renderer.fail). Bounce back to the main menu — looping inside
     // the wizard would only re-trigger the same failure.
-    return "cancelled";
+    return InstallRunResults.CANCELLED;
   }
 };
 
@@ -170,12 +178,10 @@ const labelForType = (type: InstallType | null): string => {
   return "Vanilla";
 };
 
-export const previousFromDirectory = (
-  sel: InstallSelection,
-): "fabric-loader" | "forge-build" | "install-type" => {
-  if (sel.installType === Loaders.FABRIC) return "fabric-loader";
-  if (sel.installType === Loaders.FORGE) return "forge-build";
-  return "install-type";
+export const previousFromDirectory = (sel: InstallSelection): InstallWizardStep => {
+  if (sel.installType === Loaders.FABRIC) return InstallWizardSteps.FABRIC_LOADER;
+  if (sel.installType === Loaders.FORGE) return InstallWizardSteps.FORGE_BUILD;
+  return InstallWizardSteps.INSTALL_TYPE;
 };
 
 export const defaultIdFromSelection = (sel: InstallSelection): string => {

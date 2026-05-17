@@ -52,3 +52,27 @@ export const CHANNEL_OPTIONS: readonly SelectOption<MinecraftChannel | "old" | "
   { label: "Old versions", value: "old", hint: "old_beta + old_alpha" },
   { label: "All", value: "all", hint: "every channel combined" },
 ];
+
+/** Named steps of the install-minecraft wizard state machine. */
+export const InstallWizardSteps = {
+  CHANNEL: "channel",
+  VERSION: "version",
+  RUNTIME: "runtime",
+  INSTALL_TYPE: "install-type",
+  FABRIC_LOADER: "fabric-loader",
+  FORGE_BUILD: "forge-build",
+  DIRECTORY: "directory",
+  SUMMARY: "summary",
+} as const;
+
+export type InstallWizardStep = (typeof InstallWizardSteps)[keyof typeof InstallWizardSteps];
+
+/** Outcome of {@link import("./install-helpers").runInstallFromSelection}. */
+export const InstallRunResults = {
+  OK: "ok",
+  CANCELLED: "cancelled",
+  /** Target resolution failed; the wizard should bounce back to the loader-choice step. */
+  INSTALL_TYPE: InstallWizardSteps.INSTALL_TYPE,
+} as const;
+
+export type InstallRunResult = (typeof InstallRunResults)[keyof typeof InstallRunResults];
