@@ -1,8 +1,8 @@
 name: Release
 
 # Runs on every push to `main`. Auto-bumps the patch version, pushes a
-# `chore(release): vX.Y.Z [skip release]` commit + matching `vX.Y.Z` tag back to
-# main, publishes to npm with provenance, and creates a GitHub Release.
+# `chore(release): vX.Y.Z` commit + matching `vX.Y.Z` tag back to main, publishes
+# to npm with provenance, and creates a GitHub Release.
 #
 # Required secrets:
 #   NPM_TOKEN      — npm automation token with publish scope on @loontail/minecraft-kit.
@@ -10,14 +10,14 @@ name: Release
 #                    repo's branch ruleset bypass list. The default GITHUB_TOKEN cannot
 #                    push directly to a protected `main`; RELEASE_TOKEN can.
 #
-# Loop guard: the bump commit ("chore(release): vX.Y.Z [skip release]") triggers this
-# workflow again; the guard job short-circuits when the marker is present so the
-# release does not chain into itself.
+# Loop guard: the bump commit (`chore(release): vX.Y.Z`) triggers this workflow
+# again; the guard job short-circuits when the commit message begins with
+# `chore(release):` so the release does not chain into itself.
 #
-# To ship something other than a patch (minor / major), bump the version locally with
-# `npm version minor --no-git-tag-version`, commit with `[skip release]` in the
-# message, and let the next regular commit on `main` re-trigger the workflow — the
-# bump step will then increment from the already-bumped baseline.
+# To ship something other than a patch (minor / major), bump the version locally
+# with `npm version minor --no-git-tag-version`, commit as `chore(release): vX.Y.Z`,
+# push — the workflow guard treats it as a release commit (skips), and the next
+# regular commit on `main` triggers the auto-bump from that baseline.
 
 on:
   push:
@@ -38,9 +38,9 @@ jobs:
         env:
           MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          if echo "$MESSAGE" | grep -qE '\[skip release\]|^chore\(release\):'; then
+          if echo "$MESSAGE" | grep -qE '^chore\(release\):'; then
             echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "Bump / skip-release commit detected — skipping release."
+            echo "Release commit detected — skipping."
           else
             echo "proceed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -92,7 +92,7 @@ jobs:
           plain="${version#v}"
           tag="v${plain}"
           git add package.json package-lock.json
-          git commit -m "chore(release): ${tag} [skip release]"
+          git commit -m "chore(release): ${tag}"
           git tag "${tag}"
           git push origin HEAD:main
           git push origin "${tag}"
