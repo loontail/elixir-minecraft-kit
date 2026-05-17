@@ -1,10 +1,9 @@
-import crypto from "node:crypto";
-import { createReadStream } from "node:fs";
 import pLimit from "p-limit";
 import { DOWNLOAD_CONCURRENCY, MAX_PROCESSOR_STDERR_LINES } from "../constants/defaults";
 import { extractAllToDir, readJarMainClass } from "../core/archive";
 import { MinecraftKitError } from "../core/errors";
 import { atomicWrite } from "../core/fs";
+import { sha1OfFile } from "../core/hash";
 import { targetPaths } from "../core/paths";
 import type { PauseController } from "../core/pause-controller";
 import { downloadFile } from "../http/download";
@@ -94,11 +93,7 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
 
   const limit = pLimit(input.concurrency ?? DOWNLOAD_CONCURRENCY);
 
-  for (const group of DOWNLOAD_GROUPS) {
-    const groupActions = downloads.filter((action) => group.categories.includes(action.category));
-    if (groupActions.length === 0) continue;
-    await checkpoint();
-    enterPhase(group.phase);
+  const runDownloadGroup = async (groupActions: readonly DownloadAction[]): Promise<void> => {
     await Promise.all(
       groupActions.map((action) =>
         limit(async () => {
@@ -121,6 +116,14 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
         }),
       ),
     );
+  };
+
+  for (const group of DOWNLOAD_GROUPS) {
+    const groupActions = downloads.filter((action) => group.categories.includes(action.category));
+    if (groupActions.length === 0) continue;
+    await checkpoint();
+    enterPhase(group.phase);
+    await runDownloadGroup(groupActions);
   }
 
   // Future categories the consumer hasn't excluded fall back to the generic libraries phase.
@@ -130,28 +133,7 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
   if (ungrouped.length > 0) {
     await checkpoint();
     enterPhase(InstallPhases.DOWNLOADING_LIBRARIES);
-    await Promise.all(
-      ungrouped.map((action) =>
-        limit(async () => {
-          await checkpoint();
-          const result = await downloadFile(input.http, {
-            url: action.url,
-            target: action.target,
-            ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
-            ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
-            ...(action.category !== undefined ? { category: action.category } : {}),
-            ...(input.signal !== undefined ? { signal: input.signal } : {}),
-            ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
-            ...(input.pauseController !== undefined
-              ? { pauseController: input.pauseController }
-              : {}),
-          });
-          bytesDownloaded += result.bytesDownloaded;
-          if (result.skipped) actionsSkipped++;
-          actionsCompleted++;
-        }),
-      ),
-    );
+    await runDownloadGroup(ungrouped);
   }
 
   if (writeActions.length > 0) {
@@ -333,7 +315,7 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
     durationMs: Date.now() - startedAt,
   });
   for (const [outputPath, expectedSha1] of Object.entries(input.action.outputs)) {
-    const sha1 = await sha1OfFileStreaming(outputPath);
+    const sha1 = await sha1OfFile(outputPath);
     if (sha1 !== expectedSha1) {
       throw new MinecraftKitError(
         "FORGE_PROCESSOR_FAILED",
@@ -347,15 +329,4 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
       path: outputPath,
     });
   }
-}
-
-async function sha1OfFileStreaming(filePath: string): Promise<string> {
-  const hash = crypto.createHash("sha1");
-  await new Promise<void>((resolve, reject) => {
-    const stream = createReadStream(filePath);
-    stream.on("data", (chunk) => hash.update(chunk));
-    stream.on("end", () => resolve());
-    stream.on("error", reject);
-  });
-  return hash.digest("hex");
 }

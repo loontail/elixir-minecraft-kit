@@ -82,29 +82,24 @@ export class MojangAuthApi {
       ...(options.signal !== undefined ? { signal: options.signal } : {}),
     });
     await options.onPrompt(prompt);
-    const pollOpts: Parameters<typeof pollDeviceCode>[0] = { http: this.http, state };
-    if (options.signal !== undefined) {
-      (pollOpts as { signal?: AbortSignal }).signal = options.signal;
-    }
-    if (options.onPoll !== undefined) {
-      (pollOpts as { onTick?: typeof options.onPoll }).onTick = options.onPoll;
-    }
-    const msToken = await pollDeviceCode(pollOpts);
+    const msToken = await pollDeviceCode({
+      http: this.http,
+      state,
+      ...(options.signal !== undefined ? { signal: options.signal } : {}),
+      ...(options.onPoll !== undefined ? { onTick: options.onPoll } : {}),
+    });
     return this.completeMicrosoftToken(msToken, clientId, options.signal);
   }
 
   /** Refresh a previously obtained session. The Microsoft refresh token may be rotated. */
   async refresh(refreshToken: string, options: RefreshOptions = {}): Promise<MojangSession> {
     const clientId = resolveClientId(options.clientId);
-    const refreshArgs: Parameters<typeof refreshMicrosoftToken>[0] = {
+    const msToken = await refreshMicrosoftToken({
       http: this.http,
       refreshToken,
       clientId,
-    };
-    if (options.signal !== undefined) {
-      (refreshArgs as { signal?: AbortSignal }).signal = options.signal;
-    }
-    const msToken = await refreshMicrosoftToken(refreshArgs);
+      ...(options.signal !== undefined ? { signal: options.signal } : {}),
+    });
     return this.completeMicrosoftToken(msToken, clientId, options.signal);
   }
 
@@ -131,14 +126,12 @@ export class MojangAuthApi {
       state: DeviceCodeState,
       options: PollDeviceCodeOptions = {},
     ): Promise<MojangSession> => {
-      const pollOpts: Parameters<typeof pollDeviceCode>[0] = { http: this.http, state };
-      if (options.signal !== undefined) {
-        (pollOpts as { signal?: AbortSignal }).signal = options.signal;
-      }
-      if (options.onTick !== undefined) {
-        (pollOpts as { onTick?: typeof options.onTick }).onTick = options.onTick;
-      }
-      const msToken = await pollDeviceCode(pollOpts);
+      const msToken = await pollDeviceCode({
+        http: this.http,
+        state,
+        ...(options.signal !== undefined ? { signal: options.signal } : {}),
+        ...(options.onTick !== undefined ? { onTick: options.onTick } : {}),
+      });
       return this.completeMicrosoftToken(msToken, state.clientId, options.signal);
     },
   };
@@ -149,34 +142,28 @@ export class MojangAuthApi {
     clientId: string,
     signal: AbortSignal | undefined,
   ): Promise<MojangSession> {
-    const xblArgs: Parameters<typeof authenticateXbl>[0] = {
+    const signalOpt = signal !== undefined ? { signal } : {};
+    const xbl = await authenticateXbl({
       http: this.http,
       accessToken: msToken.accessToken,
-    };
-    if (signal !== undefined) (xblArgs as { signal?: AbortSignal }).signal = signal;
-    const xbl = await authenticateXbl(xblArgs);
-
-    const xstsArgs: Parameters<typeof authenticateXsts>[0] = {
+      ...signalOpt,
+    });
+    const xsts = await authenticateXsts({
       http: this.http,
       xblToken: xbl.token,
-    };
-    if (signal !== undefined) (xstsArgs as { signal?: AbortSignal }).signal = signal;
-    const xsts = await authenticateXsts(xstsArgs);
-
-    const loginArgs: Parameters<typeof loginWithXbox>[0] = {
+      ...signalOpt,
+    });
+    const mc = await loginWithXbox({
       http: this.http,
       xstsToken: xsts.token,
       userHash: xsts.userHash,
-    };
-    if (signal !== undefined) (loginArgs as { signal?: AbortSignal }).signal = signal;
-    const mc = await loginWithXbox(loginArgs);
-
-    const profileArgs: Parameters<typeof fetchMinecraftProfile>[0] = {
+      ...signalOpt,
+    });
+    const profile = await fetchMinecraftProfile({
       http: this.http,
       accessToken: mc.accessToken,
-    };
-    if (signal !== undefined) (profileArgs as { signal?: AbortSignal }).signal = signal;
-    const profile = await fetchMinecraftProfile(profileArgs);
+      ...signalOpt,
+    });
 
     return {
       minecraft: {

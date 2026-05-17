@@ -82,6 +82,13 @@ export class TargetsApi {
     if (!input.directory) {
       throw new MinecraftKitError("INVALID_INPUT", "Target directory must be non-empty");
     }
+    if (!path.isAbsolute(input.directory)) {
+      throw new MinecraftKitError(
+        "INVALID_INPUT",
+        `Target directory must be an absolute path, got: ${input.directory}`,
+        { context: { directory: input.directory } },
+      );
+    }
     if (input.loader.minecraftVersion !== input.minecraft.version) {
       throw new MinecraftKitError(
         "INVALID_INPUT",

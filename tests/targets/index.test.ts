@@ -96,6 +96,30 @@ describe("TargetsApi", () => {
     ).toThrow();
   });
 
+  it("create() rejects relative directories", () => {
+    const { targets } = buildApis();
+    expect(() =>
+      targets.create({
+        id: "t",
+        directory: "relative/path",
+        minecraft: { version: "1", channel: "release" } as never,
+        loader: {
+          type: Loaders.VANILLA,
+          minecraftVersion: "1",
+          minecraft: { version: "1" } as never,
+        },
+        runtime: {
+          component: "x",
+          platformKey: "windows-x64",
+          versionName: "1",
+          system,
+          manifestUrl: "x",
+          manifestSha1: "x",
+        },
+      }),
+    ).toThrow(/absolute path/);
+  });
+
   it("resolve() builds vanilla target", async () => {
     const { targets } = buildApis();
     const target = await targets.resolve({
