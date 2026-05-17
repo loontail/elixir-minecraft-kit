@@ -84,7 +84,7 @@ export { offlineUuidFor, stripUuidDashes } from "./core/uuid";
 export { createMemoryCache } from "./http/cache";
 export { FetchHttpClient } from "./http/client";
 export { ChildProcessSpawner } from "./launch/spawner";
-export { silentLogger, consoleLogger } from "./core/logger";
+export { silentLogger, consoleLogger, scopedLogger } from "./core/logger";
 export {
   MojangAuthApi,
   toOnlineAuth,

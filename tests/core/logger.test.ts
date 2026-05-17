@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { consoleLogger, silentLogger } from "../../src/core/logger";
+import { consoleLogger, scopedLogger, silentLogger } from "../../src/core/logger";
+import type { LogLevel, Logger } from "../../src/types/logger";
 
 describe("logger", () => {
   describe("silentLogger", () => {
@@ -43,6 +44,42 @@ describe("logger", () => {
       const errSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
       consoleLogger.log("error", "hi");
       expect(errSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("scopedLogger", () => {
+    interface Captured {
+      level: LogLevel;
+      message: string;
+      fields: Readonly<Record<string, unknown>> | undefined;
+    }
+    function makeCapturingLogger(): { logger: Logger; entries: Captured[] } {
+      const entries: Captured[] = [];
+      const logger: Logger = {
+        log: (level, message, fields) => {
+          entries.push({ level, message, fields });
+        },
+      };
+      return { logger, entries };
+    }
+
+    it("prefixes messages with the scope", () => {
+      const { logger, entries } = makeCapturingLogger();
+      const scoped = scopedLogger(logger, "http");
+      scoped.log("info", "request issued");
+      expect(entries[0]?.message).toBe("[http] request issued");
+      expect(entries[0]?.fields).toBeUndefined();
+    });
+
+    it("merges base fields with call-site fields (call-site wins)", () => {
+      const { logger, entries } = makeCapturingLogger();
+      const scoped = scopedLogger(logger, "auth", { request: "req-1" });
+      scoped.log("warn", "retrying", { attempt: 2, request: "req-2" });
+      expect(entries[0]?.fields).toEqual({ request: "req-2", attempt: 2 });
+    });
+
+    it("returns silentLogger when the base is silent", () => {
+      expect(scopedLogger(silentLogger, "anything")).toBe(silentLogger);
     });
   });
 });
