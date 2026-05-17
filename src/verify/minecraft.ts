@@ -84,8 +84,8 @@ export async function verifyMinecraft(input: VerifyMinecraftInput): Promise<Veri
         record(
           await verifyHashedFile({
             path: action.target,
-            expectedSha1: action.expectedSha1,
-            expectedSize: action.expectedSize,
+            ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
+            ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
             url: action.url,
             category: VerifyFileCategories.LIBRARY,
           }),

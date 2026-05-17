@@ -67,7 +67,9 @@ export class FabricVersionsApi {
       throw new MinecraftKitError(
         "MANIFEST_NOT_FOUND",
         `Fabric loader version not found: ${input.loaderVersion ?? "(none matched)"}`,
-        { context: { version: input.loaderVersion } },
+        {
+          context: input.loaderVersion !== undefined ? { version: input.loaderVersion } : {},
+        },
       );
     }
     const profile = await fetchJson<FabricProfile>(this.ctx.http, this.ctx.cache, {

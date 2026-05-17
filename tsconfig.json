@@ -6,7 +6,7 @@
     "lib": ["ES2023"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": false,
+    "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -27,5 +27,11 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts", "tests/**/*.ts", "*.ts"],
-  "exclude": ["node_modules", "dist", "docs-site/.vitepress/cache", "docs-site/.vitepress/dist", "coverage"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "docs-site/.vitepress/cache",
+    "docs-site/.vitepress/dist",
+    "coverage"
+  ]
 }

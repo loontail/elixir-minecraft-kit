@@ -51,8 +51,8 @@ export async function verifyFabric(input: VerifyFabricInput): Promise<Verificati
         record(
           await verifyHashedFile({
             path: action.target,
-            expectedSha1: action.expectedSha1,
-            expectedSize: action.expectedSize,
+            ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
+            ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
             ...(action.url ? { url: action.url } : {}),
             category: VerifyFileCategories.LOADER_LIBRARY,
           }),

@@ -42,7 +42,11 @@ export async function downloadFile(
   input: DownloadFileInput,
 ): Promise<DownloadFileResult> {
   assertSafeDownloadUrl(input.url);
-  const fileRef = { url: input.url, target: input.target, category: input.category };
+  const fileRef = {
+    url: input.url,
+    target: input.target,
+    ...(input.category !== undefined ? { category: input.category } : {}),
+  };
   if (input.expectedSha1 !== undefined) {
     const existing = await checkExistingFile(input.target, input.expectedSha1, input.expectedSize);
     if (existing.matches) {
@@ -62,7 +66,9 @@ export async function downloadFile(
       const startedAt = Date.now();
       let bytesDownloaded = 0;
       const hash = crypto.createHash("sha1");
-      const response = await http.request(input.url, { signal: input.signal });
+      const response = await http.request(input.url, {
+        ...(input.signal !== undefined ? { signal: input.signal } : {}),
+      });
       const contentLength = Number(response.headers["content-length"] ?? "0");
       const total = input.expectedSize ?? (Number.isFinite(contentLength) ? contentLength : 0);
       const sourceIterable = response.stream();

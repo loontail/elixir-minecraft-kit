@@ -51,9 +51,9 @@ describe("mergeManifest", () => {
   });
 
   it("returns undefined arguments when neither side has them", () => {
-    const noArgsParent = { ...parent, arguments: undefined };
-    const noArgsChild = { ...child, arguments: undefined };
-    const result = mergeManifest(noArgsParent, noArgsChild);
+    const { arguments: _parentArgs, ...parentRest } = parent;
+    const { arguments: _childArgs, ...childRest } = child;
+    const result = mergeManifest(parentRest, childRest);
     expect(result.arguments).toBeUndefined();
   });
 

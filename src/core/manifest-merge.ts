@@ -22,7 +22,16 @@ export function mergeManifest(
   parent: MinecraftVersionManifest,
   child: MinecraftVersionManifest,
 ): MinecraftVersionManifest {
-  const merged: MinecraftVersionManifest = {
+  const args = mergeArguments(parent.arguments, child.arguments);
+  const minecraftArguments = child.minecraftArguments ?? parent.minecraftArguments;
+  const javaVersion = child.javaVersion ?? parent.javaVersion;
+  const logging = child.logging ?? parent.logging;
+  const inheritsFrom = child.inheritsFrom ?? parent.inheritsFrom;
+  const releaseTime = child.releaseTime ?? parent.releaseTime;
+  const time = child.time ?? parent.time;
+  const minimumLauncherVersion = child.minimumLauncherVersion ?? parent.minimumLauncherVersion;
+  const complianceLevel = child.complianceLevel ?? parent.complianceLevel;
+  return {
     id: child.id || parent.id,
     type: child.type ?? parent.type,
     mainClass: child.mainClass ?? parent.mainClass,
@@ -30,17 +39,16 @@ export function mergeManifest(
     assets: child.assets ?? parent.assets,
     downloads: { ...parent.downloads, ...child.downloads },
     libraries: mergeLibraries(parent.libraries, child.libraries),
-    arguments: mergeArguments(parent.arguments, child.arguments),
-    minecraftArguments: child.minecraftArguments ?? parent.minecraftArguments,
-    javaVersion: child.javaVersion ?? parent.javaVersion,
-    logging: child.logging ?? parent.logging,
-    inheritsFrom: child.inheritsFrom ?? parent.inheritsFrom,
-    releaseTime: child.releaseTime ?? parent.releaseTime,
-    time: child.time ?? parent.time,
-    minimumLauncherVersion: child.minimumLauncherVersion ?? parent.minimumLauncherVersion,
-    complianceLevel: child.complianceLevel ?? parent.complianceLevel,
+    ...(args !== undefined ? { arguments: args } : {}),
+    ...(minecraftArguments !== undefined ? { minecraftArguments } : {}),
+    ...(javaVersion !== undefined ? { javaVersion } : {}),
+    ...(logging !== undefined ? { logging } : {}),
+    ...(inheritsFrom !== undefined ? { inheritsFrom } : {}),
+    ...(releaseTime !== undefined ? { releaseTime } : {}),
+    ...(time !== undefined ? { time } : {}),
+    ...(minimumLauncherVersion !== undefined ? { minimumLauncherVersion } : {}),
+    ...(complianceLevel !== undefined ? { complianceLevel } : {}),
   };
-  return merged;
 }
 
 function libraryDedupeKey(library: MinecraftLibrary): string | null {

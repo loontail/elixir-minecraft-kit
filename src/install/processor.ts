@@ -28,9 +28,9 @@ export async function runProcessor(input: RunProcessorInput): Promise<void> {
       `Forge processor exited with code ${exit.code ?? "(signal)"}: ${mainClass}`,
       {
         context: {
-          exitCode: exit.code ?? undefined,
           mainClass,
           stderr: exit.stderr,
+          ...(exit.code !== null ? { exitCode: exit.code } : {}),
         },
       },
     );

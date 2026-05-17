@@ -88,15 +88,14 @@ export async function scenarioRepair(ctx: ScenarioContext): Promise<ScenarioOutc
     if (ok.kind !== "ok" || !ok.value) return "cancelled";
 
     type RepairAspectKey = "minecraft" | "fabric" | "forge" | "runtime";
+    const aspectKeys: readonly RepairAspectKey[] = ["minecraft", "fabric", "forge", "runtime"];
     const aspects: ReadonlyArray<{
       readonly key: RepairAspectKey;
       readonly verification?: VerificationResult;
-    }> = [
-      { key: "minecraft", verification: verifications.find((v) => v.kind === "minecraft") },
-      { key: "fabric", verification: verifications.find((v) => v.kind === "fabric") },
-      { key: "forge", verification: verifications.find((v) => v.kind === "forge") },
-      { key: "runtime", verification: verifications.find((v) => v.kind === "runtime") },
-    ];
+    }> = aspectKeys.map((key) => {
+      const verification = verifications.find((v) => v.kind === key);
+      return verification !== undefined ? { key, verification } : { key };
+    });
 
     for (const aspect of aspects) {
       if (!aspect.verification || aspect.verification.issues.length === 0) continue;

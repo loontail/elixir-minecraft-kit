@@ -62,7 +62,9 @@ export class ForgeVersionsApi {
       throw new MinecraftKitError(
         "MANIFEST_NOT_FOUND",
         `Forge build not found for ${input.minecraftVersion}: ${input.forgeVersion ?? "(none matched)"}`,
-        { context: { version: input.forgeVersion } },
+        {
+          context: input.forgeVersion !== undefined ? { version: input.forgeVersion } : {},
+        },
       );
     }
     return {
