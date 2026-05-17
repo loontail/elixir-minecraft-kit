@@ -5,6 +5,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { HTTP_RETRY_MAX } from "../constants/defaults";
+import { checkpoint } from "../core/abort";
 import { MinecraftKitError } from "../core/errors";
 import { ensureDir } from "../core/fs";
 import type { PauseController } from "../core/pause-controller";
@@ -74,12 +75,15 @@ export const downloadFile = async (
       const sourceIterable = response.stream();
       const counting = (async function* () {
         for await (const chunk of sourceIterable) {
-          if (input.pauseController?.paused) {
-            await input.pauseController.waitWhilePaused();
-          }
-          if (input.signal?.aborted) {
-            throw new MinecraftKitError("LAUNCH_ABORTED", "Download aborted by signal");
-          }
+          await checkpoint(
+            {
+              ...(input.signal !== undefined ? { signal: input.signal } : {}),
+              ...(input.pauseController !== undefined
+                ? { pauseController: input.pauseController }
+                : {}),
+            },
+            "Download aborted by signal",
+          );
           bytesDownloaded += chunk.byteLength;
           hash.update(chunk);
           input.onEvent?.({

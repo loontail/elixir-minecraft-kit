@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { DOWNLOAD_CONCURRENCY } from "../constants/defaults";
+import { checkpoint as runCheckpoint } from "../core/abort";
 import { extractAllToDir } from "../core/archive";
 import { MinecraftKitError } from "../core/errors";
 import { atomicWrite } from "../core/fs";
@@ -112,15 +113,14 @@ const createContext = (input: RunInstallInput, counters: InstallCounters): Insta
     input.onEvent?.({ type: "install:phase-changed", phase, previous: currentPhase });
     currentPhase = phase;
   };
-  const checkpoint = async (): Promise<void> => {
-    if (input.signal?.aborted) {
-      throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
-    }
-    await input.pauseController?.waitWhilePaused();
-    if (input.signal?.aborted) {
-      throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
-    }
-  };
+  const checkpoint = (): Promise<void> =>
+    runCheckpoint(
+      {
+        ...(input.signal !== undefined ? { signal: input.signal } : {}),
+        ...(input.pauseController !== undefined ? { pauseController: input.pauseController } : {}),
+      },
+      "Install aborted by signal",
+    );
   return {
     input,
     counters,
