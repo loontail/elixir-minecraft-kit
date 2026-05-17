@@ -1,5 +1,6 @@
 import { ApiEndpoints } from "../constants/api";
 import { MinecraftKitError } from "../core/errors";
+import { isMinecraftVersionManifestShape } from "../core/guards";
 import { fetchJson } from "../http/metadata";
 import type {
   MinecraftChannel,
@@ -75,18 +76,19 @@ export class MinecraftVersionsApi {
   /** Fetch and parse the per-version manifest in addition to the summary. */
   async resolve(input: MinecraftGetInput): Promise<ResolvedMinecraft> {
     const summary = await this.get(input);
-    const manifest = await fetchJson<MinecraftVersionManifest>(this.ctx.http, this.ctx.cache, {
+    const raw = await fetchJson<unknown>(this.ctx.http, this.ctx.cache, {
       url: summary.url,
       cacheKey: `minecraft-manifest:${summary.id}:${summary.sha1}`,
       ...(input.signal !== undefined ? { signal: input.signal } : {}),
     });
-    if (!manifest.id || !manifest.mainClass) {
+    if (!isMinecraftVersionManifestShape(raw)) {
       throw new MinecraftKitError(
         "MANIFEST_INVALID",
-        `Per-version manifest is missing required fields: ${summary.id}`,
+        `Per-version manifest does not match the expected shape: ${summary.id}`,
         { context: { version: summary.id, url: summary.url } },
       );
     }
+    const manifest = raw as unknown as MinecraftVersionManifest;
     return {
       version: summary.id,
       channel: summary.type,
