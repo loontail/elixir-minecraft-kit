@@ -12,11 +12,13 @@ src/verify/          ← per-aspect file checks
 src/repair/          ← verify result → repair plan
 src/launch/          ← argument composition + child process
 src/update/          ← update wrapper over install
+src/auth/            ← Microsoft OAuth → Xbox → Minecraft sign-in
 src/versions/        ← Mojang / Fabric / Forge / Adoptium resolvers
 src/targets/         ← target resolution & discovery
 ─────────────────────────────────────────────────────
 src/http/            ← HTTP client, cache, streaming download
-src/core/            ← cross-cutting utils (fs, hash, archive, paths, rules, …)
+src/core/            ← cross-cutting utils (fs, hash, archive, paths, rules,
+                       abort, json, guards, logger, assert-never, …)
 src/types/           ← public type declarations
 src/constants/       ← endpoint URLs, defaults, limits, file segments
 ```
@@ -36,7 +38,9 @@ are exposed for consumers that want to avoid the facade.
 
 - **Stateless.** The library only writes files Minecraft itself expects (`versions/`,
   `libraries/`, `assets/`, `runtime/`). There is no launcher-private state, no persisted
-  session, no profile registry. Consumers own all metadata about their installations.
+  session, no profile registry. Consumers own all metadata about their installations,
+  including authentication tokens — `kit.auth.login()` returns a `MojangSession`; storing
+  the refresh token is the launcher's job.
 - **Plan + execute split.** Every long-running operation (install, update, repair) produces an
   `InstallPlan` before it starts touching disk. Tests assert on plans; runners are tested
   separately with `FakeHttpClient` / `FakeSpawner`.
@@ -44,11 +48,23 @@ are exposed for consumers that want to avoid the facade.
   `RuntimeSystem` are all injectable on the `MinecraftKit` constructor. The defaults are
   `FetchHttpClient` (node `fetch`), in-memory LRU cache, `ChildProcessSpawner`, silent logger,
   and `detectSystem()`.
-- **Discriminated unions.** Install actions, launch events, install phases, loader kinds, and
-  verification statuses all use literal-string discriminators. No magic strings in business
-  code; values live in `src/constants/` or as `const` maps in `src/types/`.
+- **Discriminated unions, never inline literals.** Install actions, launch events, install
+  phases, loader kinds, verification statuses, download categories, error codes — every
+  enum-like string lives as an `as const` map (`InstallActionKinds`, `DownloadCategories`,
+  `EventTypes`, `Loaders`, `VerifyFileStatuses`, `InstallPhases`, `MinecraftKitErrorCodes`,
+  `WizardOutcomes`, `InstallWizardSteps`, …). Business code references the constant; the
+  derived union type forces TypeScript to flag typos.
 - **No silent catches.** Empty `catch` blocks are allowed only with a one-line comment naming
   the explicit reason (e.g. "ENOENT during cleanup of temp file before throwing").
+- **Boundary validation.** JSON pulled over the network passes through `parseJsonAs(text,
+  guard)` and one of the predicates in `src/core/guards.ts`. The kit ships without Zod by
+  design — shape checks are short hand-written predicates colocated with the call site.
+- **Defence in depth on downloads.** `downloadFile` rejects unparseable URLs and non-`http(s)`
+  schemes before fetch. Consumers shipping in hostile environments can additionally pin to
+  a `hostAllowList` (supports `*.minecraft.net`-style wildcards).
+- **Single interrupt point.** Every long-running stage routes signal + pause through
+  `checkpoint()` in `src/core/abort.ts`. The order is signal-check → await pause →
+  signal-check-again; no caller hand-rolls it.
 
 ## Operation lifecycles
 
@@ -82,12 +98,33 @@ processors are included (skip-on-correct keeps it cheap).
    `pid`, `exited` promise, and an `abort()` method. Both the signal listener and `abort()`
    route through a single guarded `doAbort()` so events never double-emit.
 
+### Authentication
+1. `kit.auth.login({ clientId, onPrompt })` starts the Microsoft OAuth 2.0 device-code grant
+   against the `consumers` tenant. The caller's `onPrompt(prompt)` callback receives the URL
+   and user code to render.
+2. Microsoft's `/token` endpoint is polled at the manifest-declared interval (RFC 8628;
+   `slow_down` bumps the interval by 5s).
+3. The resulting access token is exchanged for an Xbox Live RPS token, then an XSTS token
+   bound to `rp://api.minecraftservices.com/`, then a Minecraft bearer token via
+   `login_with_xbox`, then the player profile via `minecraft/profile`.
+4. The composed `MojangSession` carries everything `kit.launch.compose` needs plus a
+   refresh token. Persisting the refresh token is the caller's responsibility —
+   `kit.auth.refresh(token)` re-runs steps 2–4 and may rotate the token.
+
 ## Where things live
 
-- Error codes: `src/types/errors.ts` (`MinecraftKitErrorCode` union). Add new codes here; do not
-  invent ad-hoc string codes at throw sites.
+- Error codes: `src/types/errors.ts` (`MinecraftKitErrorCodes` as-const + derived
+  `MinecraftKitErrorCode` union). Add new codes here; do not invent ad-hoc string codes
+  at throw sites.
 - Event names: `src/types/events.ts` (`EventTypes` const + `ProgressEvent` union).
 - Phase names: `src/types/install.ts` (`InstallPhases`).
+- Download categories: `src/types/install.ts` (`DownloadCategories` + derived
+  `DownloadCategory` union).
+- Loader kinds: `src/types/loader.ts` (`Loaders`).
 - Defaults/limits: `src/constants/defaults.ts` (timing, concurrency) and
   `src/constants/limits.ts` (archive caps).
 - API endpoints: `src/constants/api.ts` (`ApiEndpoints`). No hard-coded URLs at call sites.
+- Runtime shape predicates: `src/core/guards.ts`.
+- Abort + pause guard: `src/core/abort.ts`.
+- JSON parsing helpers: `src/core/json.ts`.
+- Scoped logger: `src/core/logger.ts`.

@@ -15,8 +15,9 @@ const kit = new MinecraftKit();
 | `kit.install` | `plan`, `run`, `runtime.{plan,run,standalonePlan}` |
 | `kit.update` | `plan`, `run` |
 | `kit.verify.{minecraft,fabric,forge,runtime}` | `run` |
-| `kit.repair.{minecraft,fabric,forge,runtime}` | `plan`, `run` |
+| `kit.repair.{minecraft,fabric,forge,runtime}` | `plan`, `run`, `all` |
 | `kit.launch` | `compose`, `run` |
+| `kit.auth` | `login`, `refresh`, `deviceCode.{start,poll}` |
 | `kit.cache` | `get`, `set`, `delete`, `clear` |
 
 ## Constructor options
@@ -71,12 +72,33 @@ import {
   planMinecraftRepair,
   runRepair,
   planRuntimeInstall,
+  MojangAuthApi,
+  toOnlineAuth,
   FetchHttpClient,
   createMemoryCache,
 } from "@loontail/minecraft-kit";
 ```
 
 The facade just composes these with the injected dependencies for you.
+
+## Logging
+
+Pass a `Logger` to the constructor for trace output. The kit ships three implementations:
+
+```ts
+import {
+  consoleLogger,
+  silentLogger,
+  scopedLogger,
+} from "@loontail/minecraft-kit";
+
+const kit = new MinecraftKit({ logger: scopedLogger(consoleLogger, "launcher") });
+```
+
+`scopedLogger(base, scope, baseFields?)` returns a `Logger` that prefixes every line with
+`[scope]` and merges `baseFields` into every emission. Returns the silent logger
+short-circuit when the base is silent. Internal modules of the kit already use this — for
+example, the auth flow logs through `scopedLogger(base, "auth")`.
 
 ## Serialising a target
 

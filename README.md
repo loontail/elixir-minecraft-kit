@@ -1,23 +1,35 @@
 # @loontail/minecraft-kit
 
-A stateless TypeScript Minecraft launcher library and interactive CLI for vanilla, Fabric, and modern Forge.
+A stateless TypeScript Minecraft launcher library and interactive CLI for vanilla, Fabric,
+and modern Forge.
 
 **Documentation:** https://loontail.github.io/minecraft-kit/
 
 ## Features
 
-- Resolve and install vanilla Minecraft, Fabric, and modern Forge.
-- Install Mojang Java runtimes (`java-runtime-gamma`, `delta`, `jre-legacy`, ...).
-- Verify, repair, and launch installations.
-- Fully typed `onEvent` progress callbacks.
-- Interactive `mckit` CLI.
-- **Stateless** — writes only the files Minecraft itself needs; nothing else lives on disk.
+- **Install** vanilla Minecraft, Fabric, and modern Forge end-to-end.
+- **Java runtimes** — install Mojang's `java-runtime-gamma` / `delta` / `jre-legacy` /
+  others, either bundled with a target or standalone.
+- **Verify, repair, launch.** Per-aspect verifiers tell you exactly which files are missing
+  or corrupted; repair re-downloads only those.
+- **Microsoft OAuth.** Built-in device-code sign-in returns a `MojangSession` ready for
+  online launches. Token storage stays in your launcher's hands.
+- **Typed events.** Discriminated-union `onEvent` callbacks cover every download, integrity
+  check, archive extraction, processor invocation, and launch transition.
+- **Defence in depth.** URL scheme allow-list on every download, optional host pinning,
+  manifest shape validation, zip-bomb caps, zip-slip rejection, atomic writes.
+- **Interactive CLI** (`mckit`) — install / verify / repair / launch / sign-in from a single
+  menu.
+- **Stateless** — writes only the files Minecraft itself needs; no profile registry, no
+  session files, no launcher-private metadata.
 
 ## Install
 
 ```bash
 npm install @loontail/minecraft-kit
 ```
+
+Requires Node ≥ 20.11.
 
 ## Usage
 
@@ -43,13 +55,48 @@ const session = kit.launch.run(composition);
 await session.exited;
 ```
 
+### Online launch via Microsoft
+
+```ts
+const session = await kit.auth.login({
+  clientId: process.env.MINECRAFT_KIT_MSA_CLIENT_ID,
+  onPrompt: (prompt) => {
+    console.log(`Open ${prompt.verificationUri} and enter ${prompt.userCode}`);
+  },
+});
+
+// Persist `session.microsoft.refreshToken` somewhere your launcher controls.
+// Next start: kit.auth.refresh(savedRefreshToken).
+
+const composition = await kit.launch.compose(target, {
+  auth: toOnlineAuth(session),
+});
+```
+
+See [docs/guides/auth](https://loontail.github.io/minecraft-kit/guides/auth) for Azure AD
+registration steps and the full error taxonomy.
+
 ## CLI
 
 ```bash
 mckit
 ```
 
-The CLI is fully interactive — no required arguments. Run inside the directory that should host your installations.
+The CLI is fully interactive — no required arguments. Run inside the directory that should
+host your installations. Flags: `--help`, `--version`, `--debug`.
+
+## Security
+
+The kit goes through three defence layers on untrusted input. See
+[docs/guides/security](https://loontail.github.io/minecraft-kit/guides/security) for the
+full model. Highlights:
+
+- Downloads accept only `http(s)` URLs; opt-in `hostAllowList` pins to a known set of hosts.
+- Manifests pass through runtime shape guards before any code trusts them.
+- Zip extraction caps entry count, per-entry size, total size, and compression ratio;
+  rejects path traversal, null bytes, reserved Windows names, and drive letters.
+- Auth tokens never touch disk inside the kit. `kit.auth.login()` returns a session; the
+  launcher decides how to persist the refresh token.
 
 ## License
 

@@ -1,7 +1,23 @@
 # Error codes (internal)
 
-Every public API throws `MinecraftKitError`. The `code` field is the stable
-discriminator. New codes are added to `src/types/errors.ts` — never invent ad-hoc strings.
+Every public API throws `MinecraftKitError`. The `code` field is the stable discriminator.
+New codes are added to `src/types/errors.ts` — never invent ad-hoc strings at throw sites.
+
+Codes are surfaced as `MinecraftKitErrorCodes.X` (an `as const` registry) so call sites get
+compile-time checking instead of bare string literals:
+
+```ts
+import { MinecraftKitError, MinecraftKitErrorCodes } from "@loontail/minecraft-kit";
+
+throw new MinecraftKitError(
+  MinecraftKitErrorCodes.MANIFEST_INVALID,
+  "Per-version manifest is missing required fields",
+  { context: { version, url } },
+);
+```
+
+The `MinecraftKitErrorCode` union is derived from `typeof MinecraftKitErrorCodes`, so a
+typo on either side surfaces at compile time.
 
 ## Network
 
@@ -62,7 +78,26 @@ discriminator. New codes are added to `src/types/errors.ts` — never invent ad-
 |---|---|---|
 | `LAUNCH_JAVA_NOT_FOUND` | The configured `javaPath` does not exist or is not executable. | `filePath` |
 | `LAUNCH_PROCESS_FAILED` | Minecraft exited with a non-zero code without being aborted. | `exitCode` |
-| `LAUNCH_ABORTED` | The install or launch was cancelled via signal. | — |
+| `LAUNCH_ABORTED` | The install or launch was cancelled via signal. Also used by the install runner's `checkpoint()` helper when an abort is observed mid-operation. | — |
+
+## Authentication
+
+The Microsoft OAuth device-code flow lives in `src/auth/`. Every step has its own code so
+callers can branch on the specific failure (e.g. ask the user to re-enter the URL/code vs.
+ask them to register an Azure AD app).
+
+| Code | Thrown when | Context fields |
+|---|---|---|
+| `AUTH_MISSING_CLIENT_ID` | `MojangAuthApi.login` / `.refresh` was called without a `clientId` and `MINECRAFT_KIT_MSA_CLIENT_ID` is unset. | — |
+| `AUTH_DEVICE_CODE_FAILED` | Microsoft's `/devicecode` endpoint rejected the request. Message includes a precise Azure-portal fix for AADSTS700016 (app not visible to consumers), AADSTS7000218 (public flows disabled), AADSTS50059 (audience excludes consumers), and a few common OAuth error codes. | `httpStatus`, `microsoftError`, `clientId` |
+| `AUTH_DEVICE_CODE_DECLINED` | User clicked "No" / closed the Microsoft sign-in page. | — |
+| `AUTH_DEVICE_CODE_EXPIRED` | The device code expired before the user signed in (typically 15 min). | — |
+| `AUTH_REFRESH_FAILED` | Microsoft refused a refresh-token exchange. | `httpStatus`, `microsoftError` |
+| `AUTH_XBOX_FAILED` | Xbox Live `/user/authenticate` returned an incomplete response or network errored. | — |
+| `AUTH_XSTS_FAILED` | XSTS `/xsts/authorize` returned 401 with an `XErr` code (banned, no profile, country restriction, child account) or any other non-2xx. | `xerr`, `message`, `httpStatus` |
+| `AUTH_MINECRAFT_FAILED` | `login_with_xbox` returned a non-2xx that is not 403, or the response was missing the access token. Also raised by the profile fetch on unexpected non-2xx codes. The 403 path with `"invalid app registration"` in the body surfaces here with a precise pointer to `https://aka.ms/mce-reviewappid`. | `httpStatus`, `body`, `reason` |
+| `AUTH_NO_GAME_OWNERSHIP` | Profile endpoint returned 404 (this Microsoft account does not own Java Edition), or `login_with_xbox` returned a generic 403. | `httpStatus`, `body` |
+| `AUTH_CANCELLED` | The caller's `AbortSignal` aborted the device-code polling. | `reason` |
 
 ## Misc
 

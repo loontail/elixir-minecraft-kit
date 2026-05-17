@@ -18,33 +18,59 @@ only `kit.*` and types.
   user strings.
 - `scenarios.ts` — thin re-export hub over `scenarios/`.
 - `scenarios/types.ts` — `ScenarioContext`, `ScenarioOutcome`, `InstallSelection`,
-  `CHANNEL_OPTIONS`.
-- `scenarios/pickers.ts` — every interactive picker (channel, version, runtime, install type,
-  Fabric loader, Forge build, directory, installed target, runtime component, runtime install
-  root).
-- `scenarios/install-helpers.ts` — install plan/run plumbing, summary formatting, `defaultIdFor`.
-- `scenarios/install.ts` — `scenarioInstallMinecraft` (the unified wizard) and
-  `scenarioInstallRuntime` (standalone JRE).
+  `CHANNEL_OPTIONS`, `InstallWizardSteps` + `InstallRunResults` (as-const step/result names
+  shared between `install.ts` and `install-helpers.ts`).
+- `scenarios/pickers/` — interactive pickers, one file per domain:
+  - `index.ts` — barrel.
+  - `version.ts` — `pickChannel`, `pickMinecraftVersion`, `pickMinecraftVersionFromEntry`.
+  - `loader.ts` — `pickInstallType`, `pickFabricLoader`, `pickForgeBuild` (plus
+    `FabricLoaderOutcome`, `ForgeBuildOutcome`).
+  - `runtime.ts` — `pickRuntime`, `pickRuntimeComponent`, `pickRuntimeInstallRoot`.
+  - `target.ts` — `pickDirectory`, `confirmInstall`, `pickInstalledTarget`.
+- `scenarios/install-helpers.ts` — install plan/run plumbing, summary formatting,
+  `defaultIdFor`, `previousFromDirectory`, `runInstallFromSelection` (returns typed
+  `InstallRunResult`).
+- `scenarios/install.ts` — `scenarioInstallMinecraft` and `scenarioInstallRuntime`. Both are
+  switch-based state machines (`advanceInstallWizard` / `advanceRuntimeWizard`) driven by the
+  `InstallWizardSteps` / `RuntimeWizardSteps` constants — no inline step-name literals.
 - `scenarios/verify-repair.ts` — `scenarioVerify` and `scenarioRepair`.
 - `scenarios/launch.ts` — `scenarioLaunch`.
+- `scenarios/login.ts` — `pickInitialAuth` (startup sign-in) and `scenarioLogin` (session
+  view / refresh / switch / sign out).
 - `scenarios/inspect.ts` — `scenarioInspect`.
 
 ## `src/core/`
 
 Cross-cutting utilities. Bottom of the dependency graph.
 
+- `abort.ts` — `assertNotAborted(signal, message)` and `checkpoint({ signal, pauseController },
+  message)`. The "check signal → await pause → check signal again" dance lives here once;
+  install runner and `downloadFile`'s retry loop call into it.
 - `archive.ts` — zip/jar reading with zip-bomb guards (entry count, file size, total size,
   compression ratio). `readJarMainClass` parses `META-INF/MANIFEST.MF` with line-fold handling.
+- `assert-never.ts` — `assertNever(value)` exhaustiveness sentinel for `switch` on
+  discriminated unions.
 - `collections.ts` — `dedupe` / `dedupeBy` helpers (used by Forge install planner).
-- `errors.ts` — `MinecraftKitError` class and `isMinecraftKitError` / `isErrorCode` guards.
+- `errors.ts` — `MinecraftKitError` class, `isMinecraftKitError` / `isErrorCode` guards, and
+  the re-exported `MinecraftKitErrorCodes` registry.
 - `fs.ts` — `ensureDir`, `fileExists`, `dirExists`, `fileSize`, `atomicWrite` (temp + rename),
   `readText`, `readBytes`, `listChildDirectories`, `chmodExecutable`, `assertWithinRoot`
   (zip-slip defence).
-- `hash.ts` — `sha1OfFile` (streaming).
-- `logger.ts` — `silentLogger` (default) and `consoleLogger`.
+- `guards.ts` — lightweight runtime predicates for network JSON (`isPlainObject`,
+  `isNonEmptyString`, `isNonNegativeInteger`, `isArrayOf`, `isSha1Hex`, `isArtifactDownload`,
+  `isMinecraftVersionManifestShape`). Pairs with `parseJsonAs`.
+- `hash.ts` — `sha1OfFile` (streaming; wraps the read stream in `try/finally` and destroys
+  it on error).
+- `json.ts` — `parseJsonStrict<T>` (wraps parse failures into `MinecraftKitError`),
+  `parseJsonAs<T>` (parse + guard), `parseJsonOrUndefined<T>` (silent peek).
+- `logger.ts` — `silentLogger` (default), `consoleLogger`, and `scopedLogger(base, scope,
+  baseFields?)` which prefixes every line with `[scope]` and merges optional default
+  fields. Returns `silentLogger` short-circuit when the base is silent.
 - `lzma.ts` — `decodeLzma` for Mojang runtime sidecars (LZMA1 "alone" format).
 - `manifest-merge.ts` — merge a child Minecraft manifest with its `inheritsFrom` parent.
 - `maven.ts` — `parseMavenCoordinate`, `mavenRelativePath`, and `mavenRelativePathFor`.
+- `pause-controller.ts` — caller-driven pause/resume primitive consumed by `downloadFile`
+  and the install runner.
 - `paths.ts` — `targetPaths.*` — every per-target directory layout helper. Hard-coded path
   segments live in `src/constants/files.ts`.
 - `retry.ts` — `withRetry` (full-jitter exponential backoff) and `isHttpRetryable`.
@@ -60,17 +86,25 @@ Cross-cutting utilities. Bottom of the dependency graph.
 - `client.ts` — `FetchHttpClient` (the default `HttpClient`). Uses a `Symbol` sentinel to tell
   timer-driven aborts apart from parent-signal aborts.
 - `download.ts` — `downloadFile`: streaming sha1, atomic temp + rename, skip-on-correct,
-  retry-with-backoff, `download:*` events.
+  retry-with-backoff, `download:*` events. Validates the URL scheme (`http(s)` only) and an
+  optional caller-supplied `hostAllowList` before touching the network — closes the
+  manifest-injection attack class.
 - `cache.ts` — `createMemoryCache` (LRU-backed `MetadataCache`).
 - `metadata.ts` — `fetchJson` and `fetchText` (cached GET helpers).
 
 ## `src/install/`
 
 - `planner.ts` — `planInstall` aggregates vanilla / library / asset / logging / runtime /
-  loader actions into a flat `InstallPlan`.
-- `runner.ts` — `runInstall` executes a plan. Owns the parallel download pool
-  (`DOWNLOAD_CONCURRENCY`), the write loop, native extraction, runtime materialisation, and
-  Forge processor execution.
+  loader actions into a flat `InstallPlan`. Categories come from `DownloadCategories` — no
+  inline category strings.
+- `runner.ts` — `runInstall` executes a plan via an `InstallRunnerContext` that bundles
+  counters + checkpoint + phase tracker + p-limit pool. Five focused stage functions handle
+  downloads / writes / natives / runtime materialisation / Forge processors; the runtime
+  stage uses the optional `target.loader?` access so runtime-only plans (`RuntimeOnlyInstallTarget`)
+  do not need a phoney loader.
+- `processor.ts` — `runProcessor`: resolves a Forge processor JAR's `Main-Class`, spawns it
+  via the injected `Spawner`, tails stderr up to `MAX_PROCESSOR_STDERR_LINES`, and verifies
+  every declared output sha1.
 - `assets.ts` — `planAssetDownloads` (fetches the asset index, dedupes by hash).
 - `libraries.ts` — `planLibraryDownloads` (walks library entries, evaluates OS rules,
   emits download + native-extraction actions).
@@ -120,6 +154,26 @@ Cross-cutting utilities. Bottom of the dependency graph.
 - `runner.ts` — `planUpdate` is `planInstall` directly; `runUpdate` is `runInstall` plus a
   report-shape adjustment. The update concept exists for user-facing clarity, not internal
   difference.
+
+## `src/auth/`
+
+Microsoft OAuth → Xbox Live → Minecraft sign-in pipeline. **Stateless** — the kit returns
+tokens to the caller; persistence is the launcher's job.
+
+- `index.ts` — `MojangAuthApi` (facade on `kit.auth`) with `login()`, `refresh()`, and the
+  lower-level `deviceCode.start()` / `deviceCode.poll()` pair. `toOnlineAuth(session)`
+  projects a session into the `OnlineAuth` shape consumed by `kit.launch.compose`.
+- `microsoft.ts` — `startDeviceCode`, `pollDeviceCode`, `refreshMicrosoftToken`. Carries
+  Azure-portal-aware error messages for the most common AADSTS sub-codes
+  (`AADSTS700016`, `AADSTS7000218`, `AADSTS50059`).
+- `xbox.ts` — `authenticateXbl`, `authenticateXsts`. XSTS `XErr` codes (banned, no profile,
+  country restriction, child account) translate into human-readable strings.
+- `minecraft.ts` — `loginWithXbox`, `fetchMinecraftProfile`, `extractXuid` (decodes the
+  `xuid` claim from the JWT-shaped access token). 403 + `"invalid app registration"` is
+  recognised and points the user at `https://aka.ms/mce-reviewappid`.
+- `debug.ts` — `DEBUG_ENV_VAR` (`MINECRAFT_KIT_AUTH_DEBUG`), legacy `authDebug` stderr
+  writer, and `buildAuthLogger(base)` that routes auth trace through a `Logger` interface
+  with an env-toggled `consoleLogger` fallback.
 
 ## `src/versions/`
 

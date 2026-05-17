@@ -42,6 +42,48 @@ retry budget, hash mismatch, processor failure, abort signal). Per-file network 
 are retryable are reflected via `download:failed` events with `willRetry: true` and do not
 abort the operation.
 
+### Pause and resume
+
+Pass a `PauseController` for caller-driven pause/resume without aborting in-flight work:
+
+```ts
+import { PauseController } from "@loontail/minecraft-kit";
+
+const pauseController = new PauseController();
+const promise = kit.install.run(plan, { pauseController, onEvent });
+
+// later:
+pauseController.pause();   // freezes between chunks + between actions
+pauseController.resume();
+```
+
+The runner checks the pause state at every stage boundary AND between chunks inside
+`downloadFile`. A pause does not interrupt an in-flight HTTP request; only the next
+checkpoint will block. Abort with `AbortSignal` is the cancellation primitive — `pause` is
+strictly "freeze and continue later".
+
+### Filtering categories
+
+`run()` accepts `actionCategories: ReadonlySet<DownloadCategory>` to restrict the run to a
+subset of categories. Useful for partial reinstalls. Categories are defined as a const
+object:
+
+```ts
+import { DownloadCategories } from "@loontail/minecraft-kit";
+
+await kit.install.run(plan, {
+  actionCategories: new Set([
+    DownloadCategories.CLIENT_JAR,
+    DownloadCategories.LIBRARY,
+    DownloadCategories.ASSET_INDEX,
+    DownloadCategories.ASSET,
+  ]),
+});
+```
+
+The available categories: `CLIENT_JAR`, `LIBRARY`, `ASSET_INDEX`, `ASSET`,
+`LOGGING_CONFIG`, `FABRIC_LIBRARY`, `FORGE_LIBRARY`, `RUNTIME_FILE`, `FORGE_INSTALLER`.
+
 ## Runtime-only installs
 
 To install just a Java runtime — no Minecraft, no libraries, no assets — use the standalone

@@ -77,6 +77,7 @@ export default defineConfig({
             { text: "Install", link: "/guides/install" },
             { text: "Verify & repair", link: "/guides/verify-repair" },
             { text: "Launch", link: "/guides/launch" },
+            { text: "Authentication", link: "/guides/auth" },
           ],
         },
         {
@@ -106,6 +107,7 @@ export default defineConfig({
           items: [
             { text: "Architecture", link: "/guides/architecture" },
             { text: "Stateless design", link: "/guides/stateless" },
+            { text: "Security model", link: "/guides/security" },
             { text: "Limitations", link: "/guides/limitations" },
           ],
         },

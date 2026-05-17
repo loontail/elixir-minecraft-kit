@@ -60,3 +60,27 @@ ApiEndpoints.forge.installer(fullVersion);
 
 `src/constants/placeholders.ts` exports `LAUNCH_PLACEHOLDERS` — every `${...}` token used
 during launch, with a one-line description per token.
+
+## Discriminator registries (`as const`)
+
+Every enum-like string is exposed as an `as const` object so call sites never inline the
+literal. The derived union type is what TypeScript shows in signatures.
+
+| Registry | Where | Used for |
+|---|---|---|
+| `MinecraftKitErrorCodes` | `core/errors` (re-exported from package root) | `new MinecraftKitError(MinecraftKitErrorCodes.X, ...)` and `isErrorCode(e, MinecraftKitErrorCodes.X)`. |
+| `EventTypes` | `types/events` | `type: EventTypes.DOWNLOAD_STARTED` at every emit, `case EventTypes.DOWNLOAD_STARTED:` at every consumer. |
+| `InstallActionKinds` | `types/install` | Discriminator on `InstallAction`. |
+| `DownloadCategories` | `types/install` | `DownloadAction.category` values; install runner phase mapping. |
+| `InstallPhases` | `types/install` | Phase argument of `install:phase-changed`. |
+| `Loaders` | `types/loader` | `target.loader.type` values (`VANILLA`, `FABRIC`, `FORGE`). |
+| `VersionPreference` | `types/loader` | `RECOMMENDED` vs `LATEST` when resolving Fabric/Forge. |
+| `MinecraftChannels` | `types/minecraft` | `RELEASE`, `SNAPSHOT`, `OLD_BETA`, `OLD_ALPHA`. |
+| `RuntimePreference` | `types/runtime` | Runtime version selection. |
+| `VerifyFileCategories`, `VerifyFileStatuses` | `types/verify` | Per-file verification result. |
+| `VerificationKinds` | `types/verify` | `VerificationResult.kind`. |
+| `RepairPhases` | `types/repair` | Phase argument of `repair:phase-changed`. |
+| `AuthModes` | `types/auth` | `OFFLINE` vs `ONLINE`. |
+| `AuthDeviceCodeErrorReasons` | `types/auth` | Sub-codes for AUTH_DEVICE_CODE_FAILED context. |
+| `WizardOutcomes` | `cli/ui` | CLI picker `kind` values (`OK`, `BACK`, `CANCEL`). |
+| `InstallWizardSteps`, `InstallRunResults` | `cli/scenarios/types` | CLI install wizard state machine. |
