@@ -4,6 +4,7 @@ import { extractSingleEntry, openZip, readEntryBuffer } from "../core/archive";
 import { dedupe, dedupeBy } from "../core/collections";
 import { MinecraftKitError } from "../core/errors";
 import { atomicWrite } from "../core/fs";
+import { parseJsonStrict } from "../core/json";
 import { mavenRelativePathFor } from "../core/maven";
 import { targetPaths } from "../core/paths";
 import { evaluateRules } from "../core/rules";
@@ -145,15 +146,11 @@ async function readJsonEntry<T>(zipPath: string, entryName: string): Promise<T> 
       { context: { filePath: zipPath, entryName } },
     );
   }
-  try {
-    return JSON.parse(buffer.toString("utf8")) as T;
-  } catch (cause) {
-    throw new MinecraftKitError(
-      "FORGE_INSTALLER_INVALID",
-      `Forge installer entry is not valid JSON: ${entryName}`,
-      { cause, context: { filePath: zipPath, entryName } },
-    );
-  }
+  return parseJsonStrict<T>(buffer.toString("utf8"), {
+    code: "FORGE_INSTALLER_INVALID",
+    message: `Forge installer entry is not valid JSON: ${entryName}`,
+    context: { filePath: zipPath, entryName },
+  });
 }
 
 async function extractInstallerMavenEntries(

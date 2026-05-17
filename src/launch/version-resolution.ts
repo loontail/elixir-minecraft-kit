@@ -1,5 +1,6 @@
 import { MinecraftKitError } from "../core/errors";
 import { fileExists, listChildDirectories, readText } from "../core/fs";
+import { parseJsonOrUndefined, parseJsonStrict } from "../core/json";
 import { mergeManifest } from "../core/manifest-merge";
 import { targetPaths } from "../core/paths";
 import { Loaders } from "../types/loader";
@@ -74,16 +75,12 @@ async function pickInstalledVersionId(target: Target): Promise<string> {
       const versionJsonPath = targetPaths.versionJson(target.directory, id);
       if (!(await fileExists(versionJsonPath))) continue;
       const text = await readText(versionJsonPath);
-      try {
-        const parsed = JSON.parse(text) as { inheritsFrom?: string; id?: string };
-        if (
-          parsed.inheritsFrom === target.minecraft.version &&
-          (id.includes("forge") || (parsed.id ?? "").includes("forge"))
-        ) {
-          return id;
-        }
-      } catch {
-        // Ignore unreadable / malformed version JSONs and keep looking.
+      const parsed = parseJsonOrUndefined<{ inheritsFrom?: string; id?: string }>(text);
+      if (
+        parsed?.inheritsFrom === target.minecraft.version &&
+        (id.includes("forge") || (parsed.id ?? "").includes("forge"))
+      ) {
+        return id;
       }
     }
   }
@@ -101,16 +98,11 @@ async function loadAndMerge(
 ): Promise<MinecraftVersionManifest> {
   const versionJsonPath = targetPaths.versionJson(directory, versionId);
   const text = await readText(versionJsonPath);
-  let child: MinecraftVersionManifest;
-  try {
-    child = JSON.parse(text) as MinecraftVersionManifest;
-  } catch (cause) {
-    throw new MinecraftKitError(
-      "MANIFEST_INVALID",
-      `Version JSON is not valid JSON: ${versionJsonPath}`,
-      { cause, context: { filePath: versionJsonPath } },
-    );
-  }
+  const child = parseJsonStrict<MinecraftVersionManifest>(text, {
+    code: "MANIFEST_INVALID",
+    message: `Version JSON is not valid JSON: ${versionJsonPath}`,
+    context: { filePath: versionJsonPath },
+  });
   if (child.inheritsFrom !== undefined && child.inheritsFrom !== parentManifest.id) {
     // Recursive merge through any chain — but in practice Forge/Fabric inherit directly from vanilla.
     return mergeManifest(parentManifest, child);

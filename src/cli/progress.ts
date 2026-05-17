@@ -143,7 +143,7 @@ export class ProgressRenderer {
           const ts = this.now();
           this.speedSamples.push({ ts, bytes: event.bytesDownloaded - previous });
           const cutoff = ts - SPEED_WINDOW_MS;
-          while (this.speedSamples.length > 0 && this.speedSamples[0]!.ts < cutoff) {
+          while (this.speedSamples[0] !== undefined && this.speedSamples[0].ts < cutoff) {
             this.speedSamples.shift();
           }
         }
@@ -236,9 +236,9 @@ export class ProgressRenderer {
   }
 
   private computeSpeedBps(): number {
-    if (this.speedSamples.length === 0) return 0;
-    const oldest = this.speedSamples[0]!.ts;
-    const elapsed = Math.max(1, this.now() - oldest);
+    const oldest = this.speedSamples[0];
+    if (oldest === undefined) return 0;
+    const elapsed = Math.max(1, this.now() - oldest.ts);
     const bytes = this.speedSamples.reduce((sum, sample) => sum + sample.bytes, 0);
     return (bytes * 1000) / elapsed;
   }

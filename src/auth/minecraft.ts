@@ -1,4 +1,5 @@
 import { MinecraftKitError } from "../core/errors";
+import { parseJsonOrUndefined } from "../core/json";
 import type { HttpClient } from "../types/http";
 import { authDebug } from "./debug";
 
@@ -137,18 +138,13 @@ export async function fetchMinecraftProfile(input: {
  */
 export function extractXuid(accessToken: string): string {
   const parts = accessToken.split(".");
-  if (parts.length < 2) return "";
-  try {
-    const payload = parts[1];
-    if (typeof payload !== "string") return "";
-    const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(
-      "utf8",
-    );
-    const parsed = JSON.parse(json) as { xuid?: string };
-    return typeof parsed.xuid === "string" ? parsed.xuid : "";
-  } catch {
-    return "";
-  }
+  const payload = parts[1];
+  if (typeof payload !== "string") return "";
+  const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(
+    "utf8",
+  );
+  const parsed = parseJsonOrUndefined<{ xuid?: unknown }>(json);
+  return typeof parsed?.xuid === "string" ? parsed.xuid : "";
 }
 
 /** Convert a dashless UUID (Mojang format) into the dashed canonical form. */

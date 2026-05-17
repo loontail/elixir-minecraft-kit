@@ -1,5 +1,6 @@
 import { MinecraftKitError } from "../core/errors";
 import { fileExists, readText } from "../core/fs";
+import { parseJsonOrUndefined } from "../core/json";
 import { planLibraryDownloads } from "../install/libraries";
 import type { MetadataCache } from "../types/cache";
 import type { ProgressListener } from "../types/events";
@@ -61,10 +62,8 @@ export async function verifyForge(input: VerifyForgeInput): Promise<Verification
       );
       if (!(await fileExists(forgeVersionJsonPath))) return;
 
-      let parsed: ForgeVersionJson;
-      try {
-        parsed = JSON.parse(await readText(forgeVersionJsonPath)) as ForgeVersionJson;
-      } catch {
+      const parsed = parseJsonOrUndefined<ForgeVersionJson>(await readText(forgeVersionJsonPath));
+      if (parsed === undefined) {
         // Surface as CORRUPT so repair rewrites the JSON. Library verification will pick up
         // on the next pass once the file parses.
         record({

@@ -1,5 +1,6 @@
 import { fileExists, fileSize, listChildDirectories, readText } from "../core/fs";
 import { sha1OfFile } from "../core/hash";
+import { parseJsonOrUndefined } from "../core/json";
 import { targetPaths } from "../core/paths";
 import type { ProgressListener } from "../types/events";
 import {
@@ -144,12 +145,8 @@ export async function findForgeVersionJsonPath(
 }
 
 async function tryParseInheritsFrom(jsonPath: string): Promise<string | undefined> {
-  try {
-    const parsed = JSON.parse(await readText(jsonPath)) as { inheritsFrom?: string };
-    return parsed.inheritsFrom;
-  } catch {
-    // Malformed JSON cannot match by inheritsFrom; treated as a non-match. The next
-    // verify pass over this file will surface it through the regular file check path.
-    return undefined;
-  }
+  // Malformed JSON cannot match by inheritsFrom; treated as a non-match. The next
+  // verify pass over this file will surface it through the regular file check path.
+  const parsed = parseJsonOrUndefined<{ inheritsFrom?: string }>(await readText(jsonPath));
+  return parsed?.inheritsFrom;
 }

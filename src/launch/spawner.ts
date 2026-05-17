@@ -62,6 +62,10 @@ function streamFromBuffer(stream: NodeJS.ReadableStream | null): ProcessStream {
       emitBounded(emit, buffer);
       buffer = "";
     }
+    // The producer is done — clear the subscriber set so callers that retain a reference to
+    // the ProcessStream don't keep their listener closures alive for the lifetime of the
+    // owning process.
+    listeners.clear();
   });
   return {
     on(_event, listener) {
