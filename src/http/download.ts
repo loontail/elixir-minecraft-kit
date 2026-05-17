@@ -10,6 +10,7 @@ import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { ensureDir } from "../core/fs";
 import type { PauseController } from "../core/pause-controller";
 import { isHttpRetryable, withRetry } from "../core/retry";
+import { EventTypes } from "../types/events";
 import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
 
@@ -58,7 +59,7 @@ export const downloadFile = async (
   if (input.expectedSha1 !== undefined) {
     const existing = await checkExistingFile(input.target, input.expectedSha1, input.expectedSize);
     if (existing.matches) {
-      input.onEvent?.({ type: "download:skipped", file: fileRef });
+      input.onEvent?.({ type: EventTypes.DOWNLOAD_SKIPPED, file: fileRef });
       return { bytesDownloaded: 0, sha1: existing.sha1, skipped: true };
     }
   }
@@ -67,7 +68,7 @@ export const downloadFile = async (
   return withRetry(
     async () => {
       input.onEvent?.({
-        type: "download:started",
+        type: EventTypes.DOWNLOAD_STARTED,
         file: fileRef,
         expectedSize: input.expectedSize ?? 0,
       });
@@ -94,7 +95,7 @@ export const downloadFile = async (
           bytesDownloaded += chunk.byteLength;
           hash.update(chunk);
           input.onEvent?.({
-            type: "download:progress",
+            type: EventTypes.DOWNLOAD_PROGRESS,
             file: fileRef,
             bytesDownloaded,
             totalBytes: total,
@@ -130,7 +131,7 @@ export const downloadFile = async (
       if (input.expectedSha1 !== undefined && computedSha1 !== input.expectedSha1) {
         await safeUnlink(tmp);
         input.onEvent?.({
-          type: "integrity:mismatch",
+          type: EventTypes.INTEGRITY_MISMATCH,
           file: fileRef,
           algorithm: "sha1",
           expected: input.expectedSha1,
@@ -159,14 +160,14 @@ export const downloadFile = async (
         );
       }
       input.onEvent?.({
-        type: "download:completed",
+        type: EventTypes.DOWNLOAD_COMPLETED,
         file: fileRef,
         durationMs: Date.now() - startedAt,
         bytes: bytesDownloaded,
       });
       if (input.expectedSha1 !== undefined) {
         input.onEvent?.({
-          type: "integrity:verified",
+          type: EventTypes.INTEGRITY_VERIFIED,
           file: fileRef,
           algorithm: "sha1",
           hash: computedSha1,
@@ -179,7 +180,7 @@ export const downloadFile = async (
       ...(input.signal !== undefined ? { signal: input.signal } : {}),
       onAttemptFailed: (error, attempt) => {
         input.onEvent?.({
-          type: "download:failed",
+          type: EventTypes.DOWNLOAD_FAILED,
           file: fileRef,
           error: error instanceof Error ? error : new Error(String(error)),
           willRetry: isHttpRetryable(error) && attempt < HTTP_RETRY_MAX - 1,

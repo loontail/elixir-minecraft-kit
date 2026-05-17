@@ -2,6 +2,7 @@ import { MAX_PROCESSOR_STDERR_LINES } from "../constants/defaults";
 import { readJarMainClass } from "../core/archive";
 import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
 import { sha1OfFile } from "../core/hash";
+import { EventTypes } from "../types/events";
 import type { ProgressListener } from "../types/events";
 import type { RunForgeProcessorAction } from "../types/install";
 import type { Spawner } from "../types/spawner";
@@ -19,7 +20,7 @@ export type RunProcessorInput = {
 export const runProcessor = async (input: RunProcessorInput): Promise<void> => {
   const startedAt = Date.now();
   const mainClass = await resolveProcessorMainClass(input.action);
-  emit(input, { type: "forge:processor-started", index: input.action.index, mainClass });
+  emit(input, { type: EventTypes.FORGE_PROCESSOR_STARTED, index: input.action.index, mainClass });
 
   const exit = await spawnProcessor(input, mainClass);
   if (exit.code !== 0) {
@@ -36,7 +37,7 @@ export const runProcessor = async (input: RunProcessorInput): Promise<void> => {
     );
   }
   input.onEvent?.({
-    type: "forge:processor-completed",
+    type: EventTypes.FORGE_PROCESSOR_COMPLETED,
     processor: { index: input.action.index, mainClass },
     exitCode: exit.code ?? 0,
     durationMs: Date.now() - startedAt,
@@ -112,7 +113,7 @@ const verifyProcessorOutputs = async (
       );
     }
     input.onEvent?.({
-      type: "forge:processor-output-verified",
+      type: EventTypes.FORGE_PROCESSOR_OUTPUT_VERIFIED,
       processor: { index: input.action.index, mainClass },
       path: outputPath,
     });
@@ -121,7 +122,11 @@ const verifyProcessorOutputs = async (
 
 const emit = (
   input: RunProcessorInput,
-  event: { type: "forge:processor-started"; index: number; mainClass: string },
+  event: {
+    type: typeof EventTypes.FORGE_PROCESSOR_STARTED;
+    index: number;
+    mainClass: string;
+  },
 ): void => {
   input.onEvent?.({
     type: event.type,

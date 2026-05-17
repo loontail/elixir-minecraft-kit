@@ -1,5 +1,6 @@
 import { DEFAULT_KILL_GRACE_MS } from "../constants/defaults";
 import { MinecraftKitError, MinecraftKitErrorCodes } from "../core/errors";
+import { EventTypes } from "../types/events";
 import type {
   LaunchComposition,
   LaunchExit,
@@ -24,7 +25,7 @@ export const runLaunch = (input: RunLaunchInput): LaunchSession => {
   const options = input.options ?? {};
   const args = [...composition.jvmArgs, composition.mainClass, ...composition.gameArgs];
   options.onEvent?.({
-    type: "launch:starting",
+    type: EventTypes.LAUNCH_STARTING,
     command: composition.javaPath,
     args,
     cwd: composition.workingDirectory,
@@ -33,12 +34,12 @@ export const runLaunch = (input: RunLaunchInput): LaunchSession => {
     cwd: composition.workingDirectory,
     ...(composition.env !== undefined ? { env: composition.env } : {}),
   });
-  options.onEvent?.({ type: "launch:started", pid: child.pid });
+  options.onEvent?.({ type: EventTypes.LAUNCH_STARTED, pid: child.pid });
   child.stdout.on("data", (line) => {
-    options.onEvent?.({ type: "launch:stdout", line });
+    options.onEvent?.({ type: EventTypes.LAUNCH_STDOUT, line });
   });
   child.stderr.on("data", (line) => {
-    options.onEvent?.({ type: "launch:stderr", line });
+    options.onEvent?.({ type: EventTypes.LAUNCH_STDERR, line });
   });
 
   const grace = options.killGracePeriodMs ?? DEFAULT_KILL_GRACE_MS;
@@ -46,7 +47,7 @@ export const runLaunch = (input: RunLaunchInput): LaunchSession => {
   const doAbort = (reason: string): void => {
     if (aborted) return;
     aborted = true;
-    options.onEvent?.({ type: "launch:aborted", reason });
+    options.onEvent?.({ type: EventTypes.LAUNCH_ABORTED, reason });
     // Both kill calls are unconditional. Node's child_process treats a kill against a dead
     // process as a no-op, so guarding against the first return value adds no safety and
     // creates asymmetry with the SIGKILL path.
@@ -66,7 +67,7 @@ export const runLaunch = (input: RunLaunchInput): LaunchSession => {
 
   const exited: Promise<LaunchExit> = (async () => {
     const { code, signal } = await child.exited;
-    options.onEvent?.({ type: "launch:exited", code, signal });
+    options.onEvent?.({ type: EventTypes.LAUNCH_EXITED, code, signal });
     if (!aborted && code !== 0 && code !== null) {
       throw new MinecraftKitError(
         MinecraftKitErrorCodes.LAUNCH_PROCESS_FAILED,

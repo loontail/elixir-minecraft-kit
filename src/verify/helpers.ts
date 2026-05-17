@@ -2,6 +2,7 @@ import { fileExists, fileSize, listChildDirectories, readText } from "../core/fs
 import { sha1OfFile } from "../core/hash";
 import { parseJsonOrUndefined } from "../core/json";
 import { targetPaths } from "../core/paths";
+import { EventTypes } from "../types/events";
 import type { ProgressListener } from "../types/events";
 import {
   type VerificationFileResult,
@@ -29,7 +30,7 @@ export const runVerification = async (
   const results: VerificationFileResult[] = [];
   const record: VerificationRecorder = (result) => {
     results.push(result);
-    input.onEvent?.({ type: "verify:file-checked", file: result });
+    input.onEvent?.({ type: EventTypes.VERIFY_FILE_CHECKED, file: result });
   };
   await check(record);
   return {

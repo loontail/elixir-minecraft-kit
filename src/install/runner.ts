@@ -8,6 +8,7 @@ import { targetPaths } from "../core/paths";
 import type { PauseController } from "../core/pause-controller";
 import { downloadFile } from "../http/download";
 import type { MetadataCache } from "../types/cache";
+import { EventTypes } from "../types/events";
 import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
 import {
@@ -115,7 +116,7 @@ const createContext = (input: RunInstallInput, counters: InstallCounters): Insta
   let currentPhase: InstallPhase | null = null;
   const enterPhase = (phase: InstallPhase): void => {
     if (phase === currentPhase) return;
-    input.onEvent?.({ type: "install:phase-changed", phase, previous: currentPhase });
+    input.onEvent?.({ type: EventTypes.INSTALL_PHASE_CHANGED, phase, previous: currentPhase });
     currentPhase = phase;
   };
   const checkpoint = (): Promise<void> =>
@@ -226,7 +227,7 @@ const runNativesStage = async (
       excludePrefixes: action.exclude as readonly string[],
     });
     ctx.input.onEvent?.({
-      type: "archive:extracted",
+      type: EventTypes.ARCHIVE_EXTRACTED,
       archive: action.source,
       target: action.destination,
       fileCount,

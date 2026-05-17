@@ -1,3 +1,4 @@
+import { EventTypes } from "../types/events";
 import type { ProgressEvent, ProgressListener } from "../types/events";
 import type { InstallPhase } from "../types/install";
 import type { RepairPhase } from "../types/repair";
@@ -127,17 +128,17 @@ export class ProgressRenderer {
   private handle(event: ProgressEvent): void {
     let forceRender = false;
     switch (event.type) {
-      case "install:phase-changed":
-      case "repair:phase-changed":
+      case EventTypes.INSTALL_PHASE_CHANGED:
+      case EventTypes.REPAIR_PHASE_CHANGED:
         this.currentPhase = event.phase;
         forceRender = true;
         break;
-      case "download:started":
+      case EventTypes.DOWNLOAD_STARTED:
         this.activeTargets.add(event.file.target);
         this.activeBytes.set(event.file.target, 0);
         forceRender = true;
         break;
-      case "download:progress": {
+      case EventTypes.DOWNLOAD_PROGRESS: {
         const previous = this.activeBytes.get(event.file.target) ?? 0;
         if (event.bytesDownloaded > previous) {
           const ts = this.now();
@@ -150,19 +151,19 @@ export class ProgressRenderer {
         this.activeBytes.set(event.file.target, event.bytesDownloaded);
         break;
       }
-      case "download:completed":
+      case EventTypes.DOWNLOAD_COMPLETED:
         this.filesCompleted++;
         this.completedBytes += event.bytes;
         this.activeTargets.delete(event.file.target);
         this.activeBytes.delete(event.file.target);
         forceRender = true;
         break;
-      case "download:skipped":
+      case EventTypes.DOWNLOAD_SKIPPED:
         this.filesSkipped++;
         this.filesCompleted++;
         forceRender = true;
         break;
-      case "download:failed":
+      case EventTypes.DOWNLOAD_FAILED:
         if (event.willRetry) {
           // Retry will start over from byte 0; reset the per-file count so the next attempt
           // doesn't carry forward the failed-attempt's bytes.
@@ -174,9 +175,9 @@ export class ProgressRenderer {
         }
         forceRender = true;
         break;
-      case "archive:extracted":
-      case "forge:processor-started":
-      case "forge:processor-completed":
+      case EventTypes.ARCHIVE_EXTRACTED:
+      case EventTypes.FORGE_PROCESSOR_STARTED:
+      case EventTypes.FORGE_PROCESSOR_COMPLETED:
         forceRender = true;
         break;
       default:

@@ -1,3 +1,4 @@
+import { EventTypes } from "../types/events";
 import type { ProgressEvent, ProgressListener } from "../types/events";
 import {
   DownloadCategories,
@@ -174,7 +175,7 @@ export const createInstallProgressTracker = (
 
   const onEvent: ProgressListener = (event: ProgressEvent) => {
     switch (event.type) {
-      case "install:phase-changed": {
+      case EventTypes.INSTALL_PHASE_CHANGED: {
         const next = STAGE_FOR_PHASE[event.phase];
         if (next && next !== currentStage) {
           currentStage = next;
@@ -183,14 +184,14 @@ export const createInstallProgressTracker = (
         }
         return;
       }
-      case "download:started": {
+      case EventTypes.DOWNLOAD_STARTED: {
         const stage = stageOfTarget.get(event.file.target) ?? currentStage;
         inFlightByTarget.set(event.file.target, { stage, bytes: 0 });
         currentFile = event.file.target;
         schedulePush();
         return;
       }
-      case "download:progress": {
+      case EventTypes.DOWNLOAD_PROGRESS: {
         const entry = inFlightByTarget.get(event.file.target);
         if (entry) {
           const delta = event.bytesDownloaded - entry.bytes;
@@ -204,7 +205,7 @@ export const createInstallProgressTracker = (
         schedulePush();
         return;
       }
-      case "download:skipped": {
+      case EventTypes.DOWNLOAD_SKIPPED: {
         const stage = stageOfTarget.get(event.file.target);
         if (stage) {
           const size = expectedSizeOf.get(event.file.target) ?? 0;
@@ -214,7 +215,7 @@ export const createInstallProgressTracker = (
         }
         return;
       }
-      case "download:completed": {
+      case EventTypes.DOWNLOAD_COMPLETED: {
         const entry = inFlightByTarget.get(event.file.target);
         if (entry) {
           const finalBytes = event.bytes ?? entry.bytes;
