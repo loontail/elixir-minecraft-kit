@@ -11,6 +11,17 @@ describe("parseJsonStrict", () => {
     expect(value).toEqual({ a: 1 });
   });
 
+  it("throws without context when none was supplied", () => {
+    try {
+      parseJsonStrict("{nope", { code: "MANIFEST_INVALID", message: "bad" });
+      expect.fail("expected throw");
+    } catch (error) {
+      const err = error as MinecraftKitError;
+      expect(err.code).toBe("MANIFEST_INVALID");
+      expect(err.context).toEqual({});
+    }
+  });
+
   it("throws a coded MinecraftKitError carrying cause + context on failure", () => {
     try {
       parseJsonStrict("{not json", {
@@ -51,6 +62,26 @@ describe("parseJsonAs", () => {
         { code: "MANIFEST_INVALID", message: "shape mismatch" },
       ),
     ).toThrow(MinecraftKitError);
+  });
+
+  it("forwards context when supplied", () => {
+    try {
+      parseJsonAs<{ a: number }>(
+        "{}",
+        (v): v is { a: number } =>
+          typeof v === "object" &&
+          v !== null &&
+          typeof (v as Record<string, unknown>).a === "number",
+        {
+          code: "MANIFEST_INVALID",
+          message: "shape mismatch",
+          context: { filePath: "/x.json" },
+        },
+      );
+      expect.fail("expected throw");
+    } catch (error) {
+      expect((error as MinecraftKitError).context.filePath).toBe("/x.json");
+    }
   });
 });
 

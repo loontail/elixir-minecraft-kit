@@ -57,6 +57,55 @@ describe("mergeManifest", () => {
     expect(result.arguments).toBeUndefined();
   });
 
+  it("omits optional fields when neither side carries them", () => {
+    const minimalParent: MinecraftVersionManifest = {
+      id: "1.0",
+      type: "release",
+      mainClass: "M",
+      assetIndex: parent.assetIndex,
+      assets: "5",
+      downloads: { client: baseDownload },
+      libraries: [],
+    };
+    const minimalChild: MinecraftVersionManifest = { ...minimalParent, id: "1.0-child" };
+    const result = mergeManifest(minimalParent, minimalChild);
+    expect(result.arguments).toBeUndefined();
+    expect(result.javaVersion).toBeUndefined();
+    expect(result.logging).toBeUndefined();
+    expect(result.inheritsFrom).toBeUndefined();
+    expect(result.minecraftArguments).toBeUndefined();
+    expect(result.releaseTime).toBeUndefined();
+    expect(result.time).toBeUndefined();
+    expect(result.minimumLauncherVersion).toBeUndefined();
+    expect(result.complianceLevel).toBeUndefined();
+  });
+
+  it("forwards all optional fields when only parent carries them", () => {
+    const richParent: MinecraftVersionManifest = {
+      ...parent,
+      javaVersion: { component: "java-runtime-gamma", majorVersion: 17 },
+      logging: {
+        client: {
+          argument: "x",
+          file: { id: "f", sha1: "x", size: 1, url: "u" },
+          type: "log4j2-xml",
+        },
+      },
+      releaseTime: "2024-01-01T00:00:00+00:00",
+      time: "2024-01-01T00:00:00+00:00",
+      minimumLauncherVersion: 21,
+      complianceLevel: 1,
+      minecraftArguments: "--legacy",
+    };
+    const { arguments: _childArgs, ...childRest } = child;
+    const result = mergeManifest(richParent, childRest);
+    expect(result.javaVersion).toEqual({ component: "java-runtime-gamma", majorVersion: 17 });
+    expect(result.releaseTime).toBe("2024-01-01T00:00:00+00:00");
+    expect(result.minimumLauncherVersion).toBe(21);
+    expect(result.complianceLevel).toBe(1);
+    expect(result.minecraftArguments).toBe("--legacy");
+  });
+
   it("dedupes library entries by group:artifact with child winning", () => {
     const parentWithAsm: MinecraftVersionManifest = {
       ...parent,
