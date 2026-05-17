@@ -1,10 +1,18 @@
 export { MinecraftKit } from "./kit";
+export {
+  resolveLaunchVersion,
+  pickClientJarVersionId,
+  type ResolvedLaunchVersion,
+} from "./launch/version-resolution";
+export { targetPaths } from "./core/paths";
 export type {
+  InstallRunOptions,
   MinecraftKitOptions,
   RepairPlanOptions,
   RepairAspect,
   VerifyOperationOptions,
 } from "./kit";
+export { PauseController } from "./core/pause-controller";
 export { TargetsApi } from "./targets/index";
 export type {
   TargetListInput,
@@ -16,7 +24,7 @@ export type { ResolverContext } from "./versions/context";
 export { MinecraftVersionsApi } from "./versions/minecraft";
 export { FabricVersionsApi } from "./versions/fabric";
 export { ForgeVersionsApi } from "./versions/forge";
-export { RuntimeVersionsApi } from "./versions/runtime";
+export { RuntimeVersionsApi, parseMajorVersion } from "./versions/runtime";
 export type {
   MinecraftListInput,
   MinecraftLatestInput,
@@ -47,12 +55,23 @@ export {
   planForgeRepair,
   planRuntimeRepair,
   runRepair,
+  repairAll,
   type PlanMinecraftRepairInput,
   type PlanFabricRepairInput,
   type PlanForgeRepairInput,
   type PlanRuntimeRepairInput,
   type RunRepairInput,
+  type RepairAllInput,
+  type RepairAllReport,
 } from "./repair/index";
+export {
+  createInstallProgressTracker,
+  InstallStages,
+  type InstallProgressTracker,
+  type InstallStage,
+  type ProgressSnapshot,
+  type ProgressTrackerOptions,
+} from "./install/progress-tracker";
 export {
   planRuntimeInstall,
   planStandaloneRuntimeInstall,

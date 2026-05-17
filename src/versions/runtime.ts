@@ -135,12 +135,22 @@ function toResolved(
   entry: RuntimeIndexEntry,
   system: RuntimeSystem,
 ): ResolvedRuntime {
+  const majorVersion = parseMajorVersion(entry.version.name);
   return {
     component,
     platformKey,
     versionName: entry.version.name,
+    ...(majorVersion !== undefined ? { majorVersion } : {}),
     system,
     manifestUrl: entry.manifest.url,
     manifestSha1: entry.manifest.sha1,
   };
+}
+
+/** Parse the leading integer from a runtime versionName (`"21.0.8"` → 21). */
+export function parseMajorVersion(versionName: string): number | undefined {
+  const match = /^(\d+)/.exec(versionName);
+  if (!match || !match[1]) return undefined;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }

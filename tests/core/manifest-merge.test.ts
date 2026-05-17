@@ -56,4 +56,47 @@ describe("mergeManifest", () => {
     const result = mergeManifest(noArgsParent, noArgsChild);
     expect(result.arguments).toBeUndefined();
   });
+
+  it("dedupes library entries by group:artifact with child winning", () => {
+    const parentWithAsm: MinecraftVersionManifest = {
+      ...parent,
+      libraries: [{ name: "org.ow2.asm:asm:9.7" }, { name: "io.netty:netty:4.1" }],
+    };
+    const childWithAsm: MinecraftVersionManifest = {
+      ...child,
+      libraries: [{ name: "org.ow2.asm:asm:9.8" }, { name: "x:y:1" }],
+    };
+    const result = mergeManifest(parentWithAsm, childWithAsm);
+    expect(result.libraries.map((l) => l.name)).toEqual([
+      "org.ow2.asm:asm:9.8",
+      "io.netty:netty:4.1",
+      "x:y:1",
+    ]);
+  });
+
+  it("treats different classifiers as distinct libraries", () => {
+    const parentWithClassifier: MinecraftVersionManifest = {
+      ...parent,
+      libraries: [{ name: "org.lwjgl:lwjgl:3.3:natives-windows" }],
+    };
+    const childWithClassifier: MinecraftVersionManifest = {
+      ...child,
+      libraries: [{ name: "org.lwjgl:lwjgl:3.3" }],
+    };
+    const result = mergeManifest(parentWithClassifier, childWithClassifier);
+    expect(result.libraries.map((l) => l.name)).toEqual([
+      "org.lwjgl:lwjgl:3.3:natives-windows",
+      "org.lwjgl:lwjgl:3.3",
+    ]);
+  });
+
+  it("keeps libraries with unparseable names without dropping them", () => {
+    const parentWithBogus: MinecraftVersionManifest = {
+      ...parent,
+      libraries: [{ name: "not-a-coord" }, { name: "a:b:1" }],
+    };
+    const childMinimal: MinecraftVersionManifest = { ...child, libraries: [] };
+    const result = mergeManifest(parentWithBogus, childMinimal);
+    expect(result.libraries.map((l) => l.name)).toEqual(["a:b:1", "not-a-coord"]);
+  });
 });

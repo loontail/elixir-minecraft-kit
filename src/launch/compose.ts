@@ -1,16 +1,19 @@
 import { MinecraftKitError } from "../core/errors";
+import { silentLogger } from "../core/logger";
 import { targetPaths } from "../core/paths";
 import type { LaunchComposition, LaunchOptions } from "../types/launch";
+import type { Logger } from "../types/logger";
 import type { Target } from "../types/target";
 import { composeArgs } from "./args-composition";
 import { buildClasspath } from "./classpath";
 import { buildPlaceholderValues } from "./placeholder-values";
 import { pickClientJarVersionId, resolveLaunchVersion } from "./version-resolution";
 
-/** Inputs to {@link composeLaunch}. */
 export interface ComposeLaunchInput {
   readonly target: Target;
   readonly options: LaunchOptions;
+  /** Surfaces non-fatal compose-time warnings; defaults to silent. */
+  readonly logger?: Logger;
 }
 
 /** Build a fully resolved {@link LaunchComposition} ready to hand to {@link runLaunch}. */
@@ -57,6 +60,7 @@ export async function composeLaunch(input: ComposeLaunchInput): Promise<LaunchCo
     options,
     placeholderValues,
     features,
+    logger: input.logger ?? silentLogger,
   });
 
   return {

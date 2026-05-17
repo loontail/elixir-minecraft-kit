@@ -1,10 +1,13 @@
 import { DEFAULT_MAX_MB, DEFAULT_MIN_MB } from "../constants/defaults";
 import { BASE_JVM_ARGS, LEGACY_JVM_ARGS, MACOS_JVM_ARGS } from "../constants/launch";
+import { silentLogger } from "../core/logger";
 import { targetPaths } from "../core/paths";
 import type { LaunchOptions } from "../types/launch";
+import type { Logger } from "../types/logger";
 import type { MinecraftVersionManifest } from "../types/minecraft";
 import type { Target } from "../types/target";
 import { pickArguments, splitLegacyArguments } from "./arguments";
+import { filterArgsForJava } from "./jvm-compat";
 import { substituteArgs } from "./placeholders";
 
 /** Output of {@link composeArgs}. */
@@ -28,6 +31,7 @@ export function composeArgs(input: {
   readonly options: LaunchOptions;
   readonly placeholderValues: Readonly<Record<string, string>>;
   readonly features: Readonly<Record<string, boolean>>;
+  readonly logger?: Logger;
 }): ComposedArgs {
   const minMb = input.options.memory?.minMb ?? DEFAULT_MIN_MB;
   const maxMb = input.options.memory?.maxMb ?? DEFAULT_MAX_MB;
@@ -52,7 +56,17 @@ export function composeArgs(input: {
   const baseJvm = [...memoryArgs, ...BASE_JVM_ARGS, ...macosArgs];
   const substitutedJvm = substituteArgs(rawJvm, input.placeholderValues);
   const substitutedGame = substituteArgs(rawGame, input.placeholderValues);
-  const jvmArgs = [...baseJvm, ...substitutedJvm];
+  // Base + macOS args are static and known-safe; only manifest args get filtered.
+  const javaMajor = input.target.runtime.majorVersion;
+  const filteredManifestJvm =
+    javaMajor !== undefined
+      ? filterArgsForJava({
+          args: substitutedJvm,
+          javaMajor,
+          logger: input.logger ?? silentLogger,
+        })
+      : substitutedJvm;
+  const jvmArgs = [...baseJvm, ...filteredManifestJvm];
 
   if (input.merged.logging?.client?.argument) {
     const logging = input.merged.logging.client;

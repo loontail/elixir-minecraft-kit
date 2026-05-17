@@ -6,6 +6,7 @@ import { extractAllToDir, readJarMainClass } from "../core/archive";
 import { MinecraftKitError } from "../core/errors";
 import { atomicWrite } from "../core/fs";
 import { targetPaths } from "../core/paths";
+import type { PauseController } from "../core/pause-controller";
 import { downloadFile } from "../http/download";
 import type { MetadataCache } from "../types/cache";
 import type { ProgressListener } from "../types/events";
@@ -37,7 +38,25 @@ export interface RunInstallInput {
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
   readonly concurrency?: number;
+  /** Checkpoint between top-level actions and group transitions. Does not interrupt in-flight downloads. */
+  readonly pauseController?: PauseController;
+  /** When set, only download actions in this set run; post-download steps that depend on them are skipped too. */
+  readonly actionCategories?: ReadonlySet<DownloadAction["category"]>;
 }
+
+const DOWNLOAD_GROUPS: ReadonlyArray<{
+  readonly categories: ReadonlyArray<DownloadAction["category"]>;
+  readonly phase: InstallPhase;
+}> = [
+  { categories: ["runtime-file"], phase: InstallPhases.INSTALLING_RUNTIME },
+  { categories: ["client-jar"], phase: InstallPhases.DOWNLOADING_CLIENT_JAR },
+  { categories: ["library"], phase: InstallPhases.DOWNLOADING_LIBRARIES },
+  { categories: ["asset-index"], phase: InstallPhases.DOWNLOADING_ASSET_INDEX },
+  { categories: ["asset"], phase: InstallPhases.DOWNLOADING_ASSETS },
+  { categories: ["logging-config"], phase: InstallPhases.WRITING_FILES },
+  { categories: ["fabric-library"], phase: InstallPhases.INSTALLING_FABRIC },
+  { categories: ["forge-installer", "forge-library"], phase: InstallPhases.INSTALLING_FORGE },
+];
 
 /** Execute an install plan. */
 export async function runInstall(input: RunInstallInput): Promise<InstallReport> {
@@ -53,57 +72,103 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
     currentPhase = phase;
   };
 
-  const downloads = input.plan.actions.filter(isDownload);
+  const checkpoint = async (): Promise<void> => {
+    if (input.signal?.aborted) {
+      throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
+    }
+    await input.pauseController?.waitWhilePaused();
+    if (input.signal?.aborted) {
+      throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
+    }
+  };
+
+  const categoryFilter = input.actionCategories;
+  const downloads = input.plan.actions
+    .filter(isDownload)
+    .filter((a) => (categoryFilter ? categoryFilter.has(a.category) : true));
   const natives = input.plan.actions.filter(isNative);
   const writeActions = input.plan.actions.filter(isWrite);
   const processors = input.plan.actions.filter(isProcessor);
 
   enterPhase(InstallPhases.PLANNING);
 
-  // 1. Download files in parallel.
-  enterPhase(InstallPhases.DOWNLOADING_LIBRARIES);
   const limit = pLimit(input.concurrency ?? DOWNLOAD_CONCURRENCY);
-  await Promise.all(
-    downloads.map((action) =>
-      limit(async () => {
-        if (input.signal?.aborted) {
-          throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
-        }
-        const result = await downloadFile(input.http, {
-          url: action.url,
-          target: action.target,
-          ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
-          ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
-          ...(action.category !== undefined ? { category: action.category } : {}),
-          ...(input.signal !== undefined ? { signal: input.signal } : {}),
-          ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
-        });
-        bytesDownloaded += result.bytesDownloaded;
-        if (result.skipped) actionsSkipped++;
-        actionsCompleted++;
-      }),
-    ),
-  );
 
-  // 2. Write version JSON / logging config files.
+  for (const group of DOWNLOAD_GROUPS) {
+    const groupActions = downloads.filter((action) => group.categories.includes(action.category));
+    if (groupActions.length === 0) continue;
+    await checkpoint();
+    enterPhase(group.phase);
+    await Promise.all(
+      groupActions.map((action) =>
+        limit(async () => {
+          await checkpoint();
+          const result = await downloadFile(input.http, {
+            url: action.url,
+            target: action.target,
+            ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
+            ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
+            ...(action.category !== undefined ? { category: action.category } : {}),
+            ...(input.signal !== undefined ? { signal: input.signal } : {}),
+            ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
+            ...(input.pauseController !== undefined
+              ? { pauseController: input.pauseController }
+              : {}),
+          });
+          bytesDownloaded += result.bytesDownloaded;
+          if (result.skipped) actionsSkipped++;
+          actionsCompleted++;
+        }),
+      ),
+    );
+  }
+
+  // Future categories the consumer hasn't excluded fall back to the generic libraries phase.
+  const ungrouped = downloads.filter(
+    (action) => !DOWNLOAD_GROUPS.some((g) => g.categories.includes(action.category)),
+  );
+  if (ungrouped.length > 0) {
+    await checkpoint();
+    enterPhase(InstallPhases.DOWNLOADING_LIBRARIES);
+    await Promise.all(
+      ungrouped.map((action) =>
+        limit(async () => {
+          await checkpoint();
+          const result = await downloadFile(input.http, {
+            url: action.url,
+            target: action.target,
+            ...(action.expectedSha1 !== undefined ? { expectedSha1: action.expectedSha1 } : {}),
+            ...(action.expectedSize !== undefined ? { expectedSize: action.expectedSize } : {}),
+            ...(action.category !== undefined ? { category: action.category } : {}),
+            ...(input.signal !== undefined ? { signal: input.signal } : {}),
+            ...(input.onEvent !== undefined ? { onEvent: input.onEvent } : {}),
+            ...(input.pauseController !== undefined
+              ? { pauseController: input.pauseController }
+              : {}),
+          });
+          bytesDownloaded += result.bytesDownloaded;
+          if (result.skipped) actionsSkipped++;
+          actionsCompleted++;
+        }),
+      ),
+    );
+  }
+
   if (writeActions.length > 0) {
+    await checkpoint();
     enterPhase(InstallPhases.WRITING_FILES);
     for (const action of writeActions) {
-      if (input.signal?.aborted) {
-        throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
-      }
+      await checkpoint();
       await atomicWrite(action.path, action.content);
       actionsCompleted++;
     }
   }
 
-  // 3. Native extractions.
   if (natives.length > 0) {
+    await checkpoint();
     enterPhase(InstallPhases.EXTRACTING_NATIVES);
     for (const action of natives) {
-      if (input.signal?.aborted) {
-        throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
-      }
+      await checkpoint();
       const { fileCount } = await extractAllToDir(action.source, action.destination, {
         excludePrefixes: action.exclude as readonly string[],
       });
@@ -117,8 +182,8 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
     }
   }
 
-  // 4. Runtime extras (directories + symlinks for the runtime component).
   if (input.plan.target.runtime !== undefined) {
+    await checkpoint();
     enterPhase(InstallPhases.INSTALLING_RUNTIME);
     const runtimePlan = await planRuntimeDownloads({
       runtime: input.plan.target.runtime,
@@ -134,8 +199,8 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
     });
   }
 
-  // 5. Forge processors.
   if (processors.length > 0) {
+    await checkpoint();
     enterPhase(InstallPhases.RUNNING_FORGE_PROCESSORS);
     if (input.plan.target.loader.type !== Loaders.FORGE) {
       throw new MinecraftKitError(
@@ -150,9 +215,7 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
       input.plan.target.runtime.installRoot,
     );
     for (const action of processors) {
-      if (input.signal?.aborted) {
-        throw new MinecraftKitError("LAUNCH_ABORTED", "Install aborted by signal");
-      }
+      await checkpoint();
       await runProcessor({
         action,
         javaPath,

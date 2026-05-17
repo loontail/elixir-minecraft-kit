@@ -327,8 +327,12 @@ function substituteToken(
   });
 }
 
-function stripLiteralPrefix(value: string): string {
-  return value.startsWith("'") ? value.slice(1) : value;
+/** @internal */
+export function stripLiteralPrefix(value: string): string {
+  // Forge install_profile.json wraps literal values in single quotes (vs `{token}` /
+  // `[g:a:v]` maven coords). Both quotes must be stripped.
+  const stripped = value.startsWith("'") ? value.slice(1) : value;
+  return stripped.endsWith("'") ? stripped.slice(0, -1) : stripped;
 }
 
 /** Build the Forge installer download URL. Used by repair flows that need to refetch. */

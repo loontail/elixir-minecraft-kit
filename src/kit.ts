@@ -1,4 +1,5 @@
 import { silentLogger } from "./core/logger";
+import type { PauseController } from "./core/pause-controller";
 import { detectSystem } from "./core/system";
 import { createMemoryCache } from "./http/cache";
 import { FetchHttpClient } from "./http/client";
@@ -12,6 +13,7 @@ import {
 import { composeLaunch } from "./launch/compose";
 import { runLaunch } from "./launch/runner";
 import { ChildProcessSpawner } from "./launch/spawner";
+import { type RepairAllReport, repairAll } from "./repair/all";
 import { planFabricRepair } from "./repair/fabric";
 import { planForgeRepair } from "./repair/forge";
 import { planMinecraftRepair } from "./repair/minecraft";
@@ -21,7 +23,7 @@ import { TargetsApi } from "./targets/index";
 import type { MetadataCache } from "./types/cache";
 import type { OperationOptions, ProgressListener } from "./types/events";
 import type { HttpClient } from "./types/http";
-import type { InstallPlan, InstallReport } from "./types/install";
+import type { DownloadAction, InstallPlan, InstallReport } from "./types/install";
 import type {
   LaunchComposition,
   LaunchOptions,
@@ -75,11 +77,11 @@ export class MinecraftKit {
   readonly targets: TargetsApi;
   readonly install: {
     plan(target: Target, options?: OperationOptions): Promise<InstallPlan>;
-    run(plan: InstallPlan, options?: OperationOptions): Promise<InstallReport>;
+    run(plan: InstallPlan, options?: InstallRunOptions): Promise<InstallReport>;
     /** Install only the Java runtime declared by `target.runtime` (honours `installRoot`). */
     readonly runtime: {
       plan(target: Target, options?: OperationOptions): Promise<InstallPlan>;
-      run(plan: InstallPlan, options?: OperationOptions): Promise<InstallReport>;
+      run(plan: InstallPlan, options?: InstallRunOptions): Promise<InstallReport>;
       /**
        * Plan a runtime-only install without an existing Minecraft Target. The caller
        * supplies a {@link ResolvedRuntime} (typically from `kit.versions.runtime.resolve`)
@@ -121,6 +123,8 @@ export class MinecraftKit {
     readonly forge: RepairAspect;
     /** Repair the Java runtime files. Honours `target.runtime.installRoot`. */
     readonly runtime: RepairAspect;
+    /** Verify every applicable aspect (Minecraft + Runtime + active loader) and repair each broken one. */
+    all(target: Target, options?: OperationOptions): Promise<RepairAllReport>;
   };
   readonly launch: {
     compose(target: Target, options: LaunchOptions): Promise<LaunchComposition>;
@@ -153,8 +157,14 @@ export class MinecraftKit {
       ...(opts?.onEvent !== undefined ? { onEvent: opts.onEvent } : {}),
     });
 
-    const runInstallPlan = (plan: InstallPlan, opts?: OperationOptions) =>
-      runInstall({ plan, http, cache, spawner, ...carry(opts) });
+    const carryInstall = (opts: InstallRunOptions | undefined) => ({
+      ...carry(opts),
+      ...(opts?.pauseController !== undefined ? { pauseController: opts.pauseController } : {}),
+      ...(opts?.actionCategories !== undefined ? { actionCategories: opts.actionCategories } : {}),
+    });
+
+    const runInstallPlan = (plan: InstallPlan, opts?: InstallRunOptions) =>
+      runInstall({ plan, http, cache, spawner, ...carryInstall(opts) });
 
     this.install = {
       plan: (target, opts) => planInstall({ target, http, cache, ...carry(opts) }),
@@ -210,10 +220,18 @@ export class MinecraftKit {
         plan: (target, opts) => planRuntimeRepair(repairArgs(target, opts)),
         run: runRepairPlan,
       },
+      all: (target, opts) =>
+        repairAll({
+          target,
+          http,
+          cache,
+          spawner,
+          ...carry(opts),
+        }),
     };
 
     this.launch = {
-      compose: (target, opts) => composeLaunch({ target, options: opts }),
+      compose: (target, opts) => composeLaunch({ target, options: opts, logger }),
       run: (composition, opts) =>
         runLaunch({
           composition,
@@ -222,6 +240,12 @@ export class MinecraftKit {
         }),
     };
   }
+}
+
+/** Options accepted by `install.run` (and `install.runtime.run`). */
+export interface InstallRunOptions extends OperationOptions {
+  readonly pauseController?: PauseController;
+  readonly actionCategories?: ReadonlySet<DownloadAction["category"]>;
 }
 
 /** Options accepted by every `verify.<kind>.run`. */

@@ -248,6 +248,12 @@ export function buildFakeKit(input: FakeKitInput = {}): MinecraftKit {
       fabric: { plan: async () => fakeRepairPlan, run: async () => fakeRepairReport },
       forge: { plan: async () => fakeRepairPlan, run: async () => fakeRepairReport },
       runtime: { plan: async () => fakeRepairPlan, run: async () => fakeRepairReport },
+      all: async () => ({
+        verifications: [verification],
+        repairs: new Map(),
+        bytesDownloaded: 0,
+        durationMs: 1,
+      }),
     },
     launch: {
       compose: async () => composition,
