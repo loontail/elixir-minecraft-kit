@@ -3,22 +3,29 @@ import { formatUserError } from "../error-format";
 import { pickInstalledTarget } from "./pickers";
 import type { ScenarioContext, ScenarioOutcome } from "./types";
 
-/** Scenario: launch Minecraft from a discovered installation. */
+/**
+ * Scenario: launch Minecraft from a discovered installation. The active auth is taken from
+ * `ctx.auth.current` (populated once at CLI startup) — no prompting here.
+ */
 export async function scenarioLaunch(ctx: ScenarioContext): Promise<ScenarioOutcome> {
   const target = await pickInstalledTarget(ctx);
   if (!target) return "cancelled";
-  const usernameOutcome = await ctx.ui.text({
-    message: "Player username",
-    placeholder: "Player",
-    initial: "Player",
-    allowBack: true,
-    validate: (s) => (s.trim().length === 0 ? "Username must be non-empty" : undefined),
-  });
-  if (usernameOutcome.kind !== "ok") return "cancelled";
+  const auth = ctx.auth.current;
+  if (!auth) {
+    ctx.ui.log(
+      "error",
+      "No active account — sign in from the menu or restart the CLI to choose an account.",
+    );
+    return "cancelled";
+  }
+  ctx.ui.log(
+    "info",
+    auth.mode === AuthModes.ONLINE
+      ? `Launching as ${auth.username} (Microsoft).`
+      : `Launching as ${auth.username} (offline).`,
+  );
   try {
-    const composition = await ctx.kit.launch.compose(target, {
-      auth: { mode: AuthModes.OFFLINE, username: usernameOutcome.value.trim() },
-    });
+    const composition = await ctx.kit.launch.compose(target, { auth });
     ctx.ui.note(
       "Launch summary",
       [

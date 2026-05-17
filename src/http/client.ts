@@ -23,13 +23,24 @@ export class FetchHttpClient implements HttpClient {
     }
     const timer = setTimeout(() => controller.abort(TIMEOUT_REASON), timeoutMs);
     let response: Response;
+    const method = options.method ?? "GET";
     try {
-      response = await fetch(url, {
-        method: "GET",
+      const init: {
+        method: string;
+        headers: Record<string, string>;
+        signal: AbortSignal;
+        redirect: "follow";
+        body?: string | Uint8Array;
+      } = {
+        method,
         headers: { "user-agent": USER_AGENT, ...(options.headers ?? {}) },
         signal: controller.signal,
         redirect: "follow",
-      });
+      };
+      if (method !== "GET" && options.body !== undefined) {
+        init.body = options.body;
+      }
+      response = await fetch(url, init);
     } catch (cause) {
       clearTimeout(timer);
       options.signal?.removeEventListener("abort", onParentAbort);
@@ -52,7 +63,7 @@ export class FetchHttpClient implements HttpClient {
     }
     clearTimeout(timer);
     options.signal?.removeEventListener("abort", onParentAbort);
-    if (!response.ok) {
+    if (!response.ok && options.acceptNonOk !== true) {
       throw new MinecraftKitError("NETWORK_HTTP_ERROR", `HTTP ${response.status} for ${url}`, {
         context: { url, httpStatus: response.status },
       });

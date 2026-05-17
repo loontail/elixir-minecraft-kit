@@ -8,8 +8,10 @@ import {
   scenarioRepair,
   scenarioVerify,
 } from "../../src/cli/scenarios";
+import type { AuthState } from "../../src/cli/scenarios";
 import { createStubUi } from "../../src/cli/ui";
 import { MinecraftKitError } from "../../src/core/errors";
+import { AuthModes } from "../../src/types/auth";
 import type { FabricLoaderSummary } from "../../src/types/fabric";
 import type { ForgeBuildSummary } from "../../src/types/forge";
 import { Loaders } from "../../src/types/loader";
@@ -18,6 +20,16 @@ import type { DiscoveredTarget } from "../../src/types/target";
 import { buildFakeKit, fakeTarget } from "../helpers/fake-kit";
 
 const ROOT_DIR = "/tmp/mckit-test";
+
+/**
+ * Default auth state used by every scenario test. Scenarios that don't touch auth
+ * (install / verify / repair / inspect) ignore it; `scenarioLaunch` consumes the offline
+ * username directly.
+ */
+const auth = (): AuthState => ({
+  current: { mode: AuthModes.OFFLINE, username: "Player" },
+  microsoftSession: null,
+});
 
 const release2: MinecraftVersionSummary = {
   id: "1.20.1",
@@ -55,7 +67,9 @@ describe("scenarioInstallMinecraft (vanilla path)", () => {
   it("walks channel → version → runtime auto → vanilla → directory → confirm", async () => {
     const ui = createStubUi(["release", release2, "auto", Loaders.VANILLA, "default", true]);
     const kit = buildFakeKit();
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("supports back navigation from runtime → version → channel", async () => {
@@ -70,7 +84,9 @@ describe("scenarioInstallMinecraft (vanilla path)", () => {
       true,
     ]);
     const kit = buildFakeKit();
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("uses custom directory path when chosen", async () => {
@@ -84,19 +100,25 @@ describe("scenarioInstallMinecraft (vanilla path)", () => {
       true,
     ]);
     const kit = buildFakeKit();
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("cancels at the channel step", async () => {
     const ui = createStubUi(["cancel"]);
     const kit = buildFakeKit();
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "cancelled",
+    );
   });
 
   it("declines summary confirm and aborts", async () => {
     const ui = createStubUi(["release", release2, "auto", Loaders.VANILLA, "default", false]);
     const kit = buildFakeKit();
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "cancelled",
+    );
   });
 });
 
@@ -112,7 +134,9 @@ describe("scenarioInstallMinecraft (Fabric path)", () => {
       true,
     ]);
     const kit = buildFakeKit({ fabricLoaders });
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("falls back to install-type when Fabric is incompatible (empty)", async () => {
@@ -126,7 +150,9 @@ describe("scenarioInstallMinecraft (Fabric path)", () => {
       true,
     ]);
     const kit = buildFakeKit({ fabricLoaders: [] });
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("falls back to install-type when Fabric API throws (e.g. HTTP 400)", async () => {
@@ -146,7 +172,9 @@ describe("scenarioInstallMinecraft (Fabric path)", () => {
         });
       },
     });
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 });
 
@@ -162,7 +190,9 @@ describe("scenarioInstallMinecraft (Forge path)", () => {
       true,
     ]);
     const kit = buildFakeKit({ forgeBuilds });
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("falls back to install-type when Forge is incompatible", async () => {
@@ -176,7 +206,9 @@ describe("scenarioInstallMinecraft (Forge path)", () => {
       true,
     ]);
     const kit = buildFakeKit({ forgeBuilds: [] });
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 });
 
@@ -197,7 +229,9 @@ describe("scenarioInstallMinecraft (runtime override)", () => {
         { component: "jre-legacy", versionName: "8.0.412" },
       ],
     });
-    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallMinecraft({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 });
 
@@ -208,7 +242,9 @@ describe("scenarioInstallRuntime", () => {
     const kit = buildFakeKit({
       runtimeList: [{ component: "java-runtime-gamma", versionName: "17.0.8" }],
     });
-    expect(await scenarioInstallRuntime({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallRuntime({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 
   it("threads a custom installRoot through into the runtime install", async () => {
@@ -216,7 +252,9 @@ describe("scenarioInstallRuntime", () => {
     const kit = buildFakeKit({
       runtimeList: [{ component: "java-runtime-gamma", versionName: "17.0.8" }],
     });
-    expect(await scenarioInstallRuntime({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInstallRuntime({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe(
+      "completed",
+    );
   });
 });
 
@@ -224,13 +262,13 @@ describe("scenarioVerify", () => {
   it("warns when no installations are found", async () => {
     const ui = createStubUi();
     const kit = buildFakeKit({ listResult: [] });
-    expect(await scenarioVerify({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioVerify({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("cancelled");
   });
 
   it("verifies a clean installation", async () => {
     const ui = createStubUi([fakeTarget.id]);
     const kit = buildFakeKit({ listResult: [discoveredFor(fakeTarget.id)] });
-    expect(await scenarioVerify({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioVerify({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
   });
 
   it("warns when issues are present", async () => {
@@ -246,7 +284,7 @@ describe("scenarioVerify", () => {
         durationMs: 1,
       },
     });
-    expect(await scenarioVerify({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioVerify({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
   });
 });
 
@@ -254,7 +292,7 @@ describe("scenarioRepair", () => {
   it("reports clean when nothing to fix", async () => {
     const ui = createStubUi([fakeTarget.id]);
     const kit = buildFakeKit({ listResult: [discoveredFor(fakeTarget.id)] });
-    expect(await scenarioRepair({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioRepair({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
   });
 
   it("repairs when issues are present and confirmed", async () => {
@@ -270,7 +308,7 @@ describe("scenarioRepair", () => {
         durationMs: 1,
       },
     });
-    expect(await scenarioRepair({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioRepair({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
   });
 
   it("cancels when user declines repair", async () => {
@@ -286,27 +324,29 @@ describe("scenarioRepair", () => {
         durationMs: 1,
       },
     });
-    expect(await scenarioRepair({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioRepair({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("cancelled");
   });
 });
 
 describe("scenarioLaunch", () => {
   it("composes and runs a launch", async () => {
-    const ui = createStubUi([fakeTarget.id, "Player", true]);
+    // Auth is picked once at runCli startup, so the launch scenario no longer prompts for
+    // a username — only the target picker + spawn confirm.
+    const ui = createStubUi([fakeTarget.id, true]);
     const kit = buildFakeKit({ listResult: [discoveredFor(fakeTarget.id)] });
-    expect(await scenarioLaunch({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioLaunch({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
   });
 
   it("cancels when launch confirm declined", async () => {
-    const ui = createStubUi([fakeTarget.id, "Player", false]);
+    const ui = createStubUi([fakeTarget.id, false]);
     const kit = buildFakeKit({ listResult: [discoveredFor(fakeTarget.id)] });
-    expect(await scenarioLaunch({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioLaunch({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("cancelled");
   });
 
   it("warns when no installations exist", async () => {
     const ui = createStubUi();
     const kit = buildFakeKit({ listResult: [] });
-    expect(await scenarioLaunch({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioLaunch({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("cancelled");
   });
 });
 
@@ -314,13 +354,13 @@ describe("scenarioInspect", () => {
   it("warns when empty", async () => {
     const ui = createStubUi();
     const kit = buildFakeKit({ listResult: [] });
-    expect(await scenarioInspect({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInspect({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
   });
 
   it("shows a detailed note for the picked installation", async () => {
     const ui = createStubUi(["alpha"]);
     const kit = buildFakeKit({ listResult: [discoveredFor("alpha")] });
-    expect(await scenarioInspect({ kit, ui, rootDir: ROOT_DIR })).toBe("completed");
+    expect(await scenarioInspect({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("completed");
     const note = ui.calls.find((c) => c.kind === "note");
     expect(note?.message).toBe("Inspect: alpha");
     expect(note?.body).toContain("Directory:");
@@ -330,7 +370,7 @@ describe("scenarioInspect", () => {
   it("cancels when user picks cancel", async () => {
     const ui = createStubUi(["cancel"]);
     const kit = buildFakeKit({ listResult: [discoveredFor("alpha")] });
-    expect(await scenarioInspect({ kit, ui, rootDir: ROOT_DIR })).toBe("cancelled");
+    expect(await scenarioInspect({ kit, ui, rootDir: ROOT_DIR, auth: auth() })).toBe("cancelled");
   });
 });
 

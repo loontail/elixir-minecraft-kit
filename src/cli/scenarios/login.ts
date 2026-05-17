@@ -1,0 +1,203 @@
+import { CLIENT_ID_ENV_VAR, toOnlineAuth } from "../../auth/index";
+import { AuthModes, type LaunchAuth, type MojangSession } from "../../types/auth";
+import { formatUserError } from "../error-format";
+import { openBrowser } from "../open-browser";
+import type { AuthState, ScenarioContext, ScenarioOutcome } from "./types";
+
+/**
+ * Scenario: shown from the main menu after the initial sign-in already happened at startup.
+ * Lets the user inspect the active session, refresh the Microsoft token, sign out (drop
+ * back to offline + default username), or switch accounts entirely.
+ */
+export async function scenarioLogin(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+  const current = ctx.auth.current;
+  if (current?.mode === AuthModes.ONLINE && ctx.auth.microsoftSession) {
+    const session = ctx.auth.microsoftSession;
+    const action = await ctx.ui.select<"info" | "refresh" | "switch" | "logout" | "back">({
+      message: `Signed in as ${session.minecraft.username}. What now?`,
+      options: [
+        { label: "Show session details", value: "info" },
+        { label: "Refresh access token", value: "refresh" },
+        { label: "Switch account", value: "switch" },
+        { label: "Sign out (use offline mode)", value: "logout" },
+        { label: "← Back", value: "back" },
+      ],
+    });
+    if (action.kind !== "ok" || action.value === "back") return "cancelled";
+    if (action.value === "info") {
+      printSession(ctx, session);
+      return "completed";
+    }
+    if (action.value === "logout") {
+      ctx.auth.microsoftSession = null;
+      ctx.auth.current = await promptOfflineAuth(ctx);
+      ctx.ui.log("success", "Signed out — switched to offline mode.");
+      return "completed";
+    }
+    if (action.value === "refresh") return await runRefresh(ctx);
+    return await runSwitch(ctx);
+  }
+  // Currently offline — let the user pick again (offline username / Microsoft).
+  return await runSwitch(ctx);
+}
+
+/**
+ * Used by `runCli` at startup AND by the "Switch account" option. Prompts for offline /
+ * Microsoft, runs the device-code flow if needed, and writes the result into `state`.
+ *
+ * Returns `false` if the user cancels — `runCli` treats that as "exit before menu".
+ */
+export async function pickInitialAuth(
+  ctx: Omit<ScenarioContext, "auth">,
+  state: AuthState,
+): Promise<boolean> {
+  const mode = await ctx.ui.select<"offline" | "microsoft">({
+    message: "How do you want to play?",
+    options: [
+      { label: "Offline mode", value: "offline", hint: "Pick a username, no Microsoft account" },
+      {
+        label: "Sign in with Microsoft",
+        value: "microsoft",
+        hint: "Opens your browser for sign-in",
+      },
+    ],
+    initialValue: "offline",
+  });
+  if (mode.kind !== "ok") return false;
+  if (mode.value === "offline") {
+    const offline = await promptOfflineAuth(ctx);
+    if (!offline) return false;
+    state.current = offline;
+    state.microsoftSession = null;
+    return true;
+  }
+  const session = await runMicrosoftLogin(ctx);
+  if (!session) {
+    // Fall back to offline rather than abort — the user already committed to running the CLI.
+    ctx.ui.log("warn", "Sign-in failed — continuing in offline mode.");
+    const offline = await promptOfflineAuth(ctx);
+    if (!offline) return false;
+    state.current = offline;
+    state.microsoftSession = null;
+    return true;
+  }
+  state.microsoftSession = session;
+  state.current = toOnlineAuth(session);
+  return true;
+}
+
+async function runSwitch(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+  const ok = await pickInitialAuth(ctx, ctx.auth);
+  return ok ? "completed" : "cancelled";
+}
+
+async function runRefresh(ctx: ScenarioContext): Promise<ScenarioOutcome> {
+  if (!ctx.auth.microsoftSession) return "cancelled";
+  const session = ctx.auth.microsoftSession;
+  const spinner = ctx.ui.spinner();
+  spinner.start("Refreshing access token…");
+  try {
+    const fresh = await ctx.kit.auth.refresh(session.microsoft.refreshToken, {
+      clientId: session.microsoft.clientId,
+    });
+    ctx.auth.microsoftSession = fresh;
+    ctx.auth.current = toOnlineAuth(fresh);
+    spinner.stop("Access token refreshed.");
+    printSession(ctx, fresh);
+    return "completed";
+  } catch (error) {
+    spinner.stop("Refresh failed.");
+    ctx.ui.log("error", formatUserError(error));
+    return "cancelled";
+  }
+}
+
+async function runMicrosoftLogin(
+  ctx: Omit<ScenarioContext, "auth">,
+): Promise<MojangSession | null> {
+  const clientId = await resolveClientId(ctx);
+  if (clientId === null) return null;
+  const spinner = ctx.ui.spinner();
+  spinner.start("Requesting device code from Microsoft…");
+  try {
+    const session = await ctx.kit.auth.login({
+      clientId,
+      onPrompt: async (prompt) => {
+        spinner.stop("Device code issued.");
+        const opened = await openBrowser(prompt.verificationUri);
+        ctx.ui.note(
+          "Sign in with your Microsoft account",
+          [
+            opened
+              ? `1. Browser opened automatically (${prompt.verificationUri})`
+              : `1. Open ${prompt.verificationUri} in your browser`,
+            `2. Enter the code:  ${prompt.userCode}`,
+            "",
+            `(Code expires in ${Math.round(prompt.expiresIn / 60)} min — leave this terminal open)`,
+          ].join("\n"),
+        );
+        spinner.start("Waiting for browser sign-in…");
+      },
+      onPoll: ({ expiresAt }) => {
+        const left = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+        spinner.message(`Waiting for sign-in… (${left}s left)`);
+      },
+    });
+    spinner.stop(`Signed in as ${session.minecraft.username}.`);
+    return session;
+  } catch (error) {
+    spinner.stop("Sign-in failed.");
+    ctx.ui.log("error", formatUserError(error));
+    return null;
+  }
+}
+
+async function promptOfflineAuth(ctx: Omit<ScenarioContext, "auth">): Promise<LaunchAuth | null> {
+  const usernameOutcome = await ctx.ui.text({
+    message: "Player username",
+    placeholder: "Player",
+    initial: "Player",
+    validate: (s) => (s.trim().length === 0 ? "Username must be non-empty" : undefined),
+  });
+  if (usernameOutcome.kind !== "ok") return null;
+  return { mode: AuthModes.OFFLINE, username: usernameOutcome.value.trim() };
+}
+
+function printSession(ctx: Pick<ScenarioContext, "ui">, session: MojangSession): void {
+  const expiresIn = Math.max(0, Math.round((session.minecraft.expiresAt - Date.now()) / 1000 / 60));
+  ctx.ui.note(
+    "Active Mojang session",
+    [
+      `Player:       ${session.minecraft.username}`,
+      `UUID:         ${session.minecraft.uuid}`,
+      `XUID:         ${session.minecraft.xuid || "—"}`,
+      `Token expires: in ~${expiresIn} min`,
+    ].join("\n"),
+  );
+}
+
+async function resolveClientId(ctx: Omit<ScenarioContext, "auth">): Promise<string | null> {
+  const fromEnv = process.env[CLIENT_ID_ENV_VAR];
+  if (typeof fromEnv === "string" && fromEnv.trim().length > 0) return fromEnv.trim();
+  ctx.ui.note(
+    "Azure AD client id required",
+    [
+      "Microsoft sign-in needs an Azure AD application id.",
+      `Set ${CLIENT_ID_ENV_VAR} once and re-run, or paste it here.`,
+      "Register one at: https://entra.microsoft.com → App registrations.",
+      "Audience: Personal Microsoft accounts. Required scope: XboxLive.signin offline_access.",
+    ].join("\n"),
+  );
+  const entered = await ctx.ui.text({
+    message: "Paste Azure AD client id (or press Enter to cancel)",
+    placeholder: "00000000-0000-0000-0000-000000000000",
+    validate: (s) => {
+      const v = s.trim();
+      if (v.length === 0) return undefined;
+      return /^[0-9a-fA-F-]{8,}$/.test(v) ? undefined : "Does not look like a GUID";
+    },
+  });
+  if (entered.kind !== "ok") return null;
+  const trimmed = entered.value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}

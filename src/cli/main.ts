@@ -2,12 +2,15 @@ import process from "node:process";
 import { MinecraftKit } from "../kit";
 import { formatUserError } from "./error-format";
 import {
+  type AuthState,
   type ScenarioContext,
   type ScenarioOutcome,
+  pickInitialAuth,
   scenarioInspect,
   scenarioInstallMinecraft,
   scenarioInstallRuntime,
   scenarioLaunch,
+  scenarioLogin,
   scenarioRepair,
   scenarioVerify,
 } from "./scenarios";
@@ -20,6 +23,7 @@ const SCENARIO_KEYS = {
   REPAIR: "repair",
   LAUNCH: "launch",
   INSPECT: "inspect",
+  LOGIN: "login",
   EXIT: "exit",
 } as const;
 
@@ -46,8 +50,14 @@ export async function runCli(input: RunCliInput): Promise<number> {
   }
   const debug = input.args.includes("--debug");
   const kit = input.kit ?? new MinecraftKit();
-  const ctx: ScenarioContext = { kit, ui: input.ui, rootDir: input.rootDir };
+  const auth: AuthState = { current: null, microsoftSession: null };
   input.ui.intro("mckit — Minecraft launcher kit");
+  const signedIn = await pickInitialAuth({ kit, ui: input.ui, rootDir: input.rootDir }, auth);
+  if (!signedIn) {
+    input.ui.outro("Goodbye.");
+    return 0;
+  }
+  const ctx: ScenarioContext = { kit, ui: input.ui, rootDir: input.rootDir, auth };
   while (true) {
     const choice = await input.ui.select<string>({
       message: "What would you like to do?",
@@ -80,6 +90,11 @@ export const MAIN_MENU: ReadonlyArray<{ label: string; value: string; hint?: str
   { label: "Repair installation", value: SCENARIO_KEYS.REPAIR },
   { label: "Launch Minecraft", value: SCENARIO_KEYS.LAUNCH },
   { label: "Inspect installation", value: SCENARIO_KEYS.INSPECT },
+  {
+    label: "Account…",
+    value: SCENARIO_KEYS.LOGIN,
+    hint: "View session, refresh, switch, or sign out",
+  },
   { label: "Exit", value: SCENARIO_KEYS.EXIT },
 ];
 
@@ -97,6 +112,8 @@ async function dispatch(choice: string, ctx: ScenarioContext): Promise<ScenarioO
       return scenarioLaunch(ctx);
     case SCENARIO_KEYS.INSPECT:
       return scenarioInspect(ctx);
+    case SCENARIO_KEYS.LOGIN:
+      return scenarioLogin(ctx);
     default:
       ctx.ui.log("warn", `Unknown action: ${choice}`);
       return "cancelled";

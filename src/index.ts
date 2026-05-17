@@ -85,5 +85,14 @@ export { createMemoryCache } from "./http/cache";
 export { FetchHttpClient } from "./http/client";
 export { ChildProcessSpawner } from "./launch/spawner";
 export { silentLogger, consoleLogger } from "./core/logger";
+export {
+  MojangAuthApi,
+  toOnlineAuth,
+  CLIENT_ID_ENV_VAR,
+  type LoginOptions,
+  type RefreshOptions,
+  type StartDeviceCodeOptions,
+  type PollDeviceCodeOptions,
+} from "./auth/index";
 export * from "./types/index";
 export * from "./constants/index";

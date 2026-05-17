@@ -1,4 +1,5 @@
 import type { MinecraftKit } from "../../kit";
+import type { LaunchAuth, MojangSession } from "../../types/auth";
 import type { Loaders } from "../../types/loader";
 import {
   type MinecraftChannel,
@@ -7,11 +8,23 @@ import {
 } from "../../types/minecraft";
 import type { SelectOption, Ui } from "../ui";
 
+/**
+ * Mutable holder for the active session, shared by every scenario. Populated once at CLI
+ * startup (see {@link import("../main").runCli}) and updated by the "Sign in / out" menu.
+ */
+export interface AuthState {
+  /** Auth value passed straight to `kit.launch.compose`. Null until startup picks one. */
+  current: LaunchAuth | null;
+  /** Full Microsoft/Mojang session when {@link current} is online. */
+  microsoftSession: MojangSession | null;
+}
+
 /** Inputs every scenario receives. */
 export interface ScenarioContext {
   readonly kit: MinecraftKit;
   readonly ui: Ui;
   readonly rootDir: string;
+  readonly auth: AuthState;
 }
 
 /** Outcome of a scenario — whether the user cancelled or completed. */

@@ -13,6 +13,12 @@ export interface HttpResponse {
   stream(): AsyncIterable<Uint8Array>;
 }
 
+/** HTTP method supported by {@link HttpClient}. */
+export type HttpMethod = "GET" | "POST";
+
+/** Body payload accepted on POST requests. */
+export type HttpRequestBody = string | Uint8Array;
+
 /** Options for an HTTP request. */
 export interface HttpRequestOptions {
   readonly headers?: HttpHeaders;
@@ -20,6 +26,17 @@ export interface HttpRequestOptions {
   readonly timeoutMs?: number;
   /** When true, do not consult the in-memory cache. */
   readonly noCache?: boolean;
+  /** HTTP method. Defaults to `GET`. */
+  readonly method?: HttpMethod;
+  /** Request body. Ignored for GET. */
+  readonly body?: HttpRequestBody;
+  /**
+   * When `true`, the client returns the response even for non-2xx statuses
+   * instead of throwing. Useful for callers that must inspect the body of
+   * error responses (e.g. OAuth polling endpoints that return 400 with
+   * structured JSON like `{"error":"authorization_pending"}`).
+   */
+  readonly acceptNonOk?: boolean;
 }
 
 /**

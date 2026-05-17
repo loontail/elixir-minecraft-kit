@@ -1,3 +1,4 @@
+import { MojangAuthApi } from "./auth/index";
 import { silentLogger } from "./core/logger";
 import type { PauseController } from "./core/pause-controller";
 import { detectSystem } from "./core/system";
@@ -130,6 +131,12 @@ export class MinecraftKit {
     compose(target: Target, options: LaunchOptions): Promise<LaunchComposition>;
     run(composition: LaunchComposition, options?: LaunchRunOptions): LaunchSession;
   };
+  /**
+   * Microsoft / Mojang authentication. Implements the device-code flow against Microsoft
+   * Entra, exchanges the resulting tokens for an XSTS + Minecraft session, and returns
+   * everything needed to compose an `OnlineAuth` for `launch.compose`.
+   */
+  readonly auth: MojangAuthApi;
 
   /** Cache surface useful for advanced consumers (e.g. clearing between operations). */
   readonly cache: MetadataCache;
@@ -148,6 +155,7 @@ export class MinecraftKit {
     const runtime = new RuntimeVersionsApi(ctx);
     this.versions = { minecraft, fabric, forge, runtime };
     this.targets = new TargetsApi({ minecraft, fabric, forge, runtime, system });
+    this.auth = new MojangAuthApi(http);
     this.cache = cache;
 
     // Carry signal/onEvent from operation-level options through to internal call sites.

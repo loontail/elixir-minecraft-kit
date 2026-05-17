@@ -1,0 +1,168 @@
+import { MinecraftKitError } from "../core/errors";
+import type { HttpClient } from "../types/http";
+import { authDebug } from "./debug";
+
+const MC_LOGIN_URL = "https://api.minecraftservices.com/authentication/login_with_xbox";
+const MC_PROFILE_URL = "https://api.minecraftservices.com/minecraft/profile";
+
+/** Result of `login_with_xbox` — Minecraft bearer token + lifetime. */
+export interface MinecraftLoginResult {
+  readonly accessToken: string;
+  readonly expiresIn: number;
+}
+
+interface LoginResponse {
+  readonly access_token: string;
+  readonly expires_in: number;
+  /** Claims JWT carrying the XUID (`xuid`) — opaque to us; we extract via `parseXuid`. */
+  readonly username?: string;
+}
+
+interface ProfileResponse {
+  readonly id: string;
+  readonly name: string;
+  readonly errorMessage?: string;
+}
+
+/** Step 4 — trade the XSTS token for a Minecraft bearer token. */
+export async function loginWithXbox(input: {
+  readonly http: HttpClient;
+  readonly xstsToken: string;
+  readonly userHash: string;
+  readonly signal?: AbortSignal;
+}): Promise<MinecraftLoginResult> {
+  const body = JSON.stringify({
+    identityToken: `XBL3.0 x=${input.userHash};${input.xstsToken}`,
+  });
+  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json",
+      // Mojang sometimes rejects unknown user-agents on the auth endpoints. Override the
+      // library default with a UA that matches what real Minecraft launchers send, so we
+      // don't trip an "anomalous client" filter.
+      "user-agent": "Minecraft Launcher/2.0 (minecraft-kit)",
+    },
+    body,
+    acceptNonOk: true,
+  };
+  if (input.signal !== undefined) {
+    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
+  }
+  authDebug(
+    `login_with_xbox POST — userHashLen=${input.userHash.length}, xstsTokenLen=${input.xstsToken.length}`,
+  );
+  const response = await input.http.request(MC_LOGIN_URL, requestOpts);
+  if (response.status < 200 || response.status >= 300) {
+    // Read the response body for diagnostic context. Mojang sometimes returns a JSON
+    // payload like `{"error":"FORBIDDEN","errorMessage":"..."}` — much more actionable than
+    // a bare status code.
+    const rawBody = await response.text().catch(() => "");
+    const detail = rawBody.slice(0, 400);
+    authDebug(`login_with_xbox failed status=${response.status} body=${detail}`);
+    if (response.status === 403) {
+      // Mojang ships a "blessed apps" allow-list. New Azure AD client_ids must be approved
+      // through https://aka.ms/mce-reviewappid before login_with_xbox accepts them. Catch
+      // that specific error message and surface a precise fix.
+      if (/invalid app registration/i.test(detail)) {
+        throw new MinecraftKitError(
+          "AUTH_MINECRAFT_FAILED",
+          `Mojang has not approved this Azure AD application id for the Minecraft API. The OAuth + Xbox/XSTS exchange all succeeded, but api.minecraftservices.com only accepts client_ids that are on its allow-list. Apply at https://aka.ms/mce-reviewappid (Application ID, contact email, purpose) — approval typically takes a few days. Raw response: ${detail}`,
+          { context: { httpStatus: 403, body: detail, reason: "invalid_app_registration" } },
+        );
+      }
+      throw new MinecraftKitError(
+        "AUTH_NO_GAME_OWNERSHIP",
+        `Mojang refused login_with_xbox (HTTP 403). The Xbox/Microsoft exchange succeeded, but api.minecraftservices.com declined to issue a Minecraft token. Most common causes: (1) you signed in to the browser with a DIFFERENT Microsoft account than the one owning Java Edition — re-check the email on https://www.minecraft.net/profile and make sure it matches what you typed at the device-code page; (2) this account never used Xbox services before — open https://www.xbox.com once with this account, then retry; (3) transient Mojang 5xx/403, just retry in 60s. Raw response: ${detail || "<empty>"}`,
+        { context: { httpStatus: 403, body: detail } },
+      );
+    }
+    throw new MinecraftKitError(
+      "AUTH_MINECRAFT_FAILED",
+      `Minecraft sign-in failed with HTTP ${response.status}. Response: ${detail || "<empty>"}`,
+      { context: { httpStatus: response.status, body: detail } },
+    );
+  }
+  const parsed = (await response.json()) as LoginResponse;
+  if (!parsed.access_token) {
+    throw new MinecraftKitError(
+      "AUTH_MINECRAFT_FAILED",
+      "Minecraft sign-in returned no access token.",
+    );
+  }
+  return { accessToken: parsed.access_token, expiresIn: parsed.expires_in };
+}
+
+/** Step 5 — fetch the player profile (UUID + display name) using the Minecraft bearer token. */
+export async function fetchMinecraftProfile(input: {
+  readonly http: HttpClient;
+  readonly accessToken: string;
+  readonly signal?: AbortSignal;
+}): Promise<{ readonly uuid: string; readonly username: string }> {
+  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+    headers: {
+      authorization: `Bearer ${input.accessToken}`,
+      accept: "application/json",
+      "user-agent": "Minecraft Launcher/2.0 (minecraft-kit)",
+    },
+    acceptNonOk: true,
+  };
+  if (input.signal !== undefined) {
+    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
+  }
+  const response = await input.http.request(MC_PROFILE_URL, requestOpts);
+  if (response.status === 404) {
+    throw new MinecraftKitError(
+      "AUTH_NO_GAME_OWNERSHIP",
+      "This Microsoft account does not own Minecraft: Java Edition.",
+      { context: { httpStatus: 404 } },
+    );
+  }
+  if (response.status < 200 || response.status >= 300) {
+    throw new MinecraftKitError(
+      "AUTH_MINECRAFT_FAILED",
+      `Failed to load Minecraft profile (HTTP ${response.status}).`,
+      { context: { httpStatus: response.status } },
+    );
+  }
+  const parsed = (await response.json()) as ProfileResponse;
+  if (parsed.errorMessage || !parsed.id || !parsed.name) {
+    throw new MinecraftKitError(
+      "AUTH_MINECRAFT_FAILED",
+      parsed.errorMessage ?? "Minecraft profile response was malformed.",
+    );
+  }
+  return { uuid: dashUuid(parsed.id), username: parsed.name };
+}
+
+/**
+ * Decode the XUID out of the JWT-shaped Minecraft access token. The token has three base64url
+ * segments — we read the middle (payload) one and pluck `xuid`. Errors are non-fatal; we
+ * return an empty string so the rest of the flow can still proceed.
+ */
+export function extractXuid(accessToken: string): string {
+  const parts = accessToken.split(".");
+  if (parts.length < 2) return "";
+  try {
+    const payload = parts[1];
+    if (typeof payload !== "string") return "";
+    const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(
+      "utf8",
+    );
+    const parsed = JSON.parse(json) as { xuid?: string };
+    return typeof parsed.xuid === "string" ? parsed.xuid : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Convert a dashless UUID (Mojang format) into the dashed canonical form. */
+function dashUuid(raw: string): string {
+  if (raw.includes("-")) return raw;
+  if (raw.length !== 32) return raw;
+  return `${raw.slice(0, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}-${raw.slice(
+    16,
+    20,
+  )}-${raw.slice(20)}`;
+}

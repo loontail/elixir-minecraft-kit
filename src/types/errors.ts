@@ -30,7 +30,17 @@ export type MinecraftKitErrorCode =
   | "INVALID_INPUT"
   | "NOT_IMPLEMENTED"
   | "UNSUPPORTED_VERSION"
-  | "LZMA_DECODE_ERROR";
+  | "LZMA_DECODE_ERROR"
+  | "AUTH_DEVICE_CODE_EXPIRED"
+  | "AUTH_DEVICE_CODE_DECLINED"
+  | "AUTH_DEVICE_CODE_FAILED"
+  | "AUTH_REFRESH_FAILED"
+  | "AUTH_XBOX_FAILED"
+  | "AUTH_XSTS_FAILED"
+  | "AUTH_MINECRAFT_FAILED"
+  | "AUTH_NO_GAME_OWNERSHIP"
+  | "AUTH_MISSING_CLIENT_ID"
+  | "AUTH_CANCELLED";
 
 /** Structured context attached to errors. */
 export interface MinecraftKitErrorContext {
