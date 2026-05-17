@@ -1,7 +1,12 @@
 # Quickstart
 
+The kit covers two launch modes: **offline** (no Microsoft account needed, can't connect to
+online servers) and **online** (full Microsoft / Mojang sign-in via OAuth device code).
+
+## Offline launch
+
 ```ts
-import { MinecraftKit, AuthModes, Loaders } from "@loontail/minecraft-kit";
+import { MinecraftKit, AuthModes, Loaders, EventTypes } from "@loontail/minecraft-kit";
 
 const kit = new MinecraftKit();
 
@@ -21,11 +26,11 @@ console.log(`${plan.totalActions} actions, ${plan.totalBytes} bytes`);
 // 3. Execute the plan. Downloads run in parallel, files already on disk are skipped.
 await kit.install.run(plan, {
   onEvent: (e) => {
-    if (e.type === "install:phase-changed") console.log("phase:", e.phase);
+    if (e.type === EventTypes.INSTALL_PHASE_CHANGED) console.log("phase:", e.phase);
   },
 });
 
-// 4. Launch.
+// 4. Launch with an offline username.
 const composition = await kit.launch.compose(target, {
   auth: { mode: AuthModes.OFFLINE, username: "Player" },
   memory: { minMb: 1024, maxMb: 4096 },
@@ -34,9 +39,96 @@ const session = kit.launch.run(composition);
 await session.exited;
 ```
 
+## Online launch with Microsoft / Mojang sign-in
+
+The kit ships a complete OAuth 2.0 device-code flow that returns a `MojangSession` ready
+for `kit.launch.compose`. Tokens never touch disk inside the kit — persisting the refresh
+token is your launcher's job.
+
+```ts
+import { MinecraftKit, Loaders, toOnlineAuth } from "@loontail/minecraft-kit";
+import fs from "node:fs/promises";
+
+const kit = new MinecraftKit();
+
+// 1. Sign in. Reuse a saved refresh token if you have one, otherwise prompt the user.
+const saved = await readSavedSession();
+const session = saved
+  ? await kit.auth.refresh(saved.refreshToken, { clientId: saved.clientId })
+  : await kit.auth.login({
+      clientId: process.env.MINECRAFT_KIT_MSA_CLIENT_ID,
+      onPrompt: ({ verificationUri, userCode, expiresIn }) => {
+        console.log(`Open ${verificationUri}`);
+        console.log(`Enter code: ${userCode}`);
+        console.log(`(expires in ~${Math.floor(expiresIn / 60)} min)`);
+      },
+    });
+
+// 2. Persist the refresh token + client id for next start. The access token in
+//    `session.minecraft.accessToken` is short-lived and should NOT be cached.
+await saveSession({
+  refreshToken: session.microsoft.refreshToken,
+  clientId: session.microsoft.clientId,
+});
+
+console.log(`Signed in as ${session.minecraft.username}`);
+
+// 3. Resolve the same Fabric target as the offline example.
+const target = await kit.targets.resolve({
+  id: "fabric-client",
+  directory: "./minecrafts/fabric-client",
+  minecraft: { version: "1.20.1" },
+  loader: { type: Loaders.FABRIC },
+});
+
+await kit.install.run(await kit.install.plan(target));
+
+// 4. Launch with the online session projected into the `OnlineAuth` shape.
+const composition = await kit.launch.compose(target, {
+  auth: toOnlineAuth(session),
+  memory: { minMb: 1024, maxMb: 4096 },
+});
+const minecraft = kit.launch.run(composition);
+await minecraft.exited;
+
+// --- helpers (your launcher's own storage; nothing the kit ships) ---
+async function readSavedSession() {
+  try {
+    return JSON.parse(await fs.readFile("./session.json", "utf8"));
+  } catch {
+    return null;
+  }
+}
+async function saveSession(data: { refreshToken: string; clientId: string }) {
+  await fs.writeFile("./session.json", JSON.stringify(data, null, 2));
+}
+```
+
+### Prerequisites for online launch
+
+`kit.auth.login` requires an Azure AD application id:
+
+1. Register an app at [https://portal.azure.com](https://portal.azure.com) →
+   **App registrations**.
+2. Set **Supported account types** to "Personal Microsoft accounts only" (or the variant
+   that includes them).
+3. Authentication → **Allow public client flows: Yes**.
+4. Request Minecraft API access at [https://aka.ms/mce-reviewappid](https://aka.ms/mce-reviewappid).
+   Without this, `login_with_xbox` rejects the token.
+
+Pass the Application (client) ID via `MINECRAFT_KIT_MSA_CLIENT_ID` or the `clientId`
+option. The kit refuses to ship a default — `AUTH_MISSING_CLIENT_ID` is thrown when
+neither is set.
+
+See the [authentication guide](../guides/auth) for the full surface, the decoupled
+prompt/poll flow, and the auth error taxonomy.
+
+## Statelessness
+
 If you want to remember `target` across runs, serialise the value you got back from
 `kit.targets.resolve` and pass it back in next time — the kit holds no state of its own
-between calls.
+between calls. The same applies to authentication: store the refresh token however your
+launcher already stores user data; the kit will not write it for you.
 
 See the [library usage guide](../guides/library-usage) for the full facade surface, the
 [CLI guide](../guides/cli) for the interactive flow, and the [API reference](../api/) for
