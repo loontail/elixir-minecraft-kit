@@ -22,6 +22,7 @@ export type {
 // Errors + error codes (single error class for every public API)
 // ─────────────────────────────────────────────────────────────────────────────────────
 export { isErrorCode, isMinecraftKitError, MinecraftKitError } from "./core/errors";
+export { assertNever } from "./core/assert-never";
 
 // ─────────────────────────────────────────────────────────────────────────────────────
 // Targets — resolve, list, and validate a Minecraft + loader + runtime triple
