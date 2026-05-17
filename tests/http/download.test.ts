@@ -82,4 +82,25 @@ describe("downloadFile", () => {
       }),
     ).rejects.toBeInstanceOf(MinecraftKitError);
   });
+
+  it("rejects non-http(s) URL schemes before issuing a request", async () => {
+    const http = new FakeHttpClient();
+    const target = path.join(tmpDir, "x");
+    await expect(downloadFile(http, { url: "file:///etc/passwd", target })).rejects.toThrow(
+      /INVALID_INPUT|http\(s\)/,
+    );
+    await expect(downloadFile(http, { url: "data:text/plain,oops", target })).rejects.toThrow(
+      /INVALID_INPUT|http\(s\)/,
+    );
+    expect(http.requests.length).toBe(0);
+  });
+
+  it("rejects unparseable URLs", async () => {
+    const http = new FakeHttpClient();
+    const target = path.join(tmpDir, "x");
+    await expect(downloadFile(http, { url: "not a url at all", target })).rejects.toThrow(
+      /INVALID_INPUT|not parseable/,
+    );
+    expect(http.requests.length).toBe(0);
+  });
 });

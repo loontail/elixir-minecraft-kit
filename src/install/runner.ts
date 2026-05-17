@@ -184,7 +184,7 @@ export async function runInstall(input: RunInstallInput): Promise<InstallReport>
   if (processors.length > 0) {
     await checkpoint();
     enterPhase(InstallPhases.RUNNING_FORGE_PROCESSORS);
-    if (input.plan.target.loader.type !== Loaders.FORGE) {
+    if (input.plan.target.loader?.type !== Loaders.FORGE) {
       throw new MinecraftKitError(
         "FORGE_PROCESSOR_FAILED",
         "Forge processors planned for a non-Forge target",

@@ -98,6 +98,25 @@ export type InstallAction =
   | WriteLoggingConfigAction;
 
 /**
+ * A "runtime-only" install plan target. Used by `planStandaloneRuntimeInstall` to plan a
+ * JRE-only install without a Minecraft version/loader pinned to the plan.
+ */
+export interface RuntimeOnlyInstallTarget {
+  readonly id: string;
+  readonly directory: string;
+  readonly runtime: import("./runtime").ResolvedRuntime;
+  readonly minecraft?: undefined;
+  readonly loader?: undefined;
+}
+
+/**
+ * Shape of `InstallPlan.target`. Either a fully-resolved {@link import("./target").Target} or a
+ * runtime-only stand-in. The install runner only reads `target.minecraft`/`target.loader` when
+ * the plan actually contains those steps, so runtime-only plans are safe.
+ */
+export type InstallPlanTarget = import("./target").Target | RuntimeOnlyInstallTarget;
+
+/**
  * Pre-computed install plan: a flat ordered list of actions plus computed totals.
  *
  * The runner consumes this; nothing is downloaded or written during planning. The plan
@@ -107,7 +126,7 @@ export type InstallAction =
 export interface InstallPlan {
   readonly targetId: string;
   readonly directory: string;
-  readonly target: import("./target").Target;
+  readonly target: InstallPlanTarget;
   readonly actions: readonly InstallAction[];
   readonly totalBytes: number;
   readonly totalActions: number;

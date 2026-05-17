@@ -34,7 +34,10 @@ export async function loginWithXbox(input: {
   const body = JSON.stringify({
     identityToken: `XBL3.0 x=${input.userHash};${input.xstsToken}`,
   });
-  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+  authDebug(
+    `login_with_xbox POST — userHashLen=${input.userHash.length}, xstsTokenLen=${input.xstsToken.length}`,
+  );
+  const response = await input.http.request(MC_LOGIN_URL, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -46,14 +49,8 @@ export async function loginWithXbox(input: {
     },
     body,
     acceptNonOk: true,
-  };
-  if (input.signal !== undefined) {
-    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
-  }
-  authDebug(
-    `login_with_xbox POST — userHashLen=${input.userHash.length}, xstsTokenLen=${input.xstsToken.length}`,
-  );
-  const response = await input.http.request(MC_LOGIN_URL, requestOpts);
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
   if (response.status < 200 || response.status >= 300) {
     // Read the response body for diagnostic context. Mojang sometimes returns a JSON
     // payload like `{"error":"FORBIDDEN","errorMessage":"..."}` — much more actionable than
@@ -100,18 +97,15 @@ export async function fetchMinecraftProfile(input: {
   readonly accessToken: string;
   readonly signal?: AbortSignal;
 }): Promise<{ readonly uuid: string; readonly username: string }> {
-  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+  const response = await input.http.request(MC_PROFILE_URL, {
     headers: {
       authorization: `Bearer ${input.accessToken}`,
       accept: "application/json",
       "user-agent": "Minecraft Launcher/2.0 (minecraft-kit)",
     },
     acceptNonOk: true,
-  };
-  if (input.signal !== undefined) {
-    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
-  }
-  const response = await input.http.request(MC_PROFILE_URL, requestOpts);
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
   if (response.status === 404) {
     throw new MinecraftKitError(
       "AUTH_NO_GAME_OWNERSHIP",

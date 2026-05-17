@@ -51,7 +51,7 @@ export async function startDeviceCode(input: {
   readonly signal?: AbortSignal;
 }): Promise<{ readonly prompt: DeviceCodePrompt; readonly state: DeviceCodeState }> {
   const body = new URLSearchParams({ client_id: input.clientId, scope: SCOPE });
-  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+  const response = await input.http.request(DEVICE_CODE_URL, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
     body: body.toString(),
@@ -60,11 +60,8 @@ export async function startDeviceCode(input: {
     // an app registration that doesn't allow personal MSA accounts or hasn't enabled
     // public client flows.
     acceptNonOk: true,
-  };
-  if (input.signal !== undefined) {
-    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
-  }
-  const response = await input.http.request(DEVICE_CODE_URL, requestOpts);
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
   if (response.status < 200 || response.status >= 300) {
     const err = (await response.json().catch(() => ({}))) as TokenError;
     throw new MinecraftKitError(
@@ -198,16 +195,13 @@ export async function refreshMicrosoftToken(input: {
     refresh_token: input.refreshToken,
     scope: SCOPE,
   });
-  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+  const response = await input.http.request(TOKEN_URL, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },
     body: body.toString(),
     acceptNonOk: true,
-  };
-  if (input.signal !== undefined) {
-    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
-  }
-  const response = await input.http.request(TOKEN_URL, requestOpts);
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
   if (response.status < 200 || response.status >= 300) {
     const err = (await response.json().catch(() => ({}))) as TokenError;
     throw new MinecraftKitError(

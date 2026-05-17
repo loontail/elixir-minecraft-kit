@@ -1,6 +1,6 @@
 import type { MetadataCache } from "../types/cache";
 import type { HttpClient } from "../types/http";
-import type { InstallAction, InstallPlan } from "../types/install";
+import type { InstallAction, InstallPlan, RuntimeOnlyInstallTarget } from "../types/install";
 import type { ResolvedRuntime } from "../types/runtime";
 import type { Target } from "../types/target";
 import { planRuntimeDownloads } from "./runtime";
@@ -61,10 +61,9 @@ export interface PlanStandaloneRuntimeInstallInput {
 /**
  * Plan a runtime-only install **without a Minecraft target**. Useful for "Install Java/runtime"
  * flows where the user just wants a JRE on disk and never had a Minecraft version to choose
- * from. The returned plan is shaped exactly like a normal {@link InstallPlan} and runs through
- * the standard install runner — but its `target.minecraft` and `target.loader` fields are
- * intentional placeholders. The runner only reads `target.runtime` for runtime-only plans, so
- * the placeholders are never accessed at runtime.
+ * from. The returned plan is shaped exactly like a normal {@link InstallPlan} but uses a
+ * {@link RuntimeOnlyInstallTarget} that carries only the runtime + directory — the runner skips
+ * Minecraft/loader-specific stages because they have no actions in this plan.
  */
 export async function planStandaloneRuntimeInstall(
   input: PlanStandaloneRuntimeInstallInput,
@@ -81,15 +80,11 @@ export async function planStandaloneRuntimeInstall(
     (sum, action) => sum + (action.expectedSize ?? 0),
     0,
   );
-  // The install runner only touches `target.runtime` and `target.directory` for plans that
-  // have no processors and no write/native actions. The other Target fields are placeholders.
-  const target = {
+  const target: RuntimeOnlyInstallTarget = {
     id: input.id,
     directory: input.directory,
     runtime: input.runtime,
-    minecraft: undefined,
-    loader: undefined,
-  } as unknown as Target;
+  };
   return {
     targetId: input.id,
     directory: input.directory,

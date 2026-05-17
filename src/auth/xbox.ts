@@ -43,17 +43,14 @@ export async function authenticateXbl(input: {
     RelyingParty: "http://auth.xboxlive.com",
     TokenType: "JWT",
   });
-  const requestOpts: Parameters<HttpClient["request"]>[1] = {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
-    body,
-  };
-  if (input.signal !== undefined) {
-    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
-  }
   let response: Awaited<ReturnType<HttpClient["request"]>>;
   try {
-    response = await input.http.request(XBL_URL, requestOpts);
+    response = await input.http.request(XBL_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body,
+      ...(input.signal !== undefined ? { signal: input.signal } : {}),
+    });
   } catch (cause) {
     throw new MinecraftKitError("AUTH_XBOX_FAILED", "Xbox Live authentication failed.", {
       cause,
@@ -89,16 +86,13 @@ export async function authenticateXsts(input: {
     RelyingParty: "rp://api.minecraftservices.com/",
     TokenType: "JWT",
   });
-  const requestOpts: Parameters<HttpClient["request"]>[1] = {
+  const response = await input.http.request(XSTS_URL, {
     method: "POST",
     headers: { "content-type": "application/json", accept: "application/json" },
     body,
     acceptNonOk: true,
-  };
-  if (input.signal !== undefined) {
-    (requestOpts as { signal?: AbortSignal }).signal = input.signal;
-  }
-  const response = await input.http.request(XSTS_URL, requestOpts);
+    ...(input.signal !== undefined ? { signal: input.signal } : {}),
+  });
   if (response.status === 401) {
     const err = (await response.json().catch(() => ({}))) as XstsErrorResponse;
     throw new MinecraftKitError("AUTH_XSTS_FAILED", explainXErr(err.XErr), {

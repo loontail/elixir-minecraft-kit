@@ -41,6 +41,7 @@ export async function downloadFile(
   http: HttpClient,
   input: DownloadFileInput,
 ): Promise<DownloadFileResult> {
+  assertSafeDownloadUrl(input.url);
   const fileRef = { url: input.url, target: input.target, category: input.category };
   if (input.expectedSha1 !== undefined) {
     const existing = await checkExistingFile(input.target, input.expectedSha1, input.expectedSize);
@@ -190,5 +191,27 @@ async function safeUnlink(filePath: string): Promise<void> {
     await fs.unlink(filePath);
   } catch {
     // Best-effort.
+  }
+}
+
+// Manifests are loaded over the network; an attacker controlling DNS or a man-in-the-middle
+// could rewrite `library.url` to `file:///etc/passwd` and the streaming `fetch` would happily
+// follow it. Restrict downloads to plain HTTP(S) so manifests can never coax `fetch` into
+// reading local files, executing JS, or following data URIs.
+function assertSafeDownloadUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new MinecraftKitError("INVALID_INPUT", `Download URL is not parseable: ${url}`, {
+      context: { url },
+    });
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new MinecraftKitError(
+      "INVALID_INPUT",
+      `Download URL must use http(s); refusing scheme ${parsed.protocol}`,
+      { context: { url, scheme: parsed.protocol } },
+    );
   }
 }

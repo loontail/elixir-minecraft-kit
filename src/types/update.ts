@@ -1,10 +1,10 @@
-import type { InstallAction } from "./install";
+import type { InstallAction, InstallPlanTarget } from "./install";
 
 /** Update plan — additive list of actions to bring an installation up to date. */
 export interface UpdatePlan {
   readonly targetId: string;
   readonly directory: string;
-  readonly target: import("./target").Target;
+  readonly target: InstallPlanTarget;
   readonly actions: readonly InstallAction[];
   readonly totalBytes: number;
   readonly totalActions: number;
