@@ -17,7 +17,7 @@ export const CLIENT_ID_ENV_VAR = "MINECRAFT_KIT_MSA_CLIENT_ID";
 export { authDebug, DEBUG_ENV_VAR } from "./debug";
 
 /** Options accepted by {@link MojangAuthApi.login}. */
-export interface LoginOptions {
+export type LoginOptions = {
   /**
    * Azure AD application id. When omitted, the value of
    * `process.env.MINECRAFT_KIT_MSA_CLIENT_ID` is used. Throws `AUTH_MISSING_CLIENT_ID` if
@@ -33,26 +33,26 @@ export interface LoginOptions {
   /** Called once per polling tick — useful for UI "still waiting" feedback. */
   readonly onPoll?: (info: { readonly nextDelayMs: number; readonly expiresAt: number }) => void;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Options accepted by {@link MojangAuthApi.refresh}. */
-export interface RefreshOptions {
+export type RefreshOptions = {
   /** As in {@link LoginOptions.clientId}. */
   readonly clientId?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Options accepted by {@link MojangAuthApi.deviceCode.start}. */
-export interface StartDeviceCodeOptions {
+export type StartDeviceCodeOptions = {
   readonly clientId?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Options accepted by {@link MojangAuthApi.deviceCode.poll}. */
-export interface PollDeviceCodeOptions {
+export type PollDeviceCodeOptions = {
   readonly signal?: AbortSignal;
   readonly onTick?: (info: { readonly nextDelayMs: number; readonly expiresAt: number }) => void;
-}
+};
 
 /**
  * High-level Microsoft / Mojang auth surface attached to {@link import("../kit").MinecraftKit}

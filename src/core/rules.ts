@@ -2,10 +2,10 @@ import type { LibraryRule } from "../types/minecraft";
 import type { RuntimeSystem } from "../types/system";
 
 /** Inputs to rule evaluation. */
-export interface RuleEvaluationContext {
+export type RuleEvaluationContext = {
   readonly system: RuntimeSystem;
   readonly features?: Readonly<Record<string, boolean>>;
-}
+};
 
 /**
  * Evaluate a list of Mojang library/argument rules against the given context.

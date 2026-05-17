@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createInPlaceSpinner } from "../../src/cli/ui";
 
-interface FakeOut {
+type FakeOut = {
   readonly chunks: string[];
   readonly write: (chunk: string) => void;
   readonly isTTY: boolean;
-}
+};
 
 const fakeTty = (): FakeOut => {
   const chunks: string[] = [];

@@ -49,13 +49,13 @@ import { MinecraftVersionsApi } from "./versions/minecraft";
 import { RuntimeVersionsApi } from "./versions/runtime";
 
 /** Constructor options for {@link MinecraftKit}. */
-export interface MinecraftKitOptions {
+export type MinecraftKitOptions = {
   readonly httpClient?: HttpClient;
   readonly cache?: MetadataCache;
   readonly logger?: Logger;
   readonly system?: RuntimeSystem;
   readonly spawner?: Spawner;
-}
+};
 
 /**
  * Single facade for the entire library.
@@ -257,19 +257,19 @@ export interface InstallRunOptions extends OperationOptions {
 }
 
 /** Options accepted by every `verify.<kind>.run`. */
-export interface VerifyOperationOptions {
+export type VerifyOperationOptions = {
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /** Options for any `repair.<aspect>.plan` call. Accepts one or many verification results. */
-export interface RepairPlanOptions {
+export type RepairPlanOptions = {
   readonly from: VerificationResult | readonly VerificationResult[];
   readonly signal?: AbortSignal;
-}
+};
 
 /** Shared shape of every aspect-specific repair surface (`repair.minecraft`, `.fabric`, …). */
-export interface RepairAspect {
+export type RepairAspect = {
   plan(target: Target, options: RepairPlanOptions): Promise<RepairPlan>;
   run(plan: RepairPlan, options?: OperationOptions): Promise<RepairReport>;
-}
+};

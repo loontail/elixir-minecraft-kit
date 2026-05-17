@@ -62,7 +62,7 @@ export const fakeTarget: Target = {
 };
 
 /** Inputs for {@link buildFakeKit}. */
-export interface FakeKitInput {
+export type FakeKitInput = {
   readonly minecraftVersions?: readonly MinecraftVersionSummary[];
   readonly fabricLoaders?:
     | readonly FabricLoaderSummary[]
@@ -78,7 +78,7 @@ export interface FakeKitInput {
   readonly launchExit?: LaunchExit;
   readonly installError?: unknown;
   readonly runtimeList?: readonly { component: string; versionName: string }[];
-}
+};
 
 /**
  * Build a minimal {@link MinecraftKit} stand-in for scenario tests. Only the methods

@@ -31,7 +31,7 @@ export const asResultArray = (
  * Without this distinction, a "natives directory missing" report would re-trigger every
  * native-jar download even though every JAR on disk is already correct.
  */
-export interface IssueIndex {
+export type IssueIndex = {
   /** True when any verification result reported an issue at `path`. */
   has(path: string): boolean;
   /**
@@ -42,7 +42,7 @@ export interface IssueIndex {
   hasNonNative(path: string): boolean;
   /** All categories recorded for the given path (empty when none). */
   categoriesAt(path: string): ReadonlySet<VerifyFileCategory>;
-}
+};
 
 /** Build an {@link IssueIndex} from one or more verification results. */
 export const buildIssueIndex = (

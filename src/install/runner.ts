@@ -29,7 +29,7 @@ import { planRuntimeDownloads } from "./runtime";
 import { materializeRuntimeExtras } from "./runtime-extras";
 
 /** Inputs to the install runner. */
-export interface RunInstallInput {
+export type RunInstallInput = {
   readonly plan: InstallPlan;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
@@ -41,7 +41,7 @@ export interface RunInstallInput {
   readonly pauseController?: PauseController;
   /** When set, only download actions in this set run; post-download steps that depend on them are skipped too. */
   readonly actionCategories?: ReadonlySet<DownloadAction["category"]>;
-}
+};
 
 /** Download category → install phase mapping that runs each category as its own phase. */
 const DOWNLOAD_GROUPS: ReadonlyArray<{
@@ -58,26 +58,26 @@ const DOWNLOAD_GROUPS: ReadonlyArray<{
   { categories: ["forge-installer", "forge-library"], phase: InstallPhases.INSTALLING_FORGE },
 ];
 
-interface InstallCounters {
+type InstallCounters = {
   bytesDownloaded: number;
   actionsCompleted: number;
   actionsSkipped: number;
-}
+};
 
-interface InstallRunnerContext {
+type InstallRunnerContext = {
   readonly input: RunInstallInput;
   readonly counters: InstallCounters;
   readonly checkpoint: () => Promise<void>;
   readonly enterPhase: (phase: InstallPhase) => void;
   readonly limit: ReturnType<typeof pLimit>;
-}
+};
 
-interface PlannedActions {
+type PlannedActions = {
   readonly downloads: readonly DownloadAction[];
   readonly natives: readonly ExtractNativeAction[];
   readonly writes: ReadonlyArray<WriteVersionJsonAction | WriteLoggingConfigAction>;
   readonly processors: readonly RunForgeProcessorAction[];
-}
+};
 
 /** Execute an install plan. */
 export const runInstall = async (input: RunInstallInput): Promise<InstallReport> => {

@@ -11,10 +11,10 @@ import { filterArgsForJava } from "./jvm-compat";
 import { substituteArgs } from "./placeholders";
 
 /** Output of {@link composeArgs}. */
-export interface ComposedArgs {
+export type ComposedArgs = {
   readonly jvmArgs: readonly string[];
   readonly gameArgs: readonly string[];
-}
+};
 
 /**
  * Build the final JVM and game argument lists for a launch. The order is:

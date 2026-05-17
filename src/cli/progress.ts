@@ -6,17 +6,17 @@ import type { Ui, UiSpinner } from "./ui";
 type PhaseLabel = InstallPhase | RepairPhase | "idle";
 
 /** Aggregated metrics produced by {@link ProgressRenderer.summary}. */
-export interface ProgressSummary {
+export type ProgressSummary = {
   readonly filesDownloaded: number;
   readonly filesSkipped: number;
   readonly filesFailed: number;
   readonly bytesDownloaded: number;
   readonly durationMs: number;
   readonly avgSpeedBps: number;
-}
+};
 
 /** Inputs to {@link ProgressRenderer}. */
-export interface ProgressRendererInput {
+export type ProgressRendererInput = {
   readonly ui: Ui;
   /** Optional plan totals (used as the denominator for files / bytes when known). */
   readonly totalActions?: number;
@@ -29,7 +29,7 @@ export interface ProgressRendererInput {
   readonly minRenderIntervalMs?: number;
   /** Override terminal width (defaults to `process.stdout.columns`). */
   readonly columns?: () => number;
-}
+};
 
 const DEFAULT_RENDER_INTERVAL_MS = 250;
 const SPEED_WINDOW_MS = 5_000;

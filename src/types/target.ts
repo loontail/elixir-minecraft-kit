@@ -9,7 +9,7 @@ import type { ResolvedRuntime } from "./runtime";
  * it. `kit.targets.create` produces a Target from already-resolved components;
  * `kit.targets.resolve` resolves them in one go.
  */
-export interface Target {
+export type Target = {
   /** Stable identifier chosen by the consumer. Used for diagnostics, not persistence. */
   readonly id: string;
   /** Absolute or relative path to the per-target Minecraft directory. */
@@ -17,22 +17,22 @@ export interface Target {
   readonly minecraft: ResolvedMinecraft;
   readonly loader: Loader;
   readonly runtime: ResolvedRuntime;
-}
+};
 
 /** Inputs accepted by `kit.targets.create`. */
-export interface TargetCreateInput {
+export type TargetCreateInput = {
   readonly id: string;
   readonly directory: string;
   readonly minecraft: ResolvedMinecraft;
   readonly loader: Loader;
   readonly runtime: ResolvedRuntime;
-}
+};
 
 /**
  * Discovered installation found by scanning a root directory. Contains only what was
  * actually read from disk — no assumptions about correctness, completeness, or repair state.
  */
-export interface DiscoveredTarget {
+export type DiscoveredTarget = {
   /** Subdirectory name under the scanned root. */
   readonly id: string;
   /** Absolute or normalized directory path. */
@@ -43,18 +43,18 @@ export interface DiscoveredTarget {
   readonly loaders: readonly DiscoveredLoaderHint[];
   /** Detected Java executable, when one is present in the per-target `runtime/` folder. */
   readonly runtime?: DiscoveredRuntimeHint;
-}
+};
 
 /** Inferred loader hint (does not assert correctness). */
-export interface DiscoveredLoaderHint {
+export type DiscoveredLoaderHint = {
   readonly type: LoaderKind;
   readonly minecraftVersion?: string;
   readonly version?: string;
-}
+};
 
 /** Detected runtime files. */
-export interface DiscoveredRuntimeHint {
+export type DiscoveredRuntimeHint = {
   readonly component?: string;
   readonly javaPath?: string;
   readonly javaVersion?: string;
-}
+};

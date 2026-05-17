@@ -2,7 +2,7 @@
 export type HttpHeaders = Readonly<Record<string, string>>;
 
 /** Response delivered by the {@link HttpClient} interface. */
-export interface HttpResponse {
+export type HttpResponse = {
   readonly status: number;
   readonly headers: HttpHeaders;
   readonly url: string;
@@ -11,7 +11,7 @@ export interface HttpResponse {
   bytes(): Promise<Uint8Array>;
   /** Stream the body. The stream may be consumed at most once. */
   stream(): AsyncIterable<Uint8Array>;
-}
+};
 
 /** HTTP method supported by {@link HttpClient}. */
 export type HttpMethod = "GET" | "POST";
@@ -20,7 +20,7 @@ export type HttpMethod = "GET" | "POST";
 export type HttpRequestBody = string | Uint8Array;
 
 /** Options for an HTTP request. */
-export interface HttpRequestOptions {
+export type HttpRequestOptions = {
   readonly headers?: HttpHeaders;
   readonly signal?: AbortSignal;
   readonly timeoutMs?: number;
@@ -37,13 +37,13 @@ export interface HttpRequestOptions {
    * structured JSON like `{"error":"authorization_pending"}`).
    */
   readonly acceptNonOk?: boolean;
-}
+};
 
 /**
  * Pluggable HTTP client. The default implementation uses Node's built-in fetch; consumers
  * can inject a fake (e.g. for tests) by passing an `httpClient` to the {@link MinecraftKit}
  * constructor.
  */
-export interface HttpClient {
+export type HttpClient = {
   request(url: string, options?: HttpRequestOptions): Promise<HttpResponse>;
-}
+};

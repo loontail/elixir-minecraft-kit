@@ -1,12 +1,12 @@
 import lzmaModule from "lzma";
 import { MinecraftKitError } from "./errors";
 
-interface LzmaApi {
+type LzmaApi = {
   decompress(
     bytes: Uint8Array | number[],
     callback: (result: Uint8Array | number[] | null, error: unknown) => void,
   ): void;
-}
+};
 
 const lzma = lzmaModule as unknown as LzmaApi;
 

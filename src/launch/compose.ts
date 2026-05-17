@@ -9,12 +9,12 @@ import { buildClasspath } from "./classpath";
 import { buildPlaceholderValues } from "./placeholder-values";
 import { pickClientJarVersionId, resolveLaunchVersion } from "./version-resolution";
 
-export interface ComposeLaunchInput {
+export type ComposeLaunchInput = {
   readonly target: Target;
   readonly options: LaunchOptions;
   /** Surfaces non-fatal compose-time warnings; defaults to silent. */
   readonly logger?: Logger;
-}
+};
 
 /** Build a fully resolved {@link LaunchComposition} ready to hand to {@link runLaunch}. */
 export const composeLaunch = async (input: ComposeLaunchInput): Promise<LaunchComposition> => {

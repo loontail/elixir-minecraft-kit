@@ -13,7 +13,7 @@ import type { ProgressListener } from "../types/events";
 import type { HttpClient } from "../types/http";
 
 /** Inputs to {@link downloadFile}. */
-export interface DownloadFileInput {
+export type DownloadFileInput = {
   readonly url: string;
   readonly target: string;
   readonly expectedSha1?: string;
@@ -23,14 +23,14 @@ export interface DownloadFileInput {
   readonly onEvent?: ProgressListener;
   /** Checked between chunks; pauses an in-flight download without aborting. */
   readonly pauseController?: PauseController;
-}
+};
 
 /** Outputs from a successful download. */
-export interface DownloadFileResult {
+export type DownloadFileResult = {
   readonly bytesDownloaded: number;
   readonly sha1: string;
   readonly skipped: boolean;
-}
+};
 
 /**
  * Stream a URL to a file with on-the-fly hash verification, atomic rename, retries, and

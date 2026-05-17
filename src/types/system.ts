@@ -30,11 +30,11 @@ export type Architecture = (typeof Architectures)[keyof typeof Architectures];
  * Identifies the host system for the launcher. All resolvers consume this object to
  * pick the right artifacts (libraries, natives, runtime).
  */
-export interface RuntimeSystem {
+export type RuntimeSystem = {
   /** OS identifier (mojang naming). */
   readonly os: OperatingSystem;
   /** CPU architecture (mojang naming). */
   readonly arch: Architecture;
   /** OS version string from `os.release()`. Used to evaluate library `os.version` regex rules. */
   readonly osVersion: string;
-}
+};

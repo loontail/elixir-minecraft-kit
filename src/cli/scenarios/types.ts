@@ -12,20 +12,20 @@ import type { SelectOption, Ui } from "../ui";
  * Mutable holder for the active session, shared by every scenario. Populated once at CLI
  * startup (see {@link import("../main").runCli}) and updated by the "Sign in / out" menu.
  */
-export interface AuthState {
+export type AuthState = {
   /** Auth value passed straight to `kit.launch.compose`. Null until startup picks one. */
   current: LaunchAuth | null;
   /** Full Microsoft/Mojang session when {@link current} is online. */
   microsoftSession: MojangSession | null;
-}
+};
 
 /** Inputs every scenario receives. */
-export interface ScenarioContext {
+export type ScenarioContext = {
   readonly kit: MinecraftKit;
   readonly ui: Ui;
   readonly rootDir: string;
   readonly auth: AuthState;
-}
+};
 
 /** Outcome of a scenario — whether the user cancelled or completed. */
 export type ScenarioOutcome = "completed" | "cancelled";
@@ -34,7 +34,7 @@ export type ScenarioOutcome = "completed" | "cancelled";
 export type InstallType = typeof Loaders.VANILLA | typeof Loaders.FABRIC | typeof Loaders.FORGE;
 
 /** Selection state collected by the install wizard. */
-export interface InstallSelection {
+export type InstallSelection = {
   channel: MinecraftChannel | "old" | "all" | null;
   version: MinecraftVersionSummary | null;
   runtimeOverride: string | null;
@@ -43,7 +43,7 @@ export interface InstallSelection {
   forgeBuild: string | null;
   forgeLabel: string | null;
   directory: string | null;
-}
+};
 
 /** Channel picker options. Defined once so tests and the picker share the source. */
 export const CHANNEL_OPTIONS: readonly SelectOption<MinecraftChannel | "old" | "all">[] = [

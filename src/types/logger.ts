@@ -10,6 +10,6 @@ export const LogLevels = {
 export type LogLevel = (typeof LogLevels)[keyof typeof LogLevels];
 
 /** Pluggable logger. Default implementation is a silent logger; pass your own to surface logs. */
-export interface Logger {
+export type Logger = {
   log(level: LogLevel, message: string, fields?: Readonly<Record<string, unknown>>): void;
-}
+};

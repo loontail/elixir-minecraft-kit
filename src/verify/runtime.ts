@@ -15,13 +15,13 @@ import {
 import { runVerification, verifyHashedFile } from "./helpers";
 
 /** Inputs to {@link verifyRuntime}. */
-export interface VerifyRuntimeInput {
+export type VerifyRuntimeInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /**
  * Verify the Java runtime files. Honours `target.runtime.installRoot` when set so a

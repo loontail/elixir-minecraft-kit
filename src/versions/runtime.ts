@@ -9,29 +9,29 @@ import type { RuntimeSystem } from "../types/system";
 import type { ResolverContext } from "./context";
 
 /** Inputs to {@link RuntimeVersionsApi.list}. */
-export interface RuntimeListInput {
+export type RuntimeListInput = {
   readonly system: RuntimeSystem;
   readonly minecraftVersion?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** A summary entry for the list API. */
-export interface RuntimeListEntry {
+export type RuntimeListEntry = {
   readonly component: string;
   readonly platformKey: string;
   readonly versionName: string;
   readonly released: string;
   readonly manifestUrl: string;
-}
+};
 
 /** Inputs to {@link RuntimeVersionsApi.resolve}. */
-export interface RuntimeResolveInput {
+export type RuntimeResolveInput = {
   readonly system: RuntimeSystem;
   readonly minecraftVersion?: string;
   readonly component?: string;
   readonly preference?: RuntimePreferenceKind;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Public runtime versions API surface. */
 export class RuntimeVersionsApi {

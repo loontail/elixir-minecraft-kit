@@ -1,19 +1,19 @@
 import type { LaunchAuth } from "./auth";
 
 /** Optional memory configuration. */
-export interface LaunchMemoryOptions {
+export type LaunchMemoryOptions = {
   readonly minMb?: number;
   readonly maxMb?: number;
-}
+};
 
 /** Optional resolution / window configuration. */
-export interface LaunchResolutionOptions {
+export type LaunchResolutionOptions = {
   readonly width: number;
   readonly height: number;
-}
+};
 
 /** Inputs for `kit.launch.compose` (and the lower-level `composeLaunch` helper). */
-export interface LaunchOptions {
+export type LaunchOptions = {
   readonly auth: LaunchAuth;
   readonly memory?: LaunchMemoryOptions;
   readonly resolution?: LaunchResolutionOptions;
@@ -28,10 +28,10 @@ export interface LaunchOptions {
   readonly extraGameArgs?: readonly string[];
   /** Set of feature flags evaluated by argument rules (e.g. `is_demo_user`). */
   readonly features?: Readonly<Record<string, boolean>>;
-}
+};
 
 /** Fully composed launch command, ready to be passed to `kit.launch.run`. */
-export interface LaunchComposition {
+export type LaunchComposition = {
   readonly targetId: string;
   readonly directory: string;
   readonly javaPath: string;
@@ -45,29 +45,29 @@ export interface LaunchComposition {
   readonly workingDirectory: string;
   /** Environment variables to set on the spawned process. */
   readonly env?: Readonly<Record<string, string>>;
-}
+};
 
 /** Live handle for a running game process. */
-export interface LaunchSession {
+export type LaunchSession = {
   /** Operating-system process id. */
   readonly pid: number;
   /** Resolves with the exit code/signal when the process terminates. */
   readonly exited: Promise<LaunchExit>;
   /** Best-effort cancel — sends SIGTERM, then SIGKILL after the grace period. */
   abort(reason?: string): void;
-}
+};
 
 /** Outcome of a finished launch. */
-export interface LaunchExit {
+export type LaunchExit = {
   readonly code: number | null;
   readonly signal: NodeJS.Signals | null;
   readonly aborted: boolean;
-}
+};
 
 /** Options for `kit.launch.run` (and the lower-level `runLaunch` helper). */
-export interface LaunchRunOptions {
+export type LaunchRunOptions = {
   readonly signal?: AbortSignal;
   readonly onEvent?: (event: import("./events").ProgressEvent) => void;
   /** Milliseconds to wait between SIGTERM and SIGKILL when aborting. */
   readonly killGracePeriodMs?: number;
-}
+};

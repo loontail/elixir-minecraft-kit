@@ -16,22 +16,22 @@ import { planMinecraftRepair } from "./minecraft";
 import { runRepair } from "./runner";
 import { planRuntimeRepair } from "./runtime";
 
-export interface RepairAllInput {
+export type RepairAllInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly spawner: Spawner;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
-export interface RepairAllReport {
+export type RepairAllReport = {
   readonly verifications: readonly VerificationResult[];
   /** Present only for aspects that actually needed work. */
   readonly repairs: ReadonlyMap<VerificationKind, RepairReport>;
   readonly bytesDownloaded: number;
   readonly durationMs: number;
-}
+};
 
 /** Verify every applicable aspect and repair each broken one. */
 export const repairAll = async (input: RepairAllInput): Promise<RepairAllReport> => {

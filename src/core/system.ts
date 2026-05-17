@@ -4,11 +4,11 @@ import type { Architecture, OperatingSystem, RuntimeSystem } from "../types/syst
 import { MinecraftKitError } from "./errors";
 
 /** Inputs allowing the host system to be derived from current Node values or overrides. */
-export interface DetectSystemInput {
+export type DetectSystemInput = {
   readonly platform?: NodeJS.Platform;
   readonly arch?: NodeJS.Architecture;
   readonly osVersion?: string;
-}
+};
 
 /**
  * Resolve the current host system identifiers.

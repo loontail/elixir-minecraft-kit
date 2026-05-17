@@ -12,13 +12,13 @@ import { planLibraryDownloads } from "./libraries";
 import { planRuntimeDownloads } from "./runtime";
 
 /** Inputs to the install planner. */
-export interface PlanInstallInput {
+export type PlanInstallInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /** Build a flat install plan for the given target. */
 export const planInstall = async (input: PlanInstallInput): Promise<InstallPlan> => {

@@ -6,11 +6,11 @@ import type {
 } from "../../src/types/http";
 
 /** A scripted response for {@link FakeHttpClient}. */
-export interface FakeResponseSpec {
+export type FakeResponseSpec = {
   readonly status?: number;
   readonly headers?: HttpHeaders;
   readonly body: string | Uint8Array | (() => Uint8Array);
-}
+};
 
 /** Test-only HttpClient that returns scripted responses keyed by URL. */
 export class FakeHttpClient implements HttpClient {

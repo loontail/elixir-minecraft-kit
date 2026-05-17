@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { MAX_VISIBLE_OPTIONS, buildUi } from "../../src/cli/ui";
 
-interface Recorded {
+type Recorded = {
   readonly kind: "text" | "select";
   readonly opts: Record<string, unknown>;
-}
+};
 
-interface FakeClack {
+type FakeClack = {
   readonly recorded: Recorded[];
   readonly module: Parameters<typeof buildUi>[0];
-}
+};
 
 const makeFakeClack = (answers: readonly unknown[]): FakeClack => {
   const queue = [...answers];

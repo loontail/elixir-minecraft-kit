@@ -3,12 +3,12 @@ import type { MetadataCache } from "../types/cache";
 import type { HttpClient } from "../types/http";
 
 /** Inputs to {@link fetchJson}. */
-export interface FetchJsonInput {
+export type FetchJsonInput = {
   readonly url: string;
   readonly cacheKey?: string;
   readonly ttlMs?: number;
   readonly signal?: AbortSignal;
-}
+};
 
 /**
  * GET a URL, parse the body as JSON, and cache the parsed value in {@link MetadataCache} with

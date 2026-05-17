@@ -11,18 +11,18 @@ import { Loaders, VersionPreference, type VersionPreferenceKind } from "../types
 import type { ResolverContext } from "./context";
 
 /** Inputs to {@link FabricVersionsApi.list}. */
-export interface FabricListInput {
+export type FabricListInput = {
   readonly minecraftVersion?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Inputs to {@link FabricVersionsApi.resolve}. */
-export interface FabricResolveInput {
+export type FabricResolveInput = {
   readonly minecraftVersion: string;
   readonly preference?: VersionPreferenceKind;
   readonly loaderVersion?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Public Fabric versions API surface. */
 export class FabricVersionsApi {

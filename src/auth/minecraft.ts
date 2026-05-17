@@ -7,23 +7,23 @@ const MC_LOGIN_URL = "https://api.minecraftservices.com/authentication/login_wit
 const MC_PROFILE_URL = "https://api.minecraftservices.com/minecraft/profile";
 
 /** Result of `login_with_xbox` — Minecraft bearer token + lifetime. */
-export interface MinecraftLoginResult {
+export type MinecraftLoginResult = {
   readonly accessToken: string;
   readonly expiresIn: number;
-}
+};
 
-interface LoginResponse {
+type LoginResponse = {
   readonly access_token: string;
   readonly expires_in: number;
   /** Claims JWT carrying the XUID (`xuid`) — opaque to us; we extract via `parseXuid`. */
   readonly username?: string;
-}
+};
 
-interface ProfileResponse {
+type ProfileResponse = {
   readonly id: string;
   readonly name: string;
   readonly errorMessage?: string;
-}
+};
 
 /** Step 4 — trade the XSTS token for a Minecraft bearer token. */
 export const loginWithXbox = async (input: {

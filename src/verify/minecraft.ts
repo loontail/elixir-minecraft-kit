@@ -16,13 +16,13 @@ import {
 import { runVerification, verifyExistence, verifyHashedFile } from "./helpers";
 
 /** Inputs to {@link verifyMinecraft}. */
-export interface VerifyMinecraftInput {
+export type VerifyMinecraftInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /**
  * Verify the vanilla Minecraft slice of an installation: the client jar, version JSON,

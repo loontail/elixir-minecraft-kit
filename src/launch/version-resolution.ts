@@ -8,14 +8,14 @@ import type { MinecraftVersionManifest } from "../types/minecraft";
 import type { Target } from "../types/target";
 
 /** Result of resolving the on-disk version JSON for a target. */
-export interface ResolvedLaunchVersion {
+export type ResolvedLaunchVersion = {
   /** Topmost version id (the one used as `${version_name}` and for the natives directory). */
   readonly versionId: string;
   /** Merged manifest with `inheritsFrom` chain folded together. */
   readonly merged: MinecraftVersionManifest;
   /** Inherits-from chain from top (`versionId`) down to the root vanilla version. */
   readonly chain: readonly string[];
-}
+};
 
 /** Read the installed version JSON appropriate for a target's loader and merge inheritsFrom. */
 export const resolveLaunchVersion = async (target: Target): Promise<ResolvedLaunchVersion> => {

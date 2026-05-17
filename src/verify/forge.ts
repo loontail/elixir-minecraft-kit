@@ -22,13 +22,13 @@ import {
 } from "./helpers";
 
 /** Inputs to {@link verifyForge}. */
-export interface VerifyForgeInput {
+export type VerifyForgeInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /**
  * Verify the Forge loader slice: the on-disk Forge version JSON and every library it

@@ -40,43 +40,43 @@ export type RuntimeIndex = Readonly<Record<string, RuntimeIndexPlatform>>;
 export type RuntimeIndexPlatform = Readonly<Record<string, readonly RuntimeIndexEntry[]>>;
 
 /** A single available runtime release. */
-export interface RuntimeIndexEntry {
+export type RuntimeIndexEntry = {
   readonly availability: { readonly group: number; readonly progress: number };
   readonly manifest: { readonly sha1: string; readonly size: number; readonly url: string };
   readonly version: { readonly name: string; readonly released: string };
-}
+};
 
 /** Inner per-component file manifest. */
-export interface RuntimeFilesManifest {
+export type RuntimeFilesManifest = {
   readonly files: Readonly<Record<string, RuntimeFileEntry>>;
-}
+};
 
 /** A single file in the runtime manifest. */
 export type RuntimeFileEntry = RuntimeFileFile | RuntimeFileDirectory | RuntimeFileLink;
 
 /** A file entry: real bytes to download, may have lzma sidecar. */
-export interface RuntimeFileFile {
+export type RuntimeFileFile = {
   readonly type: "file";
   readonly executable: boolean;
   readonly downloads: {
     readonly raw: { readonly sha1: string; readonly size: number; readonly url: string };
     readonly lzma?: { readonly sha1: string; readonly size: number; readonly url: string };
   };
-}
+};
 
 /** A directory placeholder. */
-export interface RuntimeFileDirectory {
+export type RuntimeFileDirectory = {
   readonly type: "directory";
-}
+};
 
 /** A relative symlink. */
-export interface RuntimeFileLink {
+export type RuntimeFileLink = {
   readonly type: "link";
   readonly target: string;
-}
+};
 
 /** Resolved runtime ready to install or launch with. */
-export interface ResolvedRuntime {
+export type ResolvedRuntime = {
   /** Mojang component name (e.g. `java-runtime-gamma`). */
   readonly component: string;
   /** Platform key inside the runtime index (e.g. `windows-x64`). */
@@ -95,4 +95,4 @@ export interface ResolvedRuntime {
    * live at `<installRoot>/<component>/...`. When unset, defaults to `<target.directory>/runtime`.
    */
   readonly installRoot?: string;
-}
+};

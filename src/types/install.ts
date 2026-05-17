@@ -34,7 +34,7 @@ export const InstallActionKinds = {
 export type InstallActionKind = (typeof InstallActionKinds)[keyof typeof InstallActionKinds];
 
 /** A single download step. */
-export interface DownloadAction {
+export type DownloadAction = {
   readonly kind: typeof InstallActionKinds.DOWNLOAD_FILE;
   readonly url: string;
   readonly target: string;
@@ -50,15 +50,15 @@ export interface DownloadAction {
     | "forge-library"
     | "runtime-file"
     | "forge-installer";
-}
+};
 
 /** A native extraction step. Source jar must already exist on disk. */
-export interface ExtractNativeAction {
+export type ExtractNativeAction = {
   readonly kind: typeof InstallActionKinds.EXTRACT_NATIVE;
   readonly source: string;
   readonly destination: string;
   readonly exclude: readonly string[];
-}
+};
 
 /**
  * A Forge processor invocation. `Main-Class` is intentionally NOT carried here — the
@@ -66,28 +66,28 @@ export interface ExtractNativeAction {
  * not guaranteed to exist on disk during planning (newer Forge versions ship some
  * processor JARs as regular Maven libraries instead of bundling them in the installer).
  */
-export interface RunForgeProcessorAction {
+export type RunForgeProcessorAction = {
   readonly kind: typeof InstallActionKinds.RUN_FORGE_PROCESSOR;
   readonly index: number;
   /** First entry is the processor JAR; remaining entries are its declared classpath. */
   readonly classpath: readonly string[];
   readonly args: readonly string[];
   readonly outputs: Readonly<Record<string, string>>;
-}
+};
 
 /** Write a version JSON to disk (Fabric / Forge). */
-export interface WriteVersionJsonAction {
+export type WriteVersionJsonAction = {
   readonly kind: typeof InstallActionKinds.WRITE_VERSION_JSON;
   readonly path: string;
   readonly content: string;
-}
+};
 
 /** Write a logging config (log4j XML) to disk. */
-export interface WriteLoggingConfigAction {
+export type WriteLoggingConfigAction = {
   readonly kind: typeof InstallActionKinds.WRITE_LOGGING_CONFIG;
   readonly path: string;
   readonly content: string;
-}
+};
 
 /** Discriminated union of install actions. */
 export type InstallAction =
@@ -101,13 +101,13 @@ export type InstallAction =
  * A "runtime-only" install plan target. Used by `planStandaloneRuntimeInstall` to plan a
  * JRE-only install without a Minecraft version/loader pinned to the plan.
  */
-export interface RuntimeOnlyInstallTarget {
+export type RuntimeOnlyInstallTarget = {
   readonly id: string;
   readonly directory: string;
   readonly runtime: import("./runtime").ResolvedRuntime;
   readonly minecraft?: undefined;
   readonly loader?: undefined;
-}
+};
 
 /**
  * Shape of `InstallPlan.target`. Either a fully-resolved {@link import("./target").Target} or a
@@ -123,20 +123,20 @@ export type InstallPlanTarget = import("./target").Target | RuntimeOnlyInstallTa
  * carries a reference to the resolved target so the runner does not need a second target
  * argument.
  */
-export interface InstallPlan {
+export type InstallPlan = {
   readonly targetId: string;
   readonly directory: string;
   readonly target: InstallPlanTarget;
   readonly actions: readonly InstallAction[];
   readonly totalBytes: number;
   readonly totalActions: number;
-}
+};
 
 /** Outcome summary returned by `install.run`. */
-export interface InstallReport {
+export type InstallReport = {
   readonly targetId: string;
   readonly bytesDownloaded: number;
   readonly actionsCompleted: number;
   readonly actionsSkipped: number;
   readonly durationMs: number;
-}
+};

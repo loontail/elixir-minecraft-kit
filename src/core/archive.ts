@@ -13,7 +13,7 @@ import { MinecraftKitError } from "./errors";
 import { assertWithinRoot, atomicWrite, chmodExecutable, ensureDir } from "./fs";
 
 /** A single zip entry exposed to callers. */
-export interface ZipEntry {
+export type ZipEntry = {
   readonly name: string;
   readonly compressedSize: number;
   readonly uncompressedSize: number;
@@ -22,7 +22,7 @@ export interface ZipEntry {
   readBuffer(): Promise<Buffer>;
   /** Stream the entry contents. */
   openReadStream(): Promise<Readable>;
-}
+};
 
 /** Open a zip/jar file for streaming inspection. */
 export const openZip = (filePath: string): Promise<ZipReader> => {
@@ -173,12 +173,12 @@ const openStream = (
 };
 
 /** Inputs to {@link extractEntryToDir}. */
-export interface ExtractOptions {
+export type ExtractOptions = {
   /** Path-prefix exclusion list. Defaults to `["META-INF/"]`. */
   readonly excludePrefixes?: readonly string[];
   /** When false, refuse to overwrite existing files. */
   readonly overwrite?: boolean;
-}
+};
 
 /** Extract every file entry from a zip into `targetDir`, applying safety checks. */
 export const extractAllToDir = async (

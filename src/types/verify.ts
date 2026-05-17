@@ -36,7 +36,7 @@ export const VerifyFileCategories = {
 export type VerifyFileCategory = (typeof VerifyFileCategories)[keyof typeof VerifyFileCategories];
 
 /** A single verified file. */
-export interface VerificationFileResult {
+export type VerificationFileResult = {
   readonly path: string;
   readonly category: VerifyFileCategory;
   readonly status: VerifyFileStatus;
@@ -46,14 +46,14 @@ export interface VerificationFileResult {
   readonly actualSize?: number;
   /** Optional URL where the file can be re-downloaded if it's broken. */
   readonly url?: string;
-}
+};
 
 /** Aggregate verification result returned by each `verify.<kind>.run` API. */
-export interface VerificationResult {
+export type VerificationResult = {
   readonly targetId: string;
   readonly kind: VerificationKind;
   readonly isValid: boolean;
   readonly issues: readonly VerificationFileResult[];
   readonly checkedFiles: number;
   readonly durationMs: number;
-}
+};

@@ -11,18 +11,18 @@ export type WizardOutcome<T> =
   | { readonly kind: "cancel" };
 
 /** A select option. */
-export interface SelectOption<T> {
+export type SelectOption<T> = {
   readonly label: string;
   readonly value: T;
   readonly hint?: string;
-}
+};
 
 /** Common shape for every interactive prompt input. */
-export interface UiPromptInput {
+export type UiPromptInput = {
   readonly message: string;
   readonly allowBack?: boolean;
   readonly allowCancel?: boolean;
-}
+};
 
 /** Inputs for {@link Ui.text}. */
 export interface TextInput extends UiPromptInput {
@@ -54,17 +54,17 @@ export interface ConfirmInput extends UiPromptInput {
 }
 
 /** Spinner handle. */
-export interface UiSpinner {
+export type UiSpinner = {
   /** Start the spinner with an initial message. */
   start(message: string): void;
   /** Update the running spinner's message in-place (no newline). */
   message(message: string): void;
   /** Stop the spinner with a final message. */
   stop(message?: string): void;
-}
+};
 
 /** Public interactive-UI contract. */
-export interface Ui {
+export type Ui = {
   intro(message: string): void;
   outro(message: string): void;
   note(title: string, body: string): void;
@@ -76,12 +76,12 @@ export interface Ui {
   searchableSelect<T>(input: SearchableSelectInput<T>): Promise<WizardOutcome<T>>;
   confirm(input: ConfirmInput): Promise<WizardOutcome<boolean>>;
   spinner(): UiSpinner;
-}
+};
 
 const BACK = Symbol("mckit:back");
 const CANCEL = Symbol("mckit:cancel");
 
-interface ClackModule {
+type ClackModule = {
   intro(m: string): void;
   outro(m: string): void;
   note(body: string, title?: string): void;
@@ -100,7 +100,7 @@ interface ClackModule {
     message?(m: string): void;
   };
   isCancel(value: unknown): boolean;
-}
+};
 
 /**
  * Build the production {@link Ui} backed by `@clack/prompts`. Lazy import keeps the CLI
@@ -169,10 +169,10 @@ const DEFAULT_OUT: { write(chunk: string): void; isTTY: boolean } = {
 };
 
 /** Inputs to {@link createInPlaceSpinner}. */
-export interface InPlaceSpinnerInput {
+export type InPlaceSpinnerInput = {
   /** Sink the spinner writes to. Defaults to `process.stdout`. */
   readonly out?: { write(chunk: string): void; isTTY: boolean };
-}
+};
 
 /**
  * Build a {@link UiSpinner} that updates a single terminal line in place by writing raw
@@ -345,7 +345,7 @@ export const createStubUi = (script: readonly unknown[] = []): StubUi => {
 };
 
 /** Recorded stub-UI call. */
-export interface StubUiCall {
+export type StubUiCall = {
   readonly kind:
     | "intro"
     | "outro"
@@ -362,7 +362,7 @@ export interface StubUiCall {
   readonly message: string;
   readonly level?: "info" | "success" | "warn" | "error";
   readonly body?: string;
-}
+};
 
 /** Stub UI handle (extends {@link Ui} with a `calls` log for test assertions). */
 export interface StubUi extends Ui {

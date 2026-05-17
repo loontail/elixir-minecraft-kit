@@ -7,18 +7,18 @@ import { Loaders, VersionPreference, type VersionPreferenceKind } from "../types
 import type { ResolverContext } from "./context";
 
 /** Inputs to {@link ForgeVersionsApi.list}. */
-export interface ForgeListInput {
+export type ForgeListInput = {
   readonly minecraftVersion?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Inputs to {@link ForgeVersionsApi.resolve}. */
-export interface ForgeResolveInput {
+export type ForgeResolveInput = {
   readonly minecraftVersion: string;
   readonly preference?: VersionPreferenceKind;
   readonly forgeVersion?: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Public Forge versions API surface. */
 export class ForgeVersionsApi {
@@ -77,9 +77,9 @@ export class ForgeVersionsApi {
   }
 }
 
-interface ForgePromotions {
+type ForgePromotions = {
   readonly promos: Readonly<Record<string, string>>;
-}
+};
 
 const buildSummary = (
   fullVersion: string,

@@ -16,33 +16,33 @@ const SCOPE = "XboxLive.signin offline_access";
  * Microsoft access + refresh tokens. Internal — callers receive the higher-level
  * {@link import("../types/auth").MojangSession} instead.
  */
-export interface MicrosoftToken {
+export type MicrosoftToken = {
   readonly accessToken: string;
   readonly refreshToken: string;
   readonly expiresIn: number;
-}
+};
 
-interface DeviceCodeResponse {
+type DeviceCodeResponse = {
   readonly device_code: string;
   readonly user_code: string;
   readonly verification_uri: string;
   readonly message: string;
   readonly expires_in: number;
   readonly interval: number;
-}
+};
 
-interface TokenSuccess {
+type TokenSuccess = {
   readonly token_type: "Bearer";
   readonly scope: string;
   readonly expires_in: number;
   readonly access_token: string;
   readonly refresh_token?: string;
-}
+};
 
-interface TokenError {
+type TokenError = {
   readonly error: string;
   readonly error_description?: string;
-}
+};
 
 /** Start a device-code session against Microsoft's `/devicecode` endpoint. */
 export const startDeviceCode = async (input: {

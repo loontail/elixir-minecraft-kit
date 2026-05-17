@@ -6,14 +6,14 @@ import type { RepairPlan, RepairReport } from "../types/repair";
 import type { Spawner } from "../types/spawner";
 
 /** Inputs to {@link runRepair}. Shared across all aspect-specific repair flows. */
-export interface RunRepairInput {
+export type RunRepairInput = {
   readonly plan: RepairPlan;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly spawner: Spawner;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /** Execute any repair plan. Reuses the install runner. */
 export const runRepair = async (input: RunRepairInput): Promise<RepairReport> => {

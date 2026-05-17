@@ -13,11 +13,11 @@ import type { LibraryArtifact, MinecraftLibrary } from "../types/minecraft";
 import type { RuntimeSystem } from "../types/system";
 
 /** Outputs of {@link planLibraryDownloads}. */
-export interface LibraryPlan {
+export type LibraryPlan = {
   readonly downloads: readonly DownloadAction[];
   readonly nativeExtractions: readonly ExtractNativeAction[];
   readonly classpathFiles: readonly string[];
-}
+};
 
 /**
  * Walk a library list, evaluate rules against the system, and produce concrete download +
@@ -92,12 +92,12 @@ export const planLibraryDownloads = (input: {
   return { downloads, nativeExtractions, classpathFiles };
 };
 
-interface ArtifactDescription {
+type ArtifactDescription = {
   readonly relativePath: string;
   readonly url: string;
   readonly sha1: string | undefined;
   readonly size: number | undefined;
-}
+};
 
 const pickPrimaryArtifact = (library: MinecraftLibrary): ArtifactDescription | null => {
   if (library.downloads?.artifact) {

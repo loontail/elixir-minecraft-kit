@@ -29,7 +29,7 @@ import type { RuntimeSystem } from "../types/system";
 import { planLibraryDownloads } from "./libraries";
 
 /** Outputs of {@link planForgeInstall}. */
-export interface ForgeInstallPlan {
+export type ForgeInstallPlan = {
   readonly installerDownload: DownloadAction;
   readonly libraryDownloads: readonly DownloadAction[];
   readonly classpathFiles: readonly string[];
@@ -38,10 +38,10 @@ export interface ForgeInstallPlan {
   readonly versionId: string;
   readonly profile: ForgeInstallProfile;
   readonly version: ForgeVersionJson;
-}
+};
 
 /** Inputs to {@link planForgeInstall}. */
-export interface PlanForgeInstallInput {
+export type PlanForgeInstallInput = {
   readonly loader: ResolvedForgeLoader;
   readonly minecraft: ResolvedMinecraft;
   readonly directory: string;
@@ -50,7 +50,7 @@ export interface PlanForgeInstallInput {
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /**
  * Plan the Forge install steps. Downloads the installer, parses install_profile + version.json,
@@ -171,16 +171,16 @@ const extractInstallerMavenEntries = async (
   }
 };
 
-interface ResolvedProfileData {
+type ResolvedProfileData = {
   readonly tokens: Readonly<Record<string, ResolvedTokenValue>>;
-}
+};
 
-interface ResolvedTokenValue {
+type ResolvedTokenValue = {
   /** Final string used in argument substitution. */
   readonly value: string;
   /** When true, the value is an on-disk path; otherwise it is a literal. */
   readonly isPath: boolean;
-}
+};
 
 const resolveProfileData = async (input: {
   readonly profile: ForgeInstallProfile;

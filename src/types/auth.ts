@@ -10,15 +10,15 @@ export const AuthModes = {
 export type AuthMode = (typeof AuthModes)[keyof typeof AuthModes];
 
 /** Offline authentication. */
-export interface OfflineAuth {
+export type OfflineAuth = {
   readonly mode: typeof AuthModes.OFFLINE;
   readonly username: string;
   /** Optional explicit UUID. When omitted, a deterministic UUID is derived from the username. */
   readonly uuid?: string;
-}
+};
 
 /** Online (token-based) authentication. */
-export interface OnlineAuth {
+export type OnlineAuth = {
   readonly mode: typeof AuthModes.ONLINE;
   readonly username: string;
   readonly uuid: string;
@@ -26,7 +26,7 @@ export interface OnlineAuth {
   readonly userType?: string;
   readonly clientId?: string;
   readonly xuid?: string;
-}
+};
 
 /** Auth shape consumed by `kit.launch.compose`. */
 export type LaunchAuth = OfflineAuth | OnlineAuth;
@@ -35,7 +35,7 @@ export type LaunchAuth = OfflineAuth | OnlineAuth;
  * Device-code prompt presented to the user. The caller renders these to the user, who then
  * visits {@link verificationUri} in a browser and enters {@link userCode}.
  */
-export interface DeviceCodePrompt {
+export type DeviceCodePrompt = {
   /** Short alphanumeric code the user types on the verification page. */
   readonly userCode: string;
   /** URI the user opens to complete sign-in (typically `https://microsoft.com/link`). */
@@ -46,10 +46,10 @@ export interface DeviceCodePrompt {
   readonly expiresIn: number;
   /** Recommended seconds between polling requests. */
   readonly interval: number;
-}
+};
 
 /** Opaque state returned by `start()` and consumed by `poll()`. */
-export interface DeviceCodeState {
+export type DeviceCodeState = {
   readonly deviceCode: string;
   readonly userCode: string;
   readonly verificationUri: string;
@@ -59,7 +59,7 @@ export interface DeviceCodeState {
   readonly clientId: string;
   /** Wall-clock ms timestamp after which polling should stop. */
   readonly expiresAt: number;
-}
+};
 
 /**
  * Combined Microsoft + Minecraft session returned by `kit.auth.login` and `kit.auth.refresh`.
@@ -68,7 +68,7 @@ export interface DeviceCodeState {
  * {@link microsoft} are needed only by the launcher to refresh the session later — persist them
  * to durable storage (encrypted) alongside the user's profile.
  */
-export interface MojangSession {
+export type MojangSession = {
   readonly minecraft: {
     /** Player display name. */
     readonly username: string;
@@ -87,4 +87,4 @@ export interface MojangSession {
     /** Azure AD application id used to mint the session. */
     readonly clientId: string;
   };
-}
+};

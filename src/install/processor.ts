@@ -7,13 +7,13 @@ import type { RunForgeProcessorAction } from "../types/install";
 import type { Spawner } from "../types/spawner";
 
 /** Inputs to {@link runProcessor}. */
-export interface RunProcessorInput {
+export type RunProcessorInput = {
   readonly action: RunForgeProcessorAction;
   readonly javaPath: string;
   readonly spawner: Spawner;
   readonly onEvent?: ProgressListener;
   readonly total: number;
-}
+};
 
 /** Execute a single Forge processor and verify its declared outputs. */
 export const runProcessor = async (input: RunProcessorInput): Promise<void> => {
@@ -69,10 +69,10 @@ const resolveProcessorMainClass = async (action: RunForgeProcessorAction): Promi
   return mainClass;
 };
 
-interface ProcessorExit {
+type ProcessorExit = {
   readonly code: number | null;
   readonly stderr: string;
-}
+};
 
 const spawnProcessor = async (
   input: RunProcessorInput,

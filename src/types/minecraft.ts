@@ -17,7 +17,7 @@ export type MinecraftChannel = (typeof MinecraftChannels)[keyof typeof Minecraft
  * Note: this is a summary entry, not the full per-version manifest. Use
  * {@link ResolvedMinecraft} for the resolved/parsed full manifest.
  */
-export interface MinecraftVersionSummary {
+export type MinecraftVersionSummary = {
   /** Version id (e.g. `"1.20.1"`). */
   readonly id: string;
   /** Release channel. */
@@ -32,10 +32,10 @@ export interface MinecraftVersionSummary {
   readonly sha1: string;
   /** Compliance level: 0 = legacy, 1 = secure-chat / safety features. */
   readonly complianceLevel: number;
-}
+};
 
 /** Subset of the per-version manifest used by resolvers and consumers. */
-export interface MinecraftVersionManifest {
+export type MinecraftVersionManifest = {
   readonly id: string;
   readonly type: MinecraftChannel | string;
   readonly mainClass: string;
@@ -56,34 +56,34 @@ export interface MinecraftVersionManifest {
   readonly time?: string;
   readonly minimumLauncherVersion?: number;
   readonly complianceLevel?: number;
-}
+};
 
 /** Reference to the asset-index JSON file. */
-export interface AssetIndexReference {
+export type AssetIndexReference = {
   readonly id: string;
   readonly sha1: string;
   readonly size: number;
   readonly totalSize: number;
   readonly url: string;
-}
+};
 
 /** Per-platform downloads block of the Minecraft per-version manifest. */
-export interface MinecraftDownloads {
+export type MinecraftDownloads = {
   readonly client: ArtifactDownload;
   readonly server?: ArtifactDownload;
   readonly client_mappings?: ArtifactDownload;
   readonly server_mappings?: ArtifactDownload;
-}
+};
 
 /** A single hash-verified download. */
-export interface ArtifactDownload {
+export type ArtifactDownload = {
   readonly sha1: string;
   readonly size: number;
   readonly url: string;
-}
+};
 
 /** Library entry. Combines vanilla, modern-natives, and legacy-classifier shapes. */
-export interface MinecraftLibrary {
+export type MinecraftLibrary = {
   readonly name: string;
   readonly downloads?: MinecraftLibraryDownloads;
   readonly natives?: Readonly<Record<string, string>>;
@@ -91,13 +91,13 @@ export interface MinecraftLibrary {
   readonly rules?: readonly LibraryRule[];
   /** Some Fabric/Forge libraries carry only a Maven base URL plus a coordinate. */
   readonly url?: string;
-}
+};
 
 /** Library downloads block. */
-export interface MinecraftLibraryDownloads {
+export type MinecraftLibraryDownloads = {
   readonly artifact?: LibraryArtifact;
   readonly classifiers?: Readonly<Record<string, LibraryArtifact>>;
-}
+};
 
 /** An individual library artifact (jar/zip). */
 export interface LibraryArtifact extends ArtifactDownload {
@@ -105,17 +105,17 @@ export interface LibraryArtifact extends ArtifactDownload {
 }
 
 /** Rule entry used by libraries and modern arguments. */
-export interface LibraryRule {
+export type LibraryRule = {
   readonly action: "allow" | "disallow";
   readonly os?: { readonly name?: string; readonly arch?: string; readonly version?: string };
   readonly features?: Readonly<Record<string, boolean>>;
-}
+};
 
 /** Modern (1.13+) arguments structure. */
-export interface MinecraftArguments {
+export type MinecraftArguments = {
   readonly game: readonly ArgumentEntry[];
   readonly jvm: readonly ArgumentEntry[];
-}
+};
 
 /** A single argument entry: bare string or rule-gated value. */
 export type ArgumentEntry =
@@ -123,42 +123,42 @@ export type ArgumentEntry =
   | { readonly rules: readonly LibraryRule[]; readonly value: string | readonly string[] };
 
 /** Required Java runtime descriptor from the version manifest. */
-export interface MinecraftJavaVersion {
+export type MinecraftJavaVersion = {
   /** Mojang java-runtime component name (e.g. `java-runtime-gamma`). */
   readonly component: string;
   readonly majorVersion: number;
-}
+};
 
 /** Logging-config entry from the version manifest. */
-export interface MinecraftLogging {
+export type MinecraftLogging = {
   readonly client?: {
     readonly argument: string;
     readonly file: ArtifactDownload & { readonly id: string };
     readonly type: string;
   };
-}
+};
 
 /**
  * Fully resolved Minecraft version: summary + parsed manifest, ready to feed into
  * `kit.targets.create` or `kit.install.plan`.
  */
-export interface ResolvedMinecraft {
+export type ResolvedMinecraft = {
   /** Version id (e.g. `"1.20.1"`). */
   readonly version: string;
   readonly channel: MinecraftChannel;
   readonly manifest: MinecraftVersionManifest;
   readonly summary: MinecraftVersionSummary;
-}
+};
 
 /** Asset index document body. */
-export interface AssetIndexDocument {
+export type AssetIndexDocument = {
   readonly objects: Readonly<Record<string, AssetObject>>;
   readonly virtual?: boolean;
   readonly map_to_resources?: boolean;
-}
+};
 
 /** A single asset object hash + size. */
-export interface AssetObject {
+export type AssetObject = {
   readonly hash: string;
   readonly size: number;
-}
+};

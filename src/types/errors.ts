@@ -43,7 +43,7 @@ export type MinecraftKitErrorCode =
   | "AUTH_CANCELLED";
 
 /** Structured context attached to errors. */
-export interface MinecraftKitErrorContext {
+export type MinecraftKitErrorContext = {
   readonly url?: string;
   readonly filePath?: string;
   readonly expectedHash?: string;
@@ -55,4 +55,4 @@ export interface MinecraftKitErrorContext {
   readonly platform?: string;
   readonly version?: string;
   readonly [key: string]: unknown;
-}
+};

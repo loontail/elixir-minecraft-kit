@@ -9,22 +9,22 @@ const XSTS_URL = "https://xsts.auth.xboxlive.com/xsts/authorize";
  * Result of either XBL or XSTS authentication: the JWT plus the user hash that prefixes the
  * Minecraft `identityToken`.
  */
-export interface XboxToken {
+export type XboxToken = {
   readonly token: string;
   readonly userHash: string;
-}
+};
 
-interface XboxResponse {
+type XboxResponse = {
   readonly Token: string;
   readonly DisplayClaims?: { readonly xui?: ReadonlyArray<{ readonly uhs?: string }> };
-}
+};
 
-interface XstsErrorResponse {
+type XstsErrorResponse = {
   readonly Identity?: string;
   readonly XErr?: number;
   readonly Message?: string;
   readonly Redirect?: string;
-}
+};
 
 /**
  * Step 2 — exchange the Microsoft access token for an Xbox Live user token.

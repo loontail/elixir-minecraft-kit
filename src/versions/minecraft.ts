@@ -10,28 +10,28 @@ import type {
 import type { ResolverContext } from "./context";
 
 /** Top-level shape returned by `version_manifest_v2.json`. */
-interface VersionManifestRoot {
+type VersionManifestRoot = {
   readonly latest: { readonly release: string; readonly snapshot: string };
   readonly versions: readonly MinecraftVersionSummary[];
-}
+};
 
 /** Inputs to {@link MinecraftVersionsApi.list}. */
-export interface MinecraftListInput {
+export type MinecraftListInput = {
   readonly channel?: MinecraftChannel;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Inputs to {@link MinecraftVersionsApi.latest}. */
-export interface MinecraftLatestInput {
+export type MinecraftLatestInput = {
   readonly channel?: MinecraftChannel;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Inputs to {@link MinecraftVersionsApi.get} / `.resolve`. */
-export interface MinecraftGetInput {
+export type MinecraftGetInput = {
   readonly version: string;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Public Minecraft versions API surface. */
 export class MinecraftVersionsApi {

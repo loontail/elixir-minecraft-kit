@@ -10,13 +10,13 @@ import { VerificationKinds, type VerificationResult, VerifyFileCategories } from
 import { runVerification, verifyExistence, verifyHashedFile } from "./helpers";
 
 /** Inputs to {@link verifyFabric}. */
-export interface VerifyFabricInput {
+export type VerifyFabricInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /** Verify the Fabric loader slice: profile JSON + every library it pulls in. */
 export const verifyFabric = async (input: VerifyFabricInput): Promise<VerificationResult> => {

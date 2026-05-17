@@ -8,12 +8,12 @@ import type { Target } from "../types/target";
 import type { UpdatePlan, UpdateReport } from "../types/update";
 
 /** Inputs to {@link planUpdate}. */
-export interface PlanUpdateInput {
+export type PlanUpdateInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
-}
+};
 
 /**
  * Build an update plan. Structurally identical to an install plan — the install runner
@@ -30,14 +30,14 @@ export const planUpdate = async (input: PlanUpdateInput): Promise<UpdatePlan> =>
 };
 
 /** Inputs to the update runner. */
-export interface RunUpdateInput {
+export type RunUpdateInput = {
   readonly plan: UpdatePlan;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly spawner: Spawner;
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};
 
 /**
  * Execute an update plan. Reuses the install runner; already-correct files are skipped

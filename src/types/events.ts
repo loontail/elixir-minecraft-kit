@@ -34,17 +34,17 @@ export const EventTypes = {
 export type EventType = (typeof EventTypes)[keyof typeof EventTypes];
 
 /** Reference to a single file used in download events. */
-export interface FileRef {
+export type FileRef = {
   readonly url: string;
   readonly target: string;
   readonly category?: string;
-}
+};
 
 /** A single processor description used in Forge events. */
-export interface ProcessorRef {
+export type ProcessorRef = {
   readonly index: number;
   readonly mainClass: string;
-}
+};
 
 /**
  * Discriminated union of all runtime progress events. Pass an `onEvent` callback to
@@ -138,7 +138,7 @@ export type ProgressEvent =
 export type ProgressListener = (event: ProgressEvent) => void;
 
 /** Common options accepted by long-running operations. */
-export interface OperationOptions {
+export type OperationOptions = {
   readonly signal?: AbortSignal;
   readonly onEvent?: ProgressListener;
-}
+};

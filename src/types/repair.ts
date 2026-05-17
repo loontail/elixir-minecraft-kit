@@ -23,32 +23,32 @@ export type RepairPhase = (typeof RepairPhases)[keyof typeof RepairPhases];
  * A repair plan is, structurally, an install plan limited to actions needed to fix the
  * issues reported by a previous {@link VerificationResult}. The runner is the same.
  */
-export interface RepairPlan {
+export type RepairPlan = {
   readonly targetId: string;
   readonly directory: string;
   readonly target: import("./target").Target;
   readonly actions: readonly InstallAction[];
   readonly totalBytes: number;
   readonly totalActions: number;
-}
+};
 
 /** Repair report — same shape as install report. */
-export interface RepairReport {
+export type RepairReport = {
   readonly targetId: string;
   readonly bytesDownloaded: number;
   readonly actionsCompleted: number;
   readonly durationMs: number;
-}
+};
 
 /**
  * Inputs accepted by every aspect-specific `planXxxRepair` (`planMinecraftRepair`,
  * `planFabricRepair`, `planForgeRepair`, `planRuntimeRepair`). The per-aspect input types
  * are aliases over this shape.
  */
-export interface AspectRepairInput {
+export type AspectRepairInput = {
   readonly target: Target;
   readonly from: VerificationResult | readonly VerificationResult[];
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
-}
+};

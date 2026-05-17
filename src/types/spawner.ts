@@ -1,10 +1,10 @@
 /** Stream-of-text channel exposed by spawned processes. */
-export interface ProcessStream {
+export type ProcessStream = {
   on(event: "data", listener: (chunk: string) => void): void;
-}
+};
 
 /** Live handle for a child process. */
-export interface SpawnedProcess {
+export type SpawnedProcess = {
   readonly pid: number;
   readonly stdout: ProcessStream;
   readonly stderr: ProcessStream;
@@ -15,18 +15,18 @@ export interface SpawnedProcess {
   }>;
   /** Send a termination signal. Returns true on success. */
   kill(signal?: NodeJS.Signals): boolean;
-}
+};
 
 /** Options accepted by the spawner. */
-export interface SpawnOptions {
+export type SpawnOptions = {
   readonly cwd: string;
   readonly env?: Readonly<Record<string, string>>;
-}
+};
 
 /**
  * Pluggable process spawner. The default implementation uses `node:child_process`; tests
  * inject a fake to avoid spawning real processes.
  */
-export interface Spawner {
+export type Spawner = {
   spawn(command: string, args: readonly string[], options: SpawnOptions): SpawnedProcess;
-}
+};

@@ -6,12 +6,12 @@ import type { Target } from "../types/target";
 import { planRuntimeDownloads } from "./runtime";
 
 /** Inputs to {@link planRuntimeInstall}. */
-export interface PlanRuntimeInstallInput {
+export type PlanRuntimeInstallInput = {
   readonly target: Target;
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
-}
+};
 
 /**
  * Build an install plan that downloads ONLY the Java runtime declared by `target.runtime`.
@@ -48,7 +48,7 @@ export const planRuntimeInstall = async (input: PlanRuntimeInstallInput): Promis
 };
 
 /** Inputs to {@link planStandaloneRuntimeInstall}. */
-export interface PlanStandaloneRuntimeInstallInput {
+export type PlanStandaloneRuntimeInstallInput = {
   readonly id: string;
   /** Where the runtime files live. Used as `directory` if `runtime.installRoot` is unset. */
   readonly directory: string;
@@ -56,7 +56,7 @@ export interface PlanStandaloneRuntimeInstallInput {
   readonly http: HttpClient;
   readonly cache: MetadataCache;
   readonly signal?: AbortSignal;
-}
+};
 
 /**
  * Plan a runtime-only install **without a Minecraft target**. Useful for "Install Java/runtime"

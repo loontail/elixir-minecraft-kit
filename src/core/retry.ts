@@ -6,7 +6,7 @@ import {
 import { MinecraftKitError, isMinecraftKitError } from "./errors";
 
 /** Inputs passed to {@link withRetry}. */
-export interface RetryOptions {
+export type RetryOptions = {
   readonly maxAttempts?: number;
   readonly baseMs?: number;
   readonly capMs?: number;
@@ -14,7 +14,7 @@ export interface RetryOptions {
   readonly sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
   readonly random?: () => number;
   readonly onAttemptFailed?: (error: unknown, attempt: number) => void;
-}
+};
 
 /** Default sleep that respects the abort signal. */
 export const abortableSleep = (ms: number, signal?: AbortSignal): Promise<void> => {

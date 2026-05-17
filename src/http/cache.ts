@@ -3,10 +3,10 @@ import { CACHE_MAX_ENTRIES, CACHE_TTL_MS } from "../constants/defaults";
 import type { MetadataCache } from "../types/cache";
 
 /** Inputs to {@link createMemoryCache}. */
-export interface MemoryCacheOptions {
+export type MemoryCacheOptions = {
   readonly maxEntries?: number;
   readonly ttlMs?: number;
-}
+};
 
 /** In-memory metadata cache backed by `lru-cache`. */
 export const createMemoryCache = (options: MemoryCacheOptions = {}): MetadataCache => {

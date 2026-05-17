@@ -28,12 +28,12 @@ const SCENARIO_KEYS = {
 } as const;
 
 /** Inputs to {@link runCli}. */
-export interface RunCliInput {
+export type RunCliInput = {
   readonly args: readonly string[];
   readonly ui: Ui;
   readonly rootDir: string;
   readonly kit?: MinecraftKit;
-}
+};
 
 /** Programmatic CLI entrypoint, used by both the bin and the tests. */
 export const runCli = async (input: RunCliInput): Promise<number> => {

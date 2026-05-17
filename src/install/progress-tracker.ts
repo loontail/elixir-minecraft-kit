@@ -17,21 +17,21 @@ export const InstallStages = {
 
 export type InstallStage = (typeof InstallStages)[keyof typeof InstallStages];
 
-export interface ProgressSnapshot {
+export type ProgressSnapshot = {
   readonly stage: InstallStage;
   readonly stagePercent: number;
   readonly overallPercent: number;
   readonly bytesDownloaded: number;
   readonly totalBytes: number;
   readonly currentFile?: string;
-}
+};
 
-export interface ProgressTrackerOptions {
+export type ProgressTrackerOptions = {
   /** Milliseconds between snapshot pushes. Defaults to 100ms. */
   readonly throttleMs?: number;
-}
+};
 
-export interface InstallProgressTracker {
+export type InstallProgressTracker = {
   /** Pass directly as the `onEvent` callback to `install.run` / `repair.run`. */
   readonly onEvent: ProgressListener;
   snapshot(): ProgressSnapshot;
@@ -39,7 +39,7 @@ export interface InstallProgressTracker {
   subscribe(listener: (snapshot: ProgressSnapshot) => void): () => void;
   /** Force-emit a final 100% snapshot and stop the throttle timer. */
   finish(): void;
-}
+};
 
 const STAGE_FOR_CATEGORY: Record<DownloadAction["category"], InstallStage> = {
   "runtime-file": InstallStages.RUNTIME,

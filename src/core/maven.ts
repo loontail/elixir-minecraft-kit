@@ -3,13 +3,13 @@ import { MinecraftKitError } from "./errors";
 /**
  * Parsed Maven coordinate of the form `group:artifact:version[:classifier][@extension]`.
  */
-export interface MavenCoordinate {
+export type MavenCoordinate = {
   readonly group: string;
   readonly artifact: string;
   readonly version: string;
   readonly classifier?: string;
   readonly extension: string;
-}
+};
 
 /**
  * Parse a Maven coordinate string. Defaults `extension` to `jar`.

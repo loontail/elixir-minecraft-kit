@@ -9,11 +9,11 @@ import type {
 import type { Spawner } from "../types/spawner";
 
 /** Inputs to {@link runLaunch}. */
-export interface RunLaunchInput {
+export type RunLaunchInput = {
   readonly composition: LaunchComposition;
   readonly options?: LaunchRunOptions;
   readonly spawner: Spawner;
-}
+};
 
 /**
  * Spawn the configured Java process. Returns a {@link LaunchSession} immediately after the

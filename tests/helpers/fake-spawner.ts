@@ -2,12 +2,12 @@ import { EventEmitter } from "node:events";
 import type { ProcessStream, SpawnOptions, SpawnedProcess, Spawner } from "../../src/types/spawner";
 
 /** A scripted spawn outcome. */
-export interface FakeSpawnSpec {
+export type FakeSpawnSpec = {
   readonly stdout?: readonly string[];
   readonly stderr?: readonly string[];
   readonly exitCode: number;
   readonly delayMs?: number;
-}
+};
 
 /** Test-only Spawner that returns scripted child processes. */
 export class FakeSpawner implements Spawner {

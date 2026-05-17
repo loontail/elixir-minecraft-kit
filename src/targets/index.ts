@@ -18,7 +18,7 @@ import type { MinecraftVersionsApi } from "../versions/minecraft";
 import type { RuntimeVersionsApi } from "../versions/runtime";
 
 /** Inputs to {@link TargetsApi.resolve}. */
-export interface TargetResolveInput {
+export type TargetResolveInput = {
   readonly id: string;
   readonly directory: string;
   readonly minecraft: { readonly version: string };
@@ -35,7 +35,7 @@ export interface TargetResolveInput {
   };
   readonly system?: RuntimeSystem;
   readonly signal?: AbortSignal;
-}
+};
 
 /** Loader input variants. */
 export type TargetLoaderInput =
@@ -52,18 +52,18 @@ export type TargetLoaderInput =
     };
 
 /** Inputs to {@link TargetsApi.list}. */
-export interface TargetListInput {
+export type TargetListInput = {
   readonly rootDir: string;
-}
+};
 
 /** Constructor inputs for {@link TargetsApi}. */
-export interface TargetsApiContext {
+export type TargetsApiContext = {
   readonly minecraft: MinecraftVersionsApi;
   readonly fabric: FabricVersionsApi;
   readonly forge: ForgeVersionsApi;
   readonly runtime: RuntimeVersionsApi;
   readonly system: RuntimeSystem;
-}
+};
 
 /** Public Targets API surface. */
 export class TargetsApi {
